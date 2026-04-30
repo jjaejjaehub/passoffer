@@ -1,0 +1,320 @@
+---
+description: 에러 핸들링 규칙 (Axios · TanStack Query · React Hook Form · Chakra UI)
+globs: **/*.ts, **/*.tsx
+alwaysApply: true
+---
+
+## 에러 핸들링 규칙
+
+기술 스택: Axios · TanStack Query · React Hook Form · Chakra UI · Next.js App Router
+
+에러를 조용히 삼키거나 `console.error`만 하는 코드는
+사용자에게 빈 화면을 보여주고, 개발자에게는 원인을 숨긴다.
+에러는 반드시 명시적으로 처리하고 사용자에게 적절한 피드백을 제공한다.
+
+---
+
+### Axios — 공통 에러 인터셉터로 중앙 처리
+
+개별 API 호출마다 에러를 처리하지 않는다.
+Axios 인터셉터에서 공통 에러를 처리하고, 도메인 에러는 호출부에서 처리한다.
+
+```ts
+// src/shared/api/axiosInstance.ts
+import axios, { AxiosError, isAxiosError } from 'axios';
+
+export interface ApiErrorResponse {
+  message: string;
+  code:    string;
+  errors?: Record<string, string[]>;
+}
+
+export const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  timeout: 10_000,
+});
+
+// ✅ 응답 인터셉터 — 공통 에러 처리
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<ApiErrorResponse>) => {
+    if (error.response?.status === 401) {
+      // 인증 만료: 로그인 페이지로 리다이렉트
+      window.location.href = '/login';
+    }
+    if (error.response?.status === 403) {
+      // 권한 없음: 에러를 그대로 throw (호출부에서 처리)
+    }
+    // 나머지 에러는 그대로 throw → TanStack Query가 받아서 처리
+    return Promise.reject(error);
+  }
+);
+```
+
+Axios 에러 타입 좁히기는 항상 `isAxiosError()`를 사용한다.
+
+```ts
+import { isAxiosError } from 'axios';
+
+// ❌ 나쁜 예
+catch (error: any) { alert(error.response.data.message); }
+
+// ✅ 좋은 예
+catch (error: unknown) {
+  if (isAxiosError<ApiErrorResponse>(error)) {
+    const message = error.response?.data.message ?? '알 수 없는 오류';
+    // 처리
+  }
+}
+```
+
+---
+
+### TanStack Query — 에러 상태 처리 패턴
+
+`useQuery`의 `error` 상태를 반드시 처리한다.
+전역 에러는 `QueryClient` defaultOptions로, 로컬 에러는 컴포넌트에서 처리한다.
+
+```ts
+// src/app/_providers/QueryProvider.tsx — 전역 에러 기본 처리
+const [queryClient] = useState(() => new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      retry: (failureCount, error) => {
+        // 401/403/404는 재시도 안 함
+        if (isAxiosError(error)) {
+          const status = error.response?.status;
+          if (status === 401 || status === 403 || status === 404) return false;
+        }
+        return failureCount < 2;
+      },
+    },
+  },
+}));
+```
+
+```tsx
+// ✅ 컴포넌트에서 isLoading / error / data 3가지 상태 모두 처리
+'use client'
+function UserProfile({ id }: { id: string }) {
+  const { data: user, isLoading, error } = useUser(id);
+
+  // 로딩 상태
+  if (isLoading) return <UserSkeleton />;
+
+  // 에러 상태 — error를 무시하거나 data만 조건부 렌더링하지 않는다
+  if (error) {
+    const message = isAxiosError<ApiErrorResponse>(error)
+      ? error.response?.data.message ?? '사용자 정보를 불러올 수 없습니다'
+      : '알 수 없는 오류가 발생했습니다';
+    return <ErrorMessage message={message} />;
+  }
+
+  return <Box>{user.name}</Box>;
+}
+```
+
+```tsx
+// ✅ useMutation — onError 콜백으로 에러 처리 + Chakra UI toast
+'use client'
+import { useToast } from '@chakra-ui/react';
+
+function useUpdateUserWithToast() {
+  const toast = useToast();
+
+  return useMutation<User, AxiosError<ApiErrorResponse>, UpdateUserInput>({
+    mutationFn: (input) => http.put(`/users/${input.id}`, input),
+
+    onSuccess: () => {
+      toast({ title: '저장되었습니다', status: 'success', duration: 3000 });
+    },
+
+    onError: (error) => {
+      const message = error.response?.data.message ?? '저장에 실패했습니다';
+      toast({ title: message, status: 'error', duration: 5000, isClosable: true });
+    },
+  });
+}
+```
+
+---
+
+### React Hook Form — 에러 상태를 Chakra UI FormControl과 연결
+
+React Hook Form의 `errors` 객체는 반드시 `FormErrorMessage`와 연결한다.
+유효성 검증 에러와 서버 에러를 구분해서 처리한다.
+
+```tsx
+'use client'
+import {
+  FormControl, FormLabel, Input,
+  FormErrorMessage, Button, Alert, AlertIcon,
+} from '@chakra-ui/react';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+function LoginForm() {
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    setError,  // ✅ 서버 에러를 특정 필드에 연결할 때 사용
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    setServerError(null); // 이전 서버 에러 초기화
+
+    try {
+      await loginMutation.mutateAsync(data);
+    } catch (error) {
+      if (isAxiosError<ApiErrorResponse>(error)) {
+        const apiError = error.response?.data;
+
+        // ✅ 필드별 서버 에러 → setError로 특정 필드에 연결
+        if (apiError?.errors) {
+          Object.entries(apiError.errors).forEach(([field, messages]) => {
+            setError(field as keyof LoginFormValues, { message: messages[0] });
+          });
+          return;
+        }
+
+        // ✅ 전체 폼 에러 → 별도 Alert으로 표시
+        setServerError(apiError?.message ?? '로그인에 실패했습니다');
+      }
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* ✅ 서버 에러는 폼 상단 Alert으로 표시 */}
+      {serverError && (
+        <Alert status="error" mb={4}>
+          <AlertIcon />
+          {serverError}
+        </Alert>
+      )}
+
+      {/* ✅ 필드 에러는 FormControl isInvalid + FormErrorMessage로 처리 */}
+      <FormControl isInvalid={Boolean(errors.email)} mb={4}>
+        <FormLabel>이메일</FormLabel>
+        <Input {...register('email')} />
+        <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+      </FormControl>
+
+      <FormControl isInvalid={Boolean(errors.password)} mb={4}>
+        <FormLabel>비밀번호</FormLabel>
+        <Input type="password" {...register('password')} />
+        <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
+      </FormControl>
+
+      <Button type="submit" isLoading={isSubmitting} colorScheme="blue" w="full">
+        로그인
+      </Button>
+    </form>
+  );
+}
+```
+
+---
+
+### Next.js App Router 에러 경계 배치
+
+라우트 세그먼트마다 `error.tsx`와 `loading.tsx`를 배치한다.
+
+```
+app/
+├── layout.tsx
+├── error.tsx          ← 전체 앱 에러 경계 (최후 방어선)
+├── loading.tsx        ← 전체 앱 로딩 상태
+├── not-found.tsx      ← 404 처리
+└── (dashboard)/
+    ├── error.tsx      ← dashboard 전용 에러 경계
+    ├── loading.tsx    ← dashboard 전용 로딩 (Chakra Skeleton 사용)
+    └── page.tsx
+```
+
+```tsx
+// app/error.tsx — 반드시 'use client'
+'use client'
+import { Box, Button, Heading, Text } from '@chakra-ui/react';
+
+interface ErrorPageProps {
+  error: Error & { digest?: string };
+  reset: () => void;
+}
+
+export default function ErrorPage({ error, reset }: ErrorPageProps) {
+  useEffect(() => {
+    // 에러 리포팅 (Sentry 등)
+    reportError(error);
+  }, [error]);
+
+  return (
+    <Box textAlign="center" py={20}>
+      <Heading mb={4}>문제가 발생했습니다</Heading>
+      <Text mb={8} color="gray.500">{error.message}</Text>
+      <Button onClick={reset} colorScheme="blue">다시 시도</Button>
+    </Box>
+  );
+}
+```
+
+```tsx
+// app/loading.tsx — Server Component (Chakra Skeleton 사용)
+import { Skeleton, Stack } from '@chakra-ui/react';
+
+export default function Loading() {
+  return (
+    <Stack spacing={4} p={8}>
+      <Skeleton height="40px" />
+      <Skeleton height="20px" />
+      <Skeleton height="20px" />
+    </Stack>
+  );
+}
+```
+
+---
+
+### Suspense + ErrorBoundary 선언적 처리
+
+TanStack Query와 함께 사용할 때 `suspense: true` 옵션으로 선언적으로 처리한다.
+
+```tsx
+// ✅ Suspense + ErrorBoundary 조합
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Skeleton } from '@chakra-ui/react';
+
+export function UserSection({ id }: { id: string }) {
+  return (
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <ErrorFallback message={error.message} onReset={resetErrorBoundary} />
+      )}
+    >
+      <Suspense fallback={<Skeleton height="200px" />}>
+        <UserProfileSuspense id={id} />
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+```
+
+---
+
+### FSD 레이어별 에러 처리 위치
+
+| 위치 | 에러 처리 방식 |
+|---|---|
+| `src/shared/api/axiosInstance.ts` | 인터셉터: 401 리다이렉트, 공통 에러 throw |
+| `src/shared/api/http.ts` | Axios 에러 → 도메인 에러 변환 (필요 시) |
+| `src/entities/{slice}/api/` | `useQuery` error 상태 반환 |
+| `src/features/{slice}/api/` | `useMutation` onError 콜백, toast 피드백 |
+| `src/features/{slice}/ui/` | RHF `setError`, `FormErrorMessage`, Alert |
+| `app/**/error.tsx` | 라우트 레벨 에러 경계 (최후 방어선) |

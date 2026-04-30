@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "shopee-api-docs": {
+      "type": "stdio",
+      "command": "bun",
+      "args": [
+        "run",
+        "/Users/bag-yeongjae/workspace/shopee-crwal/mcp-server.ts"
+      ],
+      "env": {},
+      "cwd": "/Users/bag-yeongjae/workspace/shopee-crwal"
+    },
+    "shopify-dev-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@shopify/dev-mcp@latest"
+      ],
+      "env": {}
+    }
+  }
+}

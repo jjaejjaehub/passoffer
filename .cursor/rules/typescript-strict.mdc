@@ -1,0 +1,326 @@
+---
+description: TypeScript 엄격 타입 규칙 (Axios · React Hook Form · TanStack Query · Chakra UI)
+globs: **/*.ts, **/*.tsx
+alwaysApply: true
+---
+
+## TypeScript 엄격 타입 규칙
+
+기술 스택: TypeScript · Axios · React Hook Form · TanStack Query · Chakra UI · Next.js App Router
+
+타입 안전성은 런타임 오류를 컴파일 타임에 잡는 가장 효과적인 방법이다.
+아래 규칙을 위반하면 타입이 있어도 없는 것과 같은 코드가 된다.
+
+---
+
+### any 사용 금지 — unknown 사용
+
+`any`는 타입 검사를 완전히 비활성화한다. 타입을 모를 때는 `unknown`을 사용하고,
+사용 전에 반드시 타입 가드로 좁힌다.
+
+```ts
+// ❌ 나쁜 예
+function parse(data: any) {
+  return data.user.name;
+}
+
+// ✅ 좋은 예
+function parse(data: unknown) {
+  if (typeof data === 'object' && data !== null && 'user' in data) {
+    // 타입이 좁혀진 후 안전하게 접근
+  }
+}
+```
+
+---
+
+### as 타입 단언 금지 — 타입 가드 사용
+
+`as`는 컴파일러를 속긴다. 실제 타입이 다르면 런타임 오류가 발생한다.
+DOM 이벤트 처리는 예외적으로 허용한다.
+
+```ts
+// ❌ 나쁜 예
+const user = response.data as User;
+
+// ✅ 좋은 예: 타입 가드 함수
+function isUser(data: unknown): data is User {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as User).id === 'string'
+  );
+}
+
+// ✅ DOM 이벤트는 예외 허용
+const input = e.currentTarget as HTMLInputElement;
+```
+
+---
+
+### 함수 반환 타입 명시
+
+반환 타입을 생략하면 구현이 바뀔 때 호출부에서 타입 오류를 뒤늦게 발견한다.
+함수·훅·Server Action은 반환 타입을 반드시 명시한다.
+
+```ts
+// ❌ 나쁜 예
+function getUser(id: string) {
+  return http.get(`/users/${id}`);
+}
+
+// ✅ 좋은 예
+async function getUser(id: string): Promise<User> {
+  return http.get<User>(`/users/${id}`);
+}
+
+// ✅ 단순 유틸은 추론 가능하면 생략 허용
+const double = (n: number) => n * 2;
+```
+
+---
+
+### interface vs type 사용 기준
+
+- **객체 형태(shape)** → `interface` (확장·선언 병합 지원)
+- **유니온·인터섹션·조건부 타입** → `type`
+
+```ts
+// ✅ 객체는 interface
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface AdminUser extends User {
+  permissions: string[];
+}
+
+// ✅ 유니온·조건부는 type
+type Role = 'admin' | 'viewer' | 'editor';
+type ApiResponse<T> = { data: T; status: number };
+```
+
+---
+
+### Non-null 단언 연산자(!) 금지
+
+`value!`는 컴파일러를 속긴다. 옵셔널 체이닝과 nullish 병합으로 대체한다.
+
+```ts
+// ❌ 나쁜 예
+const name = user!.profile!.name;
+
+// ✅ 좋은 예
+const name = user?.profile?.name ?? '익명';
+```
+
+---
+
+### enum 대신 as const 사용
+
+`enum`은 트리쉐이킹이 안 되고 JS 런타임 코드를 생성한다.
+
+```ts
+// ❌ 나쁜 예
+enum UserRole { Admin = 'admin', Viewer = 'viewer' }
+
+// ✅ 좋은 예
+const USER_ROLE = { Admin: 'admin', Viewer: 'viewer' } as const;
+type UserRole = typeof USER_ROLE[keyof typeof USER_ROLE];
+// → 'admin' | 'viewer'
+```
+
+---
+
+### Axios — 응답 타입 명시 필수
+
+Axios `response.data`는 기본 `any`다. 반드시 제네릭으로 응답 타입을 명시한다.
+공통 `http` 래퍼를 만들어 일관성을 유지한다.
+
+```ts
+// src/shared/api/axiosInstance.ts
+import axios from 'axios';
+
+export const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  timeout: 10_000,
+});
+```
+
+```ts
+// src/shared/api/http.ts — 공통 래퍼
+// 모든 API 호출은 fetch/axios 직접 사용 대신 이 래퍼를 통한다
+export const http = {
+  get:    <T>(url: string)                => apiClient.get<T>(url).then(r => r.data),
+  post:   <T>(url: string, body: unknown) => apiClient.post<T>(url, body).then(r => r.data),
+  put:    <T>(url: string, body: unknown) => apiClient.put<T>(url, body).then(r => r.data),
+  delete: <T>(url: string)                => apiClient.delete<T>(url).then(r => r.data),
+};
+
+// ❌ 나쁜 예: data가 any
+const res = await apiClient.get('/users/1');
+
+// ✅ 좋은 예: 제네릭으로 타입 보장
+const user = await http.get<User>('/users/1'); // user: User
+```
+
+Axios 에러는 `isAxiosError()`로 타입을 좁힌다.
+
+```ts
+import { isAxiosError } from 'axios';
+
+// ❌ 나쁜 예
+catch (error: any) { console.error(error.response.data); }
+
+// ✅ 좋은 예
+catch (error: unknown) {
+  if (isAxiosError<ApiErrorResponse>(error)) {
+    console.error(error.response?.data.message);
+  }
+}
+```
+
+---
+
+### TanStack Query — queryKey 타입 안전성 + 반환 타입
+
+queryKey는 query factory 패턴으로 타입 안전하게 관리한다.
+`useQuery` / `useMutation`에 타입 파라미터를 명시한다.
+
+```ts
+// src/entities/user/api/userQueries.ts
+
+// ✅ query factory — queryKey 중앙 관리, 타입 자동 추론
+export const userQueries = {
+  all:    ()                     => ['users'] as const,
+  lists:  ()                     => [...userQueries.all(), 'list'] as const,
+  list:   (filters: UserFilters) => [...userQueries.lists(), filters] as const,
+  detail: (id: string)           => [...userQueries.all(), 'detail', id] as const,
+};
+
+// ✅ useQuery — queryFn 반환 타입 명시
+export function useUser(id: string) {
+  return useQuery({
+    queryKey: userQueries.detail(id),
+    queryFn:  (): Promise<User> => http.get(`/users/${id}`),
+    enabled:  Boolean(id),
+  });
+}
+
+// ✅ useMutation — <TData, TError, TVariables> 명시
+export function useUpdateUser() {
+  return useMutation<User, AxiosError<ApiErrorResponse>, UpdateUserInput>({
+    mutationFn: (input) => http.put(`/users/${input.id}`, input),
+  });
+}
+```
+
+여러 쿼리를 조합하는 훅도 반환 타입을 명시한다.
+
+```ts
+// ✅ 조합 훅의 반환 타입 명시
+function useUserWithPosts(id: string): {
+  user:      User | undefined;
+  posts:     Post[];
+  isLoading: boolean;
+  error:     Error | null;
+} {
+  const userQuery  = useUser(id);
+  const postsQuery = useUserPosts(id);
+
+  return {
+    user:      userQuery.data,
+    posts:     postsQuery.data ?? [],
+    isLoading: userQuery.isLoading || postsQuery.isLoading,
+    error:     userQuery.error ?? postsQuery.error,
+  };
+}
+```
+
+---
+
+### React Hook Form — zod 스키마로 타입과 검증 단일 소스 유지
+
+`useForm<T>` 제네릭을 반드시 명시하고, `z.infer<typeof schema>`로
+타입과 스키마를 한 파일에서 관리한다. 타입을 별도로 직접 작성하지 않는다.
+
+```ts
+// src/features/auth-login/model/loginSchema.ts
+import { z } from 'zod';
+
+export const loginSchema = z.object({
+  email:    z.string().email('올바른 이메일을 입력하세요'),
+  password: z.string().min(8, '비밀번호는 8자 이상'),
+});
+
+// ✅ 타입은 스키마에서 자동 추론 — 별도로 interface/type 작성 금지
+export type LoginFormValues = z.infer<typeof loginSchema>;
+```
+
+```tsx
+// src/features/auth-login/ui/LoginForm.tsx
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { loginSchema, LoginFormValues } from '../model/loginSchema';
+
+function LoginForm() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver:      zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  // ✅ SubmitHandler<T>로 onSubmit 타입 명시
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    // data는 LoginFormValues 타입 보장
+  };
+
+  return <form onSubmit={handleSubmit(onSubmit)}>{/* ... */}</form>;
+}
+```
+
+---
+
+### Chakra UI — 컴포넌트 Props 타입 확장
+
+Chakra 컴포넌트를 확장할 때 Chakra의 Props 타입을 상속한다.
+HTML 속성(`React.HTMLAttributes<HTMLDivElement>`)을 직접 확장하지 않는다.
+
+```tsx
+import { Button, ButtonProps, Box, BoxProps } from '@chakra-ui/react';
+
+// ✅ Chakra Props 상속 — sx, colorScheme 등 Chakra 속성 모두 유지
+interface PrimaryButtonProps extends ButtonProps {
+  isDestructive?: boolean;
+}
+
+export function PrimaryButton({ isDestructive, ...rest }: PrimaryButtonProps) {
+  return <Button colorScheme={isDestructive ? 'red' : 'blue'} {...rest} />;
+}
+
+// ❌ 나쁜 예: HTML 속성 직접 확장 → Chakra props 사용 불가
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+}
+```
+
+---
+
+### FSD 레이어별 타입 배치 기준
+
+```
+src/shared/model/types.ts              ← 전역 공통 (ApiResponse, Pagination 등)
+src/shared/api/http.ts                 ← Axios 인스턴스 + http 래퍼
+src/entities/{slice}/model/types.ts    ← 도메인 엔티티 (User, Product 등)
+src/entities/{slice}/api/queries.ts    ← query factory + useQuery 훅
+src/features/{slice}/model/schema.ts   ← zod 스키마 + z.infer 타입
+src/features/{slice}/model/types.ts    ← 기능 전용 타입
+```
+
+타입은 사용하는 레이어의 `model/`에 배치하고, `index.ts`로만 노출한다.
+상위 레이어 타입을 하위 레이어에서 임포트하지 않는다.

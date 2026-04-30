@@ -1,0 +1,342 @@
+---
+description: v0(shadcn/ui + Tailwind) 코드를 프로젝트 스타일로 변환
+globs:
+alwaysApply: false
+---
+
+## v0 → 프로젝트 스타일 변환 규칙
+
+이 Rule은 v0에서 생성한 shadcn/ui + Tailwind 코드를
+프로젝트 스택(Chakra UI · TanStack Query · React Hook Form · Axios · FSD)으로 변환할 때 적용한다.
+
+변환 요청 시 아래 규칙을 모두 적용한다.
+변환 후 shadcn import, Tailwind className, cn() 유틸이 남아있으면 안 된다.
+
+---
+
+## 1. 컴포넌트 대응표
+
+### 레이아웃
+
+| shadcn/Tailwind | Chakra UI |
+|---|---|
+| `<div className="flex ...">` | `<Flex ...>` |
+| `<div className="flex flex-col ...">` | `<VStack ...>` 또는 `<Flex direction="column">` |
+| `<div className="flex flex-row ...">` | `<HStack ...>` 또는 `<Flex direction="row">` |
+| `<div className="grid grid-cols-N ...">` | `<Grid templateColumns="repeat(N, 1fr)" ...>` |
+| `<div className="...">` (일반 컨테이너) | `<Box ...>` |
+| `<main>`, `<section>`, `<article>` | `<Box as="main">`, `<Box as="section">` 등 |
+
+### 타이포그래피
+
+| shadcn/Tailwind | Chakra UI |
+|---|---|
+| `<h1~h6 className="text-xl font-bold ...">` | `<Heading as="h1" size="xl" ...>` |
+| `<p className="text-sm text-gray-500 ...">` | `<Text fontSize="sm" color="gray.500" ...>` |
+| `<span className="...">` | `<Text as="span" ...>` |
+
+### 간격 · 크기 Tailwind → Chakra 단위
+
+| Tailwind | Chakra |
+|---|---|
+| `gap-1` / `space-x-1` | `spacing={1}` / `gap={1}` |
+| `gap-4` / `space-x-4` | `spacing={4}` / `gap={4}` |
+| `p-4` / `px-4` / `py-2` | `p={4}` / `px={4}` / `py={2}` |
+| `m-4` / `mt-2` / `mb-8` | `m={4}` / `mt={2}` / `mb={8}` |
+| `w-full` / `h-full` | `w="full"` / `h="full"` |
+| `max-w-md` / `max-w-lg` | `maxW="md"` / `maxW="lg"` |
+| `rounded` / `rounded-md` / `rounded-full` | `borderRadius="sm"` / `borderRadius="md"` / `borderRadius="full"` |
+
+### 색상
+
+| Tailwind | Chakra |
+|---|---|
+| `text-gray-500` | `color="gray.500"` |
+| `bg-white` / `bg-gray-100` | `bg="white"` / `bg="gray.100"` |
+| `border-gray-200` | `borderColor="gray.200"` |
+| `text-red-500` | `color="red.500"` |
+
+---
+
+## 2. shadcn/ui 컴포넌트 → Chakra UI 변환
+
+### Button
+
+```tsx
+// ❌ 변환 전 (shadcn)
+import { Button } from '@/components/ui/button';
+<Button variant="outline" size="sm" disabled={isLoading}>저장</Button>
+
+// ✅ 변환 후 (Chakra)
+import { Button } from '@chakra-ui/react';
+<Button variant="outline" size="sm" isDisabled={isLoading}>저장</Button>
+```
+
+주요 prop 변환:
+- `disabled` → `isDisabled`
+- `loading` → `isLoading`
+- variant: `"default"` → `"solid"`, `"outline"` → `"outline"`, `"ghost"` → `"ghost"`, `"destructive"` → `colorScheme="red"`
+
+### Input
+
+```tsx
+// ❌ 변환 전
+import { Input } from '@/components/ui/input';
+<Input placeholder="이메일" className="w-full" />
+
+// ✅ 변환 후
+import { Input } from '@chakra-ui/react';
+<Input placeholder="이메일" w="full" />
+```
+
+### Label + Input (폼 필드)
+
+```tsx
+// ❌ 변환 전
+import { Label } from '@/components/ui/label';
+<div className="flex flex-col gap-1">
+  <Label htmlFor="email">이메일</Label>
+  <Input id="email" />
+  <p className="text-sm text-red-500">{errors.email?.message}</p>
+</div>
+
+// ✅ 변환 후
+import { FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/react';
+<FormControl isInvalid={Boolean(errors.email)}>
+  <FormLabel htmlFor="email">이메일</FormLabel>
+  <Input id="email" {...register('email')} />
+  <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+</FormControl>
+```
+
+### Card
+
+```tsx
+// ❌ 변환 전
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+<Card>
+  <CardHeader><h3>제목</h3></CardHeader>
+  <CardContent>내용</CardContent>
+  <CardFooter>푸터</CardFooter>
+</Card>
+
+// ✅ 변환 후
+import { Box, Heading, Divider } from '@chakra-ui/react';
+<Box borderWidth="1px" borderRadius="lg" overflow="hidden">
+  <Box p={4} borderBottomWidth="1px">
+    <Heading size="md">제목</Heading>
+  </Box>
+  <Box p={4}>내용</Box>
+  <Box p={4} borderTopWidth="1px">푸터</Box>
+</Box>
+```
+
+### Dialog / Modal
+
+```tsx
+// ❌ 변환 전
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+<Dialog open={isOpen} onOpenChange={setIsOpen}>
+  <DialogContent>
+    <DialogHeader><DialogTitle>제목</DialogTitle></DialogHeader>
+    {children}
+  </DialogContent>
+</Dialog>
+
+// ✅ 변환 후
+import {
+  Modal, ModalOverlay, ModalContent,
+  ModalHeader, ModalBody, ModalCloseButton,
+} from '@chakra-ui/react';
+<Modal isOpen={isOpen} onClose={() => setIsOpen(false)}>
+  <ModalOverlay />
+  <ModalContent>
+    <ModalHeader>제목</ModalHeader>
+    <ModalCloseButton />
+    <ModalBody>{children}</ModalBody>
+  </ModalContent>
+</Modal>
+```
+
+### Select
+
+```tsx
+// ❌ 변환 전
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select';
+
+// ✅ 변환 후
+import { Select } from '@chakra-ui/react';
+<Select placeholder="선택하세요">
+  <option value="a">옵션 A</option>
+</Select>
+```
+
+### Checkbox / Switch
+
+```tsx
+// ❌ 변환 전
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+
+// ✅ 변환 후
+import { Checkbox, Switch } from '@chakra-ui/react';
+// prop 변환: checked → isChecked, onCheckedChange → onChange
+```
+
+### Badge
+
+```tsx
+// ❌ 변환 전
+import { Badge } from '@/components/ui/badge';
+<Badge variant="destructive">오류</Badge>
+
+// ✅ 변환 후
+import { Badge } from '@chakra-ui/react';
+<Badge colorScheme="red">오류</Badge>
+```
+
+### Separator
+
+```tsx
+// ❌ 변환 전
+import { Separator } from '@/components/ui/separator';
+<Separator />
+
+// ✅ 변환 후
+import { Divider } from '@chakra-ui/react';
+<Divider />
+```
+
+### Skeleton
+
+```tsx
+// ❌ 변환 전
+import { Skeleton } from '@/components/ui/skeleton';
+<Skeleton className="h-4 w-full" />
+
+// ✅ 변환 후
+import { Skeleton } from '@chakra-ui/react';
+<Skeleton height="4" width="full" />
+```
+
+### Toast / Alert
+
+```tsx
+// ❌ 변환 전 (sonner or shadcn toast)
+import { toast } from 'sonner';
+toast.success('저장되었습니다');
+toast.error('오류가 발생했습니다');
+
+// ✅ 변환 후
+import { useToast } from '@chakra-ui/react';
+const toast = useToast();
+toast({ title: '저장되었습니다', status: 'success', duration: 3000, isClosable: true });
+toast({ title: '오류가 발생했습니다', status: 'error', duration: 5000, isClosable: true });
+```
+
+---
+
+## 3. cn() 유틸 제거
+
+`cn()`은 조건부 클래스 합성 유틸이다. Chakra UI에서는 필요 없다.
+
+```tsx
+// ❌ 변환 전
+import { cn } from '@/lib/utils';
+<div className={cn('flex gap-4', isActive && 'bg-blue-500', className)}>
+
+// ✅ 변환 후: 조건부 스타일은 Chakra props로
+<Flex gap={4} bg={isActive ? 'blue.500' : undefined} {...rest}>
+```
+
+---
+
+## 4. React Hook Form 연동 변환
+
+shadcn 폼과 React Hook Form 연동 패턴을 Chakra 방식으로 변환한다.
+
+```tsx
+// ❌ 변환 전 (shadcn Form 컴포넌트 사용)
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+
+const form = useForm<FormValues>();
+
+<Form {...form}>
+  <FormField
+    control={form.control}
+    name="email"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>이메일</FormLabel>
+        <FormControl><Input {...field} /></FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+</Form>
+
+// ✅ 변환 후 (Chakra + RHF 직접 연동)
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FormControl, FormLabel, Input, FormErrorMessage } from '@chakra-ui/react';
+
+const { register, handleSubmit, formState: { errors } } =
+  useForm<FormValues>({ resolver: zodResolver(schema) });
+
+<FormControl isInvalid={Boolean(errors.email)}>
+  <FormLabel>이메일</FormLabel>
+  <Input {...register('email')} />
+  <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+</FormControl>
+```
+
+---
+
+## 5. import 경로 정리
+
+```tsx
+// ❌ 제거 대상 import
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+// ✅ 변환 후 import
+import { Button, Input, useToast, /* 필요한 것만 */ } from '@chakra-ui/react';
+```
+
+---
+
+## 6. FSD 파일 위치 제안
+
+변환 완료 후 반드시 아래 기준으로 파일 위치를 제안한다.
+
+```
+페이지 단위 컴포넌트        → src/pages/{기능명}/ui/{컴포넌트명}.tsx
+폼 (로그인, 회원가입 등)    → src/features/{기능명}/ui/{폼명}.tsx
+폼 스키마 + 타입           → src/features/{기능명}/model/schema.ts
+도메인 표시 컴포넌트        → src/entities/{도메인}/ui/{컴포넌트명}.tsx
+공통 UI (버튼, 모달 등)    → src/shared/ui/{컴포넌트명}.tsx
+```
+
+'use client' 필요 여부도 함께 판단해서 명시한다.
+(useForm, useToast, useState 등 사용 시 → 'use client' 필요)
+
+---
+
+## 7. 변환 완료 체크리스트
+
+변환 후 아래 항목을 모두 확인한다.
+
+```
+□ @/components/ui/* import가 없는지
+□ @/lib/utils (cn 포함) import가 없는지
+□ className="..." Tailwind 클래스가 없는지
+□ cn() 호출이 없는지
+□ sonner, radix-ui 등 shadcn 의존 패키지 import가 없는지
+□ useForm<FormValues> 제네릭이 명시됐는지
+□ FormControl + isInvalid + FormErrorMessage가 연결됐는지
+□ 'use client' 필요 여부가 판단됐는지
+□ FSD 파일 위치가 제안됐는지
+```

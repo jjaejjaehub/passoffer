@@ -1,0 +1,123 @@
+---
+description: FSD + Next.js App Router 아키텍처 규칙
+globs: **/*.ts, **/*.tsx
+alwaysApply: true
+---
+
+## 프로젝트 구조 원칙
+
+- `app/` 폴더는 Next.js 라우팅 전용이며, 비즈니스 로직을 포함하지 않는다
+- 실제 구현은 모두 `src/` 안의 FSD 레이어에 위치한다
+- 루트의 `pages/` 폴더는 빈 폴더라도 절대 삭제하지 않는다 (App Router 빌드 에러 방지)
+
+## app/ 라우트 파일 작성 규칙 (re-export 패턴)
+
+`app/` 안의 `page.tsx`, `layout.tsx`는 `src/pages/` 컴포넌트를 import해서 그대로 re-export만 한다.
+비즈니스 로직, JSX 구현, 데이터 fetch를 `app/` 안에 직접 작성하지 않는다.
+
+```tsx
+// ✅ 올바른 예: app/(public)/page.tsx
+export { HomePage as default } from "@/pages/home";
+
+// ✅ 올바른 예: app/(auth)/login/page.tsx
+export { LoginPage as default } from "@/pages/login";
+
+// ✅ 올바른 예: app/layout.tsx
+export { RootLayout as default } from "@/pages/root";
+
+// ❌ 잘못된 예: app/page.tsx 안에 직접 구현
+export default function Page() {
+  const data = await fetch("/api/..."); // ❌ 직접 fetch 금지
+  return <main>...</main>; // ❌ JSX 직접 작성 금지
+}
+```
+
+## FSD 레이어 의존성 규칙
+
+의존 방향은 반드시 아래 한 방향만 허용한다.
+
+```
+app → pages → widgets → features → entities → shared
+```
+
+- 같은 레이어 내 다른 슬라이스 간 임포트는 금지한다
+- 하위 레이어가 상위 레이어를 임포트하는 것은 금지한다
+- 외부 임포트는 반드시 슬라이스의 `index.ts` (Public API)를 통해서만 한다
+
+```ts
+// ✅ 올바른 예: features → entities
+import { UserAvatar } from "@/entities/user";
+
+// ❌ 잘못된 예: entities → features (역방향)
+import { LoginForm } from "@/features/auth-by-email";
+
+// ❌ 잘못된 예: 같은 레이어 내 슬라이스 간 직접 참조
+// features/cart 안에서
+import { useLogin } from "@/features/auth-by-email/model/useLogin"; // ❌ 내부 직접 접근
+import { useLogin } from "@/features/auth-by-email"; // ❌ 같은 레이어
+```
+
+## 슬라이스 Public API (index.ts) 규칙
+
+모든 슬라이스는 `index.ts`를 통해서만 외부에 노출한다.
+슬라이스 내부 파일을 외부에서 직접 경로로 임포트하지 않는다.
+
+```ts
+// src/entities/user/index.ts
+export { UserAvatar } from "./ui/UserAvatar";
+export type { User } from "./model/types";
+
+// ✅ 올바른 사용
+import { UserAvatar } from "@/entities/user";
+
+// ❌ 잘못된 사용
+import { UserAvatar } from "@/entities/user/ui/UserAvatar";
+```
+
+## 슬라이스 폴더 구조
+
+각 슬라이스는 아래 세그먼트 구조를 따른다.
+
+```
+src/features/auth-by-email/
+├── ui/          ← 컴포넌트
+├── model/       ← 상태, 훅, 타입
+├── api/         ← API 호출 (해당 슬라이스 전용)
+├── lib/         ← 내부 유틸
+└── index.ts     ← Public API (외부 노출 전용)
+```
+
+## Server / Client Component 규칙
+
+- 기본값은 Server Component이며, 필요한 경우에만 `'use client'`를 선언한다
+- `'use client'`가 필요한 경우: `useState`, `useEffect`, 이벤트 핸들러, 브라우저 API 사용 시
+- `shared/ui/`의 인터랙티브 컴포넌트는 파일 상단에 `'use client'`를 명시한다
+- Server Component 안에 Client Component를 children으로 전달하는 패턴을 적극 활용한다
+
+```tsx
+// ✅ Server Component가 Client Component를 children으로 감싸는 패턴
+// src/widgets/dashboard/ui/Dashboard.tsx (Server Component)
+import { InteractivePanel } from "@/features/panel"; // 'use client' 컴포넌트
+
+export async function Dashboard() {
+  const data = await fetchData();
+  return (
+    <section>
+      <h1>{data.title}</h1>
+      <InteractivePanel /> {/* Client Component는 leaf에 배치 */}
+    </section>
+  );
+}
+```
+
+## 디렉토리 별칭 (tsconfig paths 기준)
+
+```ts
+@/*         → src/*
+@/app/*     → src/app/*
+@/pages/*   → src/pages/*
+@/widgets/* → src/widgets/*
+@/features/*→ src/features/*
+@/entities/*→ src/entities/*
+@/shared/*  → src/shared/*
+```

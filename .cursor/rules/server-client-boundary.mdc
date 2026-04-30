@@ -1,0 +1,279 @@
+---
+description: Next.js App Router — Server / Client Component 경계 규칙 (TanStack Query · Chakra UI · React Hook Form)
+globs: app/**/*.tsx, src/**/*.tsx
+alwaysApply: true
+---
+
+## Server / Client Component 경계 규칙
+
+기술 스택: Next.js App Router · TanStack Query · Chakra UI · React Hook Form · Axios
+
+App Router에서 잘못된 경계는 번들 사이즈 증가, 보안 이슈, 불필요한 재렌더링을 유발한다.
+경계는 항상 의도적으로 설정한다.
+
+---
+
+### 기본 원칙: 기본값은 Server Component
+
+`'use client'` 선언이 없는 모든 파일은 Server Component다.
+반드시 필요한 경우에만 `'use client'`를 추가한다.
+
+```
+'use client'가 필요한 경우:
+  ✅ useState, useReducer, useContext 사용
+  ✅ useEffect, useLayoutEffect 사용
+  ✅ onClick, onChange 등 이벤트 핸들러 사용
+  ✅ 브라우저 API (window, localStorage, navigator 등) 사용
+  ✅ TanStack Query (useQuery, useMutation) 사용
+  ✅ React Hook Form (useForm) 사용
+  ✅ Chakra UI 컴포넌트 사용 (내부적으로 useContext 사용)
+
+'use client'가 불필요한 경우:
+  ❌ 단순 데이터 표시 (props만 받아 렌더링)
+  ❌ async/await로 직접 data fetch
+  ❌ DB, 환경변수 등 서버 리소스 접근
+```
+
+---
+
+### Chakra UI — Provider는 Client Component, 나머지는 최소화
+
+Chakra UI는 내부적으로 Context를 사용하므로 `ChakraProvider`를 Client Component에 감싼다.
+개별 Chakra 컴포넌트를 쓰는 파일도 `'use client'`가 필요하다.
+
+```tsx
+// src/app/_providers/ChakraClientProvider.tsx
+'use client'
+import { ChakraProvider } from '@chakra-ui/react';
+import { theme } from '@/shared/config/theme';
+
+export function ChakraClientProvider({ children }: { children: React.ReactNode }) {
+  return <ChakraProvider theme={theme}>{children}</ChakraProvider>;
+}
+
+// app/layout.tsx — Server Component에서 Provider 감싸기
+import { ChakraClientProvider } from './_providers/ChakraClientProvider';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <body>
+        <ChakraClientProvider>{children}</ChakraClientProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+---
+
+### TanStack Query — QueryClientProvider는 Client Component
+
+TanStack Query도 마찬가지로 Provider를 Client Component로 분리한다.
+
+```tsx
+// src/app/_providers/QueryProvider.tsx
+'use client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState } from 'react';
+
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  // ✅ useState로 QueryClient 생성 — 서버/클라이언트 간 상태 공유 방지
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries:   { staleTime: 60_000, retry: 1 },
+      mutations: { retry: false },
+    },
+  }));
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
+  );
+}
+
+// ❌ 나쁜 예: 모듈 레벨에서 QueryClient 생성 (서버/클라이언트 공유됨)
+const queryClient = new QueryClient();
+```
+
+두 Provider를 합쳐서 `app/layout.tsx`에서 한 번만 사용한다.
+
+```tsx
+// src/app/_providers/Providers.tsx
+'use client'
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryProvider>
+      <ChakraClientProvider>
+        {children}
+      </ChakraClientProvider>
+    </QueryProvider>
+  );
+}
+```
+
+---
+
+### TanStack Query의 data fetch — useQuery는 Client, 초기 데이터는 Server에서
+
+`useQuery`는 `'use client'` 필수다. 초기 데이터 성능이 중요하면
+Server Component에서 prefetch 후 `dehydrate`로 전달한다.
+
+```tsx
+// ✅ 패턴 A: Client Component에서 useQuery만 사용 (단순한 경우)
+'use client'
+export function UserProfile({ id }: { id: string }) {
+  const { data: user, isLoading, error } = useUser(id);
+
+  if (isLoading) return <Skeleton />;
+  if (error)     return <ErrorMessage />;
+  return <Box>{user?.name}</Box>;
+}
+
+// ✅ 패턴 B: Server에서 prefetch + Client에서 useQuery (SEO·초기 렌더 중요한 경우)
+// src/pages/user/ui/UserPage.tsx — Server Component
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+import { getQueryClient } from '@/shared/api/getQueryClient';
+
+export async function UserPage({ id }: { id: string }) {
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: userQueries.detail(id),
+    queryFn:  () => http.get<User>(`/users/${id}`),
+  });
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <UserProfileClient id={id} /> {/* Client Component */}
+    </HydrationBoundary>
+  );
+}
+```
+
+---
+
+### React Hook Form — 폼은 항상 Client Component
+
+`useForm`은 브라우저 상태를 사용하므로 폼 컴포넌트는 반드시 `'use client'`다.
+폼을 감싸는 페이지는 Server Component로 유지하고, 폼만 Client로 분리한다.
+
+```tsx
+// ✅ 좋은 예: 폼만 Client Component로 분리
+// src/features/auth-login/ui/LoginForm.tsx
+'use client'
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FormControl, FormLabel, Input, Button, FormErrorMessage } from '@chakra-ui/react';
+
+export function LoginForm() {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
+
+  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+    // Axios or Server Action 호출
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <FormControl isInvalid={Boolean(errors.email)}>
+        <FormLabel>이메일</FormLabel>
+        <Input {...register('email')} />
+        <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
+      </FormControl>
+      <Button type="submit" isLoading={isSubmitting}>로그인</Button>
+    </form>
+  );
+}
+
+// src/pages/login/ui/LoginPage.tsx — Server Component 유지
+export function LoginPage() {
+  return (
+    <Box maxW="md" mx="auto">
+      <LoginForm /> {/* Client Component를 leaf에 */}
+    </Box>
+  );
+}
+```
+
+---
+
+### 'use client' 최소화 — leaf 컴포넌트에만 선언
+
+인터랙티브한 부분을 최소 단위로 분리해 `'use client'` 범위를 줄인다.
+
+```tsx
+// ❌ 나쁜 예: 페이지 전체가 Client Component
+'use client'
+export default function ProductPage({ id }: { id: string }) {
+  const { data } = useQuery({ queryKey: ['product', id], queryFn: ... });
+  return <Box><ProductInfo product={data} /><AddToCartButton /></Box>;
+}
+
+// ✅ 좋은 예: 데이터가 필요한 컴포넌트만 Client Component
+// Server Component
+export async function ProductPage({ id }: { id: string }) {
+  return (
+    <Box>
+      <ProductInfoServer id={id} />    {/* Server: async fetch */}
+      <AddToCartButton productId={id} /> {/* Client: useQuery or state */}
+    </Box>
+  );
+}
+```
+
+---
+
+### children 패턴으로 Server → Client 컴포넌트 조합
+
+Client Component 안에 Server Component를 직접 import하면 Client 번들에 포함된다.
+`children` props로 전달해 Server Component를 유지한다.
+
+```tsx
+// ❌ 나쁜 예
+'use client'
+import { UserProfile } from '@/entities/user'; // Server Component가 Client 번들로
+
+export function Modal() {
+  const [isOpen, setIsOpen] = useState(false);
+  return isOpen ? <UserProfile /> : null;
+}
+
+// ✅ 좋은 예: children으로 전달
+// src/shared/ui/Modal.tsx
+'use client'
+export function Modal({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return isOpen ? <Box>{children}</Box> : null;
+}
+
+// Server Component에서 조합
+export async function UserModal({ id }: { id: string }) {
+  const user = await fetchUser(id); // Server에서 fetch
+  return (
+    <Modal>
+      <UserProfile user={user} /> {/* Server Component 유지 */}
+    </Modal>
+  );
+}
+```
+
+---
+
+### FSD 레이어별 Server/Client 배치 기준
+
+| FSD 레이어 | 권장 | 이유 |
+|---|---|---|
+| `app/` (Next.js 라우팅) | Server | layout·page 기본값 Server |
+| `app/_providers/` | Client | QueryProvider, ChakraProvider |
+| `src/pages/` | Server | prefetch 후 위젯 조합 |
+| `src/widgets/` | Server 우선 | 레이아웃 조합 역할 |
+| `src/features/*/ui/` | Client | 폼(RHF)·버튼·인터랙션 |
+| `src/features/*/api/` | Client | useQuery, useMutation |
+| `src/entities/*/ui/` | Server 우선 | 도메인 표시 컴포넌트 |
+| `src/shared/ui/` | 명시 필요 | 인터랙티브 컴포넌트는 'use client' 명시 |
+
+`src/shared/ui/`의 모든 Chakra UI 기반 인터랙티브 컴포넌트는
+파일 상단에 `'use client'`를 명시한다.

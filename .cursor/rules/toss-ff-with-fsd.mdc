@@ -1,0 +1,474 @@
+---
+description: Toss Frontend Fundamentals × FSD — 변경하기 쉬운 코드 규칙
+globs: **/*.ts, **/*.tsx
+alwaysApply: true
+---
+
+참고 문서: https://frontend-fundamentals.com/code-quality/code/
+FSD 공식 문서: https://feature-sliced.design/docs/guides/tech/with-nextjs
+
+아래 규칙은 Toss Frontend Fundamentals의 4가지 기준을 FSD 아키텍처 원칙에 위반하지 않도록 적용한 것이다.
+FSD 레이어 의존성 방향(app → pages → widgets → features → entities → shared)은 모든 규칙보다 우선한다.
+
+---
+
+## 1. 가독성 (Readability)
+
+### [맥락 줄이기] 동시에 실행되지 않는 코드 분리하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/submit-button.html
+
+역할/권한에 따라 분기되는 컴포넌트는 각 분기를 별도 컴포넌트로 분리한다.
+분기 판단은 상위 컴포넌트 한 곳에서만 한다.
+
+```tsx
+// ❌ 나쁜 예: 하나의 컴포넌트에 viewer/admin 분기 로직이 혼재
+function SubmitButton() {
+  const role = useRole();
+  useEffect(() => {
+    if (role !== "viewer") showAnimation();
+  }, [role]);
+  return role === "viewer" ? (
+    <TextButton disabled>Submit</TextButton>
+  ) : (
+    <Button type="submit">Submit</Button>
+  );
+}
+
+// ✅ 좋은 예: 분기는 상위에서 한 번, 각 컴포넌트는 단일 맥락만 담당
+function SubmitButton() {
+  const isViewer = useRole() === "viewer";
+  return isViewer ? <ViewerSubmitButton /> : <AdminSubmitButton />;
+}
+function ViewerSubmitButton() {
+  return <TextButton disabled>Submit</TextButton>;
+}
+function AdminSubmitButton() {
+  useEffect(() => {
+    showAnimation();
+  }, []);
+  return <Button type="submit">Submit</Button>;
+}
+```
+
+> **FSD 적용**: `ViewerSubmitButton`, `AdminSubmitButton`은 features 또는 widgets 슬라이스 안에 배치한다.
+
+---
+
+### [맥락 줄이기] 구현 상세 추상화하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/login-start-page.html
+
+페이지 컴포넌트는 고수준 흐름만 담는다. 인증 체크, 리다이렉트 같은 구현 상세는 HOC나 Wrapper로 추상화한다.
+
+```tsx
+// ❌ 나쁜 예: 페이지 컴포넌트에 인증 체크 구현이 직접 노출
+function LoginStartPage() {
+  const status = useCheckLoginStatus();
+  useEffect(() => {
+    if (status === "LOGGED_IN") location.href = "/home";
+  }, [status]);
+  return status !== "LOGGED_IN" ? <LoginForm /> : null;
+}
+
+// ✅ 좋은 예: 인증 로직을 AuthGuard로 분리, 페이지는 UI만 담당
+function LoginStartPage() {
+  return <LoginForm />;
+}
+// app/ 레이어 또는 shared/ui에서 감싸기
+function App() {
+  return (
+    <AuthGuard>
+      <LoginStartPage />
+    </AuthGuard>
+  );
+}
+```
+
+> **FSD 적용**: `AuthGuard`는 `src/app/` (FSD app 레이어) 또는 `src/shared/ui/`에 배치한다.
+
+---
+
+### [맥락 줄이기] 로직 종류에 따라 훅 쪼개기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/use-page-state-readability.html
+
+하나의 훅에 URL 상태·서버 상태·UI 상태를 섞지 않는다. 로직 종류별로 훅을 분리한다.
+
+```tsx
+// ❌ 나쁜 예: 성격이 다른 로직이 하나의 훅에 혼재
+function usePageState() {
+  const [query, setQuery] = useQueryParam("query");
+  const { data } = useQuery(["items", query], fetchItems);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  return { query, setQuery, data, isModalOpen, setIsModalOpen };
+}
+
+// ✅ 좋은 예: 역할별 훅 분리
+function useSearchQuery() {
+  return useQueryParam("query");
+}
+function useItemList(query: string) {
+  return useQuery(["items", query], fetchItems);
+}
+function useItemModal() {
+  return useState(false);
+}
+```
+
+> **FSD 적용**: 각 훅은 해당 도메인 슬라이스의 `model/` 세그먼트에 배치한다.
+
+---
+
+### [이름 붙이기] 복잡한 조건에 이름 붙이기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/condition-name.html
+
+복잡한 불리언 조건식은 의미를 드러내는 변수명으로 추출한다.
+
+```tsx
+// ❌ 나쁜 예
+if (user.role !== "viewer" && !user.isBanned && user.age >= 19) {
+}
+
+// ✅ 좋은 예
+const canSubmit = user.role !== "viewer" && !user.isBanned && user.age >= 19;
+if (canSubmit) {
+}
+```
+
+---
+
+### [이름 붙이기] 매직 넘버에 이름 붙이기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/magic-number-readability.html
+
+의미를 알 수 없는 숫자·문자열 리터럴은 반드시 이름 있는 상수로 선언한다.
+
+```tsx
+// ❌ 나쁜 예
+if (user.age >= 19) {
+}
+
+// ✅ 좋은 예
+const MIN_ADULT_AGE = 19;
+if (user.age >= MIN_ADULT_AGE) {
+}
+```
+
+---
+
+### [위에서 아래로] 시점 이동 줄이기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/user-policy.html
+
+코드를 읽을 때 위아래로 시선이 이동하지 않도록 관련 로직을 가까이 둔다.
+조기 반환(early return) 패턴으로 중첩을 줄인다.
+
+```tsx
+// ❌ 나쁜 예: 조건 분기가 멀리 떨어져 있어 시점 이동 발생
+function Page() {
+  const policy = usePolicy();
+  // ... 수십 줄 후
+  if (!policy.isActive) return null;
+}
+
+// ✅ 좋은 예: 조기 반환으로 조건을 상단에 집중
+function Page() {
+  const policy = usePolicy();
+  if (!policy.isActive) return null;
+  // 이후 로직은 isActive가 보장된 상태에서 읽힘
+}
+```
+
+---
+
+### [위에서 아래로] 삼항 연산자 단순하게 쓰기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/ternary-operator.html
+
+삼항 연산자는 단순한 값 분기에만 사용하고, 중첩하지 않는다.
+중첩이 필요하면 if문이나 함수로 추출한다.
+
+```tsx
+// ❌ 나쁜 예: 중첩 삼항
+const label = isLoading ? "Loading..." : hasError ? "Error" : "Done";
+
+// ✅ 좋은 예
+function getLabel(isLoading: boolean, hasError: boolean) {
+  if (isLoading) return "Loading...";
+  if (hasError) return "Error";
+  return "Done";
+}
+```
+
+---
+
+### [위에서 아래로] 왼쪽→오른쪽으로 읽히게 하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/comparison-order.html
+
+비교 연산자는 "변하는 값 ≥ 기준값" 순서로 작성한다. 숫자를 왼쪽에 두지 않는다.
+
+```tsx
+// ❌ 나쁜 예
+if (19 <= user.age) {
+}
+
+// ✅ 좋은 예
+if (user.age >= 19) {
+}
+```
+
+---
+
+## 2. 예측 가능성 (Predictability)
+
+### 이름 겹치지 않게 관리하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/http.html
+
+전역 API(fetch, window 등)와 이름이 겹치거나 혼동될 수 있는 네이밍을 사용하지 않는다.
+
+```tsx
+// ❌ 나쁜 예: 전역 fetch와 구분 불가
+export const http = {
+  fetch: (url: string) => fetch(url),
+};
+
+// ✅ 좋은 예: 의도를 명확히 드러내는 메서드명 사용
+export const http = {
+  get: (url: string) => fetch(url),
+  post: (url: string, body: unknown) =>
+    fetch(url, { method: "POST", body: JSON.stringify(body) }),
+};
+```
+
+> **FSD 적용**: `http` 클라이언트는 `src/shared/api/`에 배치한다.
+
+---
+
+### 같은 종류의 함수는 반환 타입 통일하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/use-user.html
+
+비슷한 역할을 하는 훅·함수는 반환 구조를 통일한다. `useUser`, `useProduct` 등 데이터 훅은 동일한 형태로 반환한다.
+
+```tsx
+// ❌ 나쁜 예: 훅마다 반환 구조가 달라 예측 불가
+function useUser() {
+  return { user, isLoading };
+}
+function useProduct() {
+  return [product, isLoading, error];
+}
+
+// ✅ 좋은 예: 일관된 반환 구조
+function useUser() {
+  return { data: user, isLoading, error };
+}
+function useProduct() {
+  return { data: product, isLoading, error };
+}
+```
+
+> **FSD 적용**: `useUser`는 `src/entities/user/model/`, `useProduct`는 `src/entities/product/model/`에 배치한다.
+
+---
+
+### 숨은 로직 드러내기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/hidden-logic.html
+
+함수 시그니처(이름·파라미터)에 드러나지 않는 부수 효과를 숨기지 않는다.
+부수 효과가 있으면 이름에 드러내거나 파라미터로 명시한다.
+
+```tsx
+// ❌ 나쁜 예: 이름만 보면 로깅이 일어나는지 알 수 없음
+async function fetchUser(id: string) {
+  logger.log("fetchUser called"); // 숨은 부수 효과
+  return api.get(`/users/${id}`);
+}
+
+// ✅ 좋은 예 1: 이름에 부수 효과 포함
+async function fetchUserWithLog(id: string) {
+  logger.log("fetchUser called");
+  return api.get(`/users/${id}`);
+}
+
+// ✅ 좋은 예 2: 옵션 파라미터로 명시
+async function fetchUser(id: string, options?: { logging?: boolean }) {
+  if (options?.logging) logger.log("fetchUser called");
+  return api.get(`/users/${id}`);
+}
+```
+
+---
+
+## 3. 응집도 (Cohesion)
+
+### 함께 수정되는 파일을 같은 디렉토리에 두기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/code-directory.html
+
+기능 단위로 파일을 응집시킨다. 기술 유형(components/, hooks/, utils/)으로 분산시키지 않는다.
+FSD 슬라이스 구조가 이 원칙을 자동으로 보장한다.
+
+```
+// ❌ 나쁜 예: 기술 유형 기준 분산
+src/
+  components/UserCard.tsx
+  hooks/useUserCard.ts
+  utils/formatUserName.ts
+
+// ✅ 좋은 예: FSD 슬라이스로 기능 단위 응집
+src/
+  entities/user/
+    ui/UserCard.tsx
+    model/useUserCard.ts
+    lib/formatUserName.ts
+    index.ts            ← Public API
+```
+
+---
+
+### 매직 넘버를 상수로 응집시키기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/magic-number-cohesion.html
+
+관련 상수는 한 파일·객체에 모아 관리한다. 값이 바뀔 때 한 곳만 수정하면 되도록 한다.
+
+```tsx
+// ✅ 좋은 예: 도메인별 상수를 슬라이스 안에 응집
+// src/entities/user/config.ts
+export const USER_POLICY = {
+  MIN_AGE: 19,
+  MAX_LOGIN_ATTEMPTS: 5,
+  SESSION_TIMEOUT_MS: 30 * 60 * 1000,
+} as const;
+```
+
+> **FSD 적용**: 도메인별 상수는 해당 슬라이스의 `config.ts`에, 전역 상수는 `src/shared/config/`에 배치한다.
+
+---
+
+### 폼의 응집도 생각하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/form-fields.html
+
+폼 필드 정의·유효성 검사·초기값을 분산시키지 않고, 변경 단위에 따라 응집 방식을 선택한다.
+
+- **필드 단위 응집**: 각 필드가 독립적이고 고유한 검증이 필요할 때 (이메일, 전화번호 등)
+- **폼 전체 단위 응집**: 모든 필드가 하나의 비즈니스 로직을 이룰 때 (결제 정보, 회원가입 등)
+
+```tsx
+// ✅ 좋은 예: 폼 전체를 한 슬라이스 안에 응집
+// src/features/signup/model/schema.ts
+export const signupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8),
+  age: z.number().min(19),
+});
+
+export const signupDefaultValues = {
+  email: "",
+  password: "",
+  age: undefined,
+};
+```
+
+> **FSD 적용**: 폼 스키마·초기값·훅은 해당 feature 슬라이스의 `model/` 세그먼트에 함께 배치한다.
+
+---
+
+## 4. 결합도 (Coupling)
+
+### 책임을 하나씩 관리하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/use-page-state-coupling.html
+
+하나의 훅·컴포넌트가 여러 책임을 가지지 않도록 한다.
+각 훅은 하나의 관심사만 담당하고, 서로 영향을 주지 않아야 한다.
+
+```tsx
+// ❌ 나쁜 예: URL 상태와 UI 상태를 하나의 훅이 관리 → 한쪽 변경이 다른 쪽 재렌더링 유발
+function usePageState() {
+  const [tab, setTab] = useQueryParam("tab");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  return { tab, setTab, isModalOpen, setIsModalOpen };
+}
+
+// ✅ 좋은 예: 책임 분리
+function useTabState() {
+  return useQueryParam("tab");
+}
+function useModalState() {
+  return useState(false);
+}
+```
+
+---
+
+### 중복 코드 허용하기 (무분별한 공통화 금지)
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/use-bottom-sheet.html
+
+함께 변경될 가능성이 낮은 코드는 억지로 공통화하지 않는다.
+공통화하면 한쪽 변경이 다른 쪽에 영향을 주는 결합이 생긴다.
+
+```tsx
+// ❌ 나쁜 예: 우연히 비슷한 두 훅을 하나로 합침 → type 분기가 계속 늘어남
+function useBottomSheet(type: "login" | "signup" | "payment") {
+  // type별 분기 처리...
+}
+
+// ✅ 좋은 예: 각자의 책임을 독립적으로 관리 (FSD 슬라이스 분리와 일치)
+// src/features/auth-login/model/useLoginSheet.ts
+function useLoginSheet() {
+  return useState(false);
+}
+
+// src/features/auth-signup/model/useSignupSheet.ts
+function useSignupSheet() {
+  return useState(false);
+}
+```
+
+> **FSD 원칙과 일치**: 같은 레이어의 다른 슬라이스끼리 직접 참조 금지. 중복을 허용하는 것이 FSD의 슬라이스 독립성 원칙과 자연스럽게 맞닿는다.
+
+---
+
+### Props Drilling 제거하기
+
+ref: https://frontend-fundamentals.com/code-quality/code/examples/item-edit-modal.html
+
+3단계 이상 props를 내려보내야 한다면, Context나 Composition 패턴으로 대체한다.
+
+```tsx
+// ❌ 나쁜 예: props drilling
+<ItemEditModal
+  item={item}
+  onSave={onSave}
+  userPermission={userPermission}
+  onPermissionChange={onPermissionChange}
+/>
+
+// ✅ 좋은 예: Context로 결합 제거
+<ItemEditModalProvider item={item} permission={userPermission}>
+  <ItemEditModal />
+</ItemEditModalProvider>
+```
+
+> **FSD 적용**: Context Provider는 해당 feature 슬라이스의 `model/` 또는 widget의 `ui/`에 배치한다.
+
+---
+
+## FSD × Frontend Fundamentals 트레이드오프 판단 기준
+
+| 상황                             | 우선 기준                          | FSD 적용                                        |
+| -------------------------------- | ---------------------------------- | ----------------------------------------------- |
+| 함께 수정 안 하면 버그 위험 높음 | 응집도 → 공통화/추상화             | 같은 슬라이스 안으로 이동                       |
+| 버그 위험 낮음                   | 가독성 → 중복 허용                 | 슬라이스를 분리해 독립 유지                     |
+| 수정 영향 범위가 넓어질 우려     | 결합도 → 책임 분리                 | 슬라이스 간 의존 방향 검토                      |
+| 동작 예측이 어려운 코드          | 예측 가능성 → 이름·시그니처 명확히 | Public API(index.ts) 명확히 정의                |
+| 레이어 의존성 위반 발생          | FSD 의존 방향 최우선               | 공통 로직을 하위 레이어(shared/entities)로 이동 |
