@@ -353,7 +353,7 @@ export function ShopifyProductDetailModal({
     if (!error) return '';
     if (error.type === 'NO_API_KEY')
       return 'Shopify API 키가 없습니다. 채널 설정에서 등록해 주세요.';
-    if (error.type === 'NOT_FOUND') return '상품을 찾을 수 없습니다.';
+    if ((error.type as string) === 'NOT_FOUND') return '상품을 찾을 수 없습니다.';
     return error.message;
   })();
 
