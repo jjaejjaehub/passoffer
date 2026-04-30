@@ -508,15 +508,17 @@ export function useChannelApiKey<K extends keyof ChannelApiKeys>(
 // 캐시된 데이터에서 channelId를 추출한다.
 
 export function useChannelUuid(channelType: keyof ChannelApiKeys): string | null {
-  const { data } = useQuery({
-    queryKey: credentialQueries.channel(channelType),
-    queryFn: channelType === 'qoo10'
+  const queryFn =
+    channelType === 'qoo10'
       ? fetchQoo10Credential
       : channelType === 'shopee'
         ? fetchShopeeCredential
         : channelType === 'shopify'
           ? fetchShopifyCredential
-          : fetchRakutenCredential,
+          : fetchRakutenCredential;
+  const { data } = useQuery<{ channelId?: string } | null>({
+    queryKey: credentialQueries.channel(channelType),
+    queryFn,
     staleTime: CREDENTIAL_STALE_TIME,
     gcTime: CREDENTIAL_GC_TIME,
     retry: (failureCount, error) => {
@@ -526,5 +528,5 @@ export function useChannelUuid(channelType: keyof ChannelApiKeys): string | null
       return failureCount < 1;
     },
   });
-  return (data as { channelId?: string } | null)?.channelId ?? null;
+  return data?.channelId ?? null;
 }
