@@ -24,7 +24,7 @@ for (const lp of lps) {
     const [mp] = await db.select().from(masterProducts).where(eq(masterProducts.id, lp.masterProductId));
     console.log('[masterProduct]', mp && { id: mp.id, code: mp.code, title: mp.title });
     const mvs = await db.select().from(masterProductVariants).where(eq(masterProductVariants.masterProductId, lp.masterProductId));
-    console.log('[masterVariants]', mvs.map((v) => ({ id: v.id, sku: v.sku, optionName: v.optionName, optionValue: v.optionValue, stock: v.stock })));
+    console.log('[masterVariants]', mvs.map((v) => ({ id: v.id, sku: v.sku, stock: v.stock })));
   }
   const links = await db.select().from(listedProductVariantLinks).where(eq(listedProductVariantLinks.listedProductId, lp.id));
   console.log('[variantLinks]', links);

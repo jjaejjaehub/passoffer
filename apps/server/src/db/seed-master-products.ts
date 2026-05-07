@@ -15,7 +15,13 @@
 import 'dotenv/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { masterProducts, masterProductVariants } from './schema';
+import {
+  masterProducts,
+  masterProductVariants,
+  masterProductOptionGroups,
+  masterProductOptionValues,
+  masterProductVariantOptionValues,
+} from './schema';
 
 const USER_ID = '178a6913-3cbf-4290-b47b-ab866a92fe14';
 
@@ -139,6 +145,36 @@ async function seed() {
 
     console.log(`✓ 마스터 상품 생성: ${hoodie!.id} — ${hoodie!.title}`);
 
+    // 후드티 옵션 그룹 (색상 × 사이즈)
+    const [hoodieColorGroup] = await db
+      .insert(masterProductOptionGroups)
+      .values({ masterProductId: hoodie!.id, name: '색상', position: 0 })
+      .returning();
+    const [hoodieSizeGroup] = await db
+      .insert(masterProductOptionGroups)
+      .values({ masterProductId: hoodie!.id, name: '사이즈', position: 1 })
+      .returning();
+
+    const hoodieColorValues = await db
+      .insert(masterProductOptionValues)
+      .values([
+        { groupId: hoodieColorGroup!.id, value: '블랙', position: 0 },
+        { groupId: hoodieColorGroup!.id, value: '그레이', position: 1 },
+        { groupId: hoodieColorGroup!.id, value: '아이보리', position: 2 },
+      ])
+      .returning();
+    const hoodieSizeValues = await db
+      .insert(masterProductOptionValues)
+      .values([
+        { groupId: hoodieSizeGroup!.id, value: 'M', position: 0 },
+        { groupId: hoodieSizeGroup!.id, value: 'L', position: 1 },
+        { groupId: hoodieSizeGroup!.id, value: 'XL', position: 2 },
+      ])
+      .returning();
+
+    const colorByName = new Map(hoodieColorValues.map((v) => [v.value, v.id]));
+    const sizeByName = new Map(hoodieSizeValues.map((v) => [v.value, v.id]));
+
     // 후드티 변형 (색상 × 사이즈)
     const hoodieVariants = [
       { color: '블랙', size: 'M', sku: 'MP-002-BLK-M', price: '59000', stock: 30 },
@@ -150,18 +186,29 @@ async function seed() {
       { color: '아이보리', size: 'L', sku: 'MP-002-IVR-L', price: '59000', stock: 10 },
     ];
 
-    await db.insert(masterProductVariants).values(
-      hoodieVariants.map((v) => ({
-        masterProductId: hoodie!.id,
-        sku: v.sku,
-        optionName: `색상:${v.color}`,
-        optionValue: v.size,
-        price: v.price,
-        stock: v.stock,
-        extraAttributes: { color: v.color, size: v.size },
-      })),
+    const insertedHoodieVariants = await db
+      .insert(masterProductVariants)
+      .values(
+        hoodieVariants.map((v) => ({
+          masterProductId: hoodie!.id,
+          sku: v.sku,
+          price: v.price,
+          stock: v.stock,
+          extraAttributes: { color: v.color, size: v.size },
+        })),
+      )
+      .returning();
+
+    await db.insert(masterProductVariantOptionValues).values(
+      insertedHoodieVariants.flatMap((variant, idx) => {
+        const def = hoodieVariants[idx]!;
+        return [
+          { variantId: variant.id, optionValueId: colorByName.get(def.color)! },
+          { variantId: variant.id, optionValueId: sizeByName.get(def.size)! },
+        ];
+      }),
     );
-    console.log(`  └ 변형 ${hoodieVariants.length}개 생성`);
+    console.log(`  └ 변형 ${hoodieVariants.length}개 생성 (색상×사이즈 다축)`);
 
     // ── 3. 히알루론산 수분 앰플 (단품) ────────────────────────────
     const [skincare] = await db.insert(masterProducts).values({
@@ -305,13 +352,48 @@ async function seed() {
 
     console.log(`✓ 마스터 상품 생성: ${tumbler!.id} — ${tumbler!.title}`);
 
+    // 텀블러 옵션 그룹 (용량 단축)
+    const [tumblerCapacityGroup] = await db
+      .insert(masterProductOptionGroups)
+      .values({ masterProductId: tumbler!.id, name: '용량', position: 0 })
+      .returning();
+
+    const tumblerCapacityValues = await db
+      .insert(masterProductOptionValues)
+      .values([
+        { groupId: tumblerCapacityGroup!.id, value: '350ml', position: 0 },
+        { groupId: tumblerCapacityGroup!.id, value: '500ml', position: 1 },
+        { groupId: tumblerCapacityGroup!.id, value: '700ml', position: 2 },
+      ])
+      .returning();
+
+    const capacityByName = new Map(tumblerCapacityValues.map((v) => [v.value, v.id]));
+
     // 텀블러 변형 (용량)
-    await db.insert(masterProductVariants).values([
-      { masterProductId: tumbler!.id, sku: 'MP-005-350', optionName: '용량', optionValue: '350ml', price: '32000', stock: 40 },
-      { masterProductId: tumbler!.id, sku: 'MP-005-500', optionName: '용량', optionValue: '500ml', price: '35000', stock: 50 },
-      { masterProductId: tumbler!.id, sku: 'MP-005-700', optionName: '용량', optionValue: '700ml', price: '39000', stock: 30 },
-    ]);
-    console.log('  └ 변형 3개 생성');
+    const tumblerVariantDefs = [
+      { capacity: '350ml', sku: 'MP-005-350', price: '32000', stock: 40 },
+      { capacity: '500ml', sku: 'MP-005-500', price: '35000', stock: 50 },
+      { capacity: '700ml', sku: 'MP-005-700', price: '39000', stock: 30 },
+    ];
+    const insertedTumblerVariants = await db
+      .insert(masterProductVariants)
+      .values(
+        tumblerVariantDefs.map((v) => ({
+          masterProductId: tumbler!.id,
+          sku: v.sku,
+          price: v.price,
+          stock: v.stock,
+        })),
+      )
+      .returning();
+
+    await db.insert(masterProductVariantOptionValues).values(
+      insertedTumblerVariants.map((variant, idx) => ({
+        variantId: variant.id,
+        optionValueId: capacityByName.get(tumblerVariantDefs[idx]!.capacity)!,
+      })),
+    );
+    console.log('  └ 변형 3개 생성 (용량 단축)');
 
     console.log('\n=== 시드 완료: 마스터 상품 5개 생성 ===');
   } finally {

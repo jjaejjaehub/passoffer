@@ -36,7 +36,7 @@ const variants = await db
   .from(masterProductVariants)
   .where(eq(masterProductVariants.masterProductId, mp.id));
 console.log('master_product_variants:');
-for (const v of variants) console.log({ id: v.id, sku: v.sku, stock: v.stock, optionValue: v.optionValue });
+for (const v of variants) console.log({ id: v.id, sku: v.sku, stock: v.stock });
 
 const [lp] = await db.select().from(listedProducts).where(eq(listedProducts.masterProductId, mp.id));
 if (!lp) { console.error('no listed product'); process.exit(1); }
