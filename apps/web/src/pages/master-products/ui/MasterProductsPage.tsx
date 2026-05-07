@@ -3,6 +3,7 @@
 import {
   Box,
   Button,
+  Checkbox,
   Flex,
   Icon,
   Input,
@@ -14,8 +15,9 @@ import {
 import { RefreshCw, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useCheckListedProductFromChannel, useDeleteMasterProduct, useListedProducts, useMasterProducts, usePullSalesFromChannel, useSyncListedProduct } from "@/entities/master-product";
+import { useCheckListedProductFromChannel, useDeleteMasterProduct, useListedProducts, useMasterProducts, usePullSalesFromChannel, useSyncListedProduct, type MasterProduct } from "@/entities/master-product";
 import { useChannels } from "@/entities/channel";
+import { BulkListToChannelModal } from "@/features/list-to-channel";
 import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/shared/ui";
 import { appToaster } from "@/shared/ui/app-toaster";
@@ -44,12 +46,18 @@ function MasterProductsTab({
 }): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
-  const { data, isLoading } = useMasterProducts({ search, page, pageSize: 20 });
+  const { data, isLoading, refetch } = useMasterProducts({ search, page, pageSize: 20 });
   const { mutateAsync: deleteMasterProduct } = useDeleteMasterProduct();
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [search, page]);
 
   useEffect(() => {
     if (pendingHref !== null && pathname === pendingHref) {
@@ -73,6 +81,28 @@ function MasterProductsTab({
       setConfirmDeleteId(null);
     }
   };
+
+  const allChecked = items.length > 0 && items.every((item) => selectedIds.has(item.id));
+  const indeterminate = !allChecked && items.some((item) => selectedIds.has(item.id));
+
+  const toggleAll = (): void => {
+    if (allChecked) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map((item) => item.id)));
+    }
+  };
+
+  const toggleOne = (id: string): void => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedProducts: MasterProduct[] = items.filter((item) => selectedIds.has(item.id));
 
   if (isLoading) {
     return (
@@ -98,10 +128,58 @@ function MasterProductsTab({
           <Spinner color="gray.400" size="md" />
         </Box>
       )}
+
+      {/* 일괄 액션 바 */}
+      {selectedIds.size > 0 && (
+        <Flex
+          align="center"
+          justify="space-between"
+          mb={3}
+          px={3}
+          py={2}
+          bg="gray.900"
+          borderRadius="md"
+          color="white"
+        >
+          <Text fontSize="sm" fontWeight="medium">{selectedIds.size}개 선택됨</Text>
+          <Flex gap={2}>
+            <Button
+              size="xs"
+              variant="outline"
+              borderColor="whiteAlpha.400"
+              color="white"
+              _hover={{ bg: "whiteAlpha.200" }}
+              onClick={() => setSelectedIds(new Set())}
+            >
+              선택 해제
+            </Button>
+            <Button
+              size="xs"
+              bg="white"
+              color="gray.900"
+              _hover={{ bg: "gray.100" }}
+              onClick={() => setBulkModalOpen(true)}
+            >
+              채널 일괄 등록
+            </Button>
+          </Flex>
+        </Flex>
+      )}
+
       <Box overflowX="auto">
         <Table.Root size="sm">
           <Table.Header>
             <Table.Row>
+              <Table.ColumnHeader w="40px" onClick={(e) => e.stopPropagation()}>
+                <Checkbox.Root
+                  checked={indeterminate ? "indeterminate" : allChecked}
+                  onCheckedChange={toggleAll}
+                  size="sm"
+                >
+                  <Checkbox.HiddenInput />
+                  <Checkbox.Control />
+                </Checkbox.Root>
+              </Table.ColumnHeader>
               <Table.ColumnHeader>상품명/코드</Table.ColumnHeader>
               <Table.ColumnHeader>브랜드</Table.ColumnHeader>
               <Table.ColumnHeader>소비자가</Table.ColumnHeader>
@@ -114,7 +192,7 @@ function MasterProductsTab({
           <Table.Body>
             {items.length === 0 ? (
               <Table.Row>
-                <Table.Cell colSpan={7}>
+                <Table.Cell colSpan={8}>
                   <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
                     마스터 상품이 없습니다.
                   </Text>
@@ -126,8 +204,19 @@ function MasterProductsTab({
                   key={item.id}
                   cursor="pointer"
                   _hover={{ bg: "gray.50" }}
+                  bg={selectedIds.has(item.id) ? "blue.50" : undefined}
                   onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
                 >
+                  <Table.Cell onClick={(e) => { e.stopPropagation(); toggleOne(item.id); }}>
+                    <Checkbox.Root
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={() => toggleOne(item.id)}
+                      size="sm"
+                    >
+                      <Checkbox.HiddenInput />
+                      <Checkbox.Control />
+                    </Checkbox.Root>
+                  </Table.Cell>
                   <Table.Cell>
                     <Stack gap={0.5}>
                       <Text fontSize="sm" fontWeight="medium">{item.title}</Text>
@@ -196,6 +285,16 @@ function MasterProductsTab({
           </Table.Body>
         </Table.Root>
       </Box>
+
+      <BulkListToChannelModal
+        products={selectedProducts}
+        open={bulkModalOpen}
+        onOpenChange={setBulkModalOpen}
+        onSuccess={() => {
+          setSelectedIds(new Set());
+          void refetch();
+        }}
+      />
 
       <Flex mt={4} align="center" justify="center" gap={2}>
         <Button

@@ -16,6 +16,18 @@ export interface Qoo10SimpleOptionPreset {
 
 export const QOO10_SIMPLE_OPTION_NOT_SELECTED_VALUE = "選択しない";
 
+export interface ProductOptionAxisPreset {
+  id: string;
+  label: string;
+  nameValue: string;
+}
+
+export const PRODUCT_OPTION_AXIS_PRESETS: readonly ProductOptionAxisPreset[] = [
+  { id: "color", label: "+ 색상", nameValue: "색상" },
+  { id: "size", label: "+ 사이즈", nameValue: "사이즈" },
+  { id: "material", label: "+ 소재", nameValue: "소재" },
+];
+
 export const QOO10_SIMPLE_OPTION_PRESETS: readonly Qoo10SimpleOptionPreset[] = [
   {
     id: "additional_purchase",

@@ -11,7 +11,7 @@ export const apiClient = axios.create({
   timeout: 10_000,
 });
 
-// 요청마다 JWT 토큰 자동 첨부
+// 요청마다 JWT 토큰 자동 첨부 + ngrok 브라우저 경고 우회
 apiClient.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('oms-auth-token');
@@ -19,6 +19,7 @@ apiClient.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
+  config.headers['ngrok-skip-browser-warning'] = 'true';
   return config;
 });
 

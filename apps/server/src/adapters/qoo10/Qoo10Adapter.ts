@@ -1038,6 +1038,7 @@ export class Qoo10Adapter implements IChannelAdapter {
       Keyword: keyword,
       Condition: 'NEW',
       BrandNo: str('BrandNo') || '0',
+      ItemType: str('ItemType'),
     };
 
     // AvailableDateType=0(즉시발송)이면 AvailableDateValue는 1~3 정수여야 함
@@ -1048,6 +1049,11 @@ export class Qoo10Adapter implements IChannelAdapter {
     // 빈 문자열 파라미터 제거 (API가 빈 값을 오류로 처리하는 경우 방지)
     for (const key of Object.keys(params)) {
       if (params[key] === '') delete params[key];
+    }
+
+    // 멀티축 상품(ItemType 설정): ItemQty=0, ItemPrice는 기본가(ItemType의 옵션가는 차액)
+    if (params.ItemType) {
+      params.ItemQty = '0';
     }
 
     const setNewGoodsRes = await fetch(`${BASE_URL}/ItemsBasic.SetNewGoods`, {
@@ -1091,7 +1097,55 @@ export class Qoo10Adapter implements IChannelAdapter {
       throw new Error(`Qoo10 API error [${setNewGoodsData.ResultCode}]: ${setNewGoodsData.ResultMsg}`);
     }
 
+    // 다축 옵션 — 각 SKU 조합을 SetGoodsOptionInfo 로 등록
+    // 입력: qoo10Variants = [{ optionPath: "그룹||*값$$그룹||*값", sku, price, qty }]
+    const qoo10Variants = Array.isArray(d.qoo10Variants) ? (d.qoo10Variants as Array<{ optionPath: string; sku: string; price: string; qty: number }>) : [];
+    if (qoo10Variants.length > 0) {
+      try {
+        await this.setItemOptions(itemCode, qoo10Variants);
+      } catch (err) {
+        console.error('[SetGoodsOptionInfo] failed:', err);
+      }
+    }
+
     return { productId: itemCode, title: itemTitle };
+  }
+
+  // 다축 변형들을 Qoo10 옵션으로 등록한다.
+  // optionPath 포맷: "그룹1||*값1$$그룹2||*값2"
+  // SetGoodsOptionInfo: ItemCode, OptionData(다중 라인 텍스트), Flag='ADD'
+  private async setItemOptions(
+    itemCode: string,
+    variants: Array<{ optionPath: string; sku: string; price: string; qty: number }>,
+  ): Promise<void> {
+    // OptionData 라인 포맷: 그룹1||*값1$$그룹2||*값2$$$판매가차이$$$수량$$$판매자SKU
+    // (Qoo10 docs 기반 추정 — 실제 자격증명 환경에서 검증 필요)
+    const optionDataLines = variants.map((v) => {
+      const priceDiff = '0';
+      return [v.optionPath, priceDiff, String(v.qty), v.sku].join('$$$');
+    });
+    const optionData = optionDataLines.join('\n');
+
+    const res = await fetch(`${BASE_URL}/ItemsBasic.SetGoodsOptionInfo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        GiosisCertificationKey: this.certKey,
+        QAPIVersion: '1.0',
+        Accept: 'application/json',
+      },
+      body: new URLSearchParams({
+        ItemCode: itemCode,
+        OptionData: optionData,
+        Flag: 'ADD',
+        returnType: 'json',
+      }).toString(),
+    });
+    const data = (await res.json()) as Qoo10ApiResponse<unknown>;
+    console.log('[SetGoodsOptionInfo]', { itemCode, lineCount: variants.length, ResultCode: data.ResultCode, ResultMsg: data.ResultMsg });
+    if (data.ResultCode !== 0) {
+      throw new Error(`Qoo10 SetGoodsOptionInfo error [${data.ResultCode}]: ${data.ResultMsg}`);
+    }
   }
 
   // ─── link-only 모델용 정규화 메서드 ───────────────────────────

@@ -59,12 +59,18 @@ interface ImageRow {
   altText: string;
 }
 
+const MASTER_MAX_AXES = 3;
+
+interface VariantOptionCell {
+  groupName: string;
+  value: string;
+}
+
 interface MasterVariantRow {
   /** 테이블 표시용 임시 key (저장 전) */
   _key: string;
   sku: string;
-  optionName: string;
-  optionValue: string;
+  options: VariantOptionCell[];
   price: string;
   stock: string;
 }
@@ -83,35 +89,28 @@ function cartesian(axes: OptionAxisState[]): MasterVariantRow[] {
   if (axes.length === 0) return [];
   if (axes.some((a) => a.values.length === 0)) return [];
 
-  if (axes.length === 1) {
-    const ax = axes[0]!;
-    return ax.values.map((v) => ({
-      _key: genKey(),
-      sku: "",
-      optionName: ax.name,
-      optionValue: v,
-      price: "",
-      stock: "0",
-    }));
-  }
-
-  // 2축 이상: 이름은 "축1:축2", 값은 "v1/v2"
-  const axis1 = axes[0]!;
-  const axis2 = axes[1]!;
-  const rows: MasterVariantRow[] = [];
-  for (const v1 of axis1.values) {
-    for (const v2 of axis2.values) {
-      rows.push({
-        _key: genKey(),
-        sku: "",
-        optionName: `${axis1.name}:${axis2.name}`,
-        optionValue: `${v1}/${v2}`,
-        price: "",
-        stock: "0",
-      });
+  // N축 데카르트 곱
+  let combos: VariantOptionCell[][] = [[]];
+  for (const ax of axes) {
+    const next: VariantOptionCell[][] = [];
+    for (const prefix of combos) {
+      for (const v of ax.values) {
+        next.push([...prefix, { groupName: ax.name, value: v }]);
+      }
     }
+    combos = next;
   }
-  return rows;
+  return combos.map((options) => ({
+    _key: genKey(),
+    sku: "",
+    options,
+    price: "",
+    stock: "0",
+  }));
+}
+
+function optionsToLabel(options: VariantOptionCell[]): string {
+  return options.map((o) => `${o.groupName}: ${o.value}`).join(" / ");
 }
 
 // ── 플랫폼 등록 가능 여부 ─────────────────────────────────────────
@@ -210,13 +209,17 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
   // ── 편집 모드 변형 ────────────────────────────────────────────────
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editingVariant, setEditingVariant] = useState<{
-    sku: string; optionName: string; optionValue: string; price: string; stock: string;
-  }>({ sku: "", optionName: "", optionValue: "", price: "", stock: "" });
+    sku: string;
+    /** groupName -> value */
+    optionValues: Record<string, string>;
+    price: string;
+    stock: string;
+  }>({ sku: "", optionValues: {}, price: "", stock: "" });
 
   // 단일 변형 추가 폼 (편집 모드)
   const [newVariantSku, setNewVariantSku] = useState("");
-  const [newVariantOptionName, setNewVariantOptionName] = useState("");
-  const [newVariantOptionValue, setNewVariantOptionValue] = useState("");
+  /** groupName -> value */
+  const [newVariantOptionValues, setNewVariantOptionValues] = useState<Record<string, string>>({});
   const [newVariantPrice, setNewVariantPrice] = useState("");
   const [newVariantStock, setNewVariantStock] = useState("");
 
@@ -489,14 +492,23 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         const variantsUrl = `/api/master-products/${created.id}/variants`;
 
         if (draftVariants.length > 0) {
+          // 옵션 그룹 먼저 저장 (서버에서 옵션값 정합성 검증)
+          if (optionAxes.length > 0) {
+            try {
+              await http.put(`/api/master-products/${created.id}/option-groups`, {
+                groups: optionAxes.map((a) => ({ name: a.name, values: a.values })),
+              });
+            } catch {
+              appToaster.create({ title: "옵션 그룹 저장 실패", type: "error" });
+            }
+          }
           // 옵션 조합으로 생성된 변형들을 일괄 저장
           for (const row of draftVariants) {
             if (!row.sku.trim()) continue;
             try {
               await http.post(variantsUrl, {
                 sku: row.sku.trim(),
-                optionName: row.optionName.trim() || undefined,
-                optionValue: row.optionValue.trim() || undefined,
+                optionValues: row.options,
                 price: row.price.trim() || undefined,
                 stock: Number(row.stock) || 0,
               });
@@ -567,15 +579,19 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       appToaster.create({ title: "SKU는 필수입니다.", type: "error" });
       return;
     }
+    const groups = detail?.optionGroups ?? [];
+    const optionValues: VariantOptionCell[] = groups
+      .map((g) => ({ groupName: g.name, value: (newVariantOptionValues[g.name] ?? "").trim() }))
+      .filter((c) => c.value.length > 0);
     try {
       await addVariant({
         sku: newVariantSku.trim(),
-        optionName: newVariantOptionName.trim() || undefined,
-        optionValue: newVariantOptionValue.trim() || undefined,
+        optionValues: optionValues.length > 0 ? optionValues : undefined,
         price: newVariantPrice.trim() || undefined,
         stock: Number(newVariantStock) || 0,
       });
-      setNewVariantSku(""); setNewVariantOptionName(""); setNewVariantOptionValue("");
+      setNewVariantSku("");
+      setNewVariantOptionValues({});
       setNewVariantPrice(""); setNewVariantStock("");
       appToaster.create({ title: "변형 추가 완료", type: "success" });
     } catch {
@@ -584,13 +600,16 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
   };
 
   const handleSaveVariant = async (variantId: string): Promise<void> => {
+    const groups = detail?.optionGroups ?? [];
+    const optionValues: VariantOptionCell[] = groups
+      .map((g) => ({ groupName: g.name, value: (editingVariant.optionValues[g.name] ?? "").trim() }))
+      .filter((c) => c.value.length > 0);
     try {
       await updateVariant({
         variantId,
         input: {
           sku: editingVariant.sku.trim(),
-          optionName: editingVariant.optionName.trim() || undefined,
-          optionValue: editingVariant.optionValue.trim() || undefined,
+          optionValues: optionValues.length > 0 ? optionValues : undefined,
           price: editingVariant.price.trim() || undefined,
           stock: Number(editingVariant.stock) || 0,
         },
@@ -867,7 +886,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
             <Box px={5} pt={5} pb={3}>
               <OptionAxisForm
                 axes={optionAxes}
-                maxAxes={2}
+                maxAxes={MASTER_MAX_AXES}
                 maxValues={20}
                 onAxesChange={setOptionAxes}
                 onApply={handleOptionApply}
@@ -884,8 +903,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   <Table.Root size="sm">
                     <Table.Header>
                       <Table.Row bg="gray.50">
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="24">옵션명</Table.ColumnHeader>
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="24">옵션값</Table.ColumnHeader>
+                        {optionAxes.map((ax) => (
+                          <Table.ColumnHeader key={ax.id} fontWeight="medium" color="gray.600" w="24">
+                            {ax.name || "옵션"}
+                          </Table.ColumnHeader>
+                        ))}
                         <Table.ColumnHeader fontWeight="medium" color="gray.600" w="28">SKU</Table.ColumnHeader>
                         <Table.ColumnHeader fontWeight="medium" color="gray.600" w="20">가격 (₩)</Table.ColumnHeader>
                         <Table.ColumnHeader fontWeight="medium" color="gray.600" w="16">재고</Table.ColumnHeader>
@@ -895,12 +917,13 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                     <Table.Body>
                       {draftVariants.map((row) => (
                         <Table.Row key={row._key} _hover={{ bg: "gray.50" }}>
-                          <Table.Cell>
-                            <Text fontSize="xs" color="gray.600">{row.optionName || "-"}</Text>
-                          </Table.Cell>
-                          <Table.Cell>
-                            <Text fontSize="xs" fontWeight="medium">{row.optionValue || "-"}</Text>
-                          </Table.Cell>
+                          {optionAxes.map((ax, axIdx) => (
+                            <Table.Cell key={ax.id}>
+                              <Text fontSize="xs" fontWeight="medium">
+                                {row.options[axIdx]?.value ?? "-"}
+                              </Text>
+                            </Table.Cell>
+                          ))}
                           <Table.Cell>
                             <Input
                               size="xs"
@@ -998,15 +1021,21 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         )}
 
         {/* ── 변형 목록 (편집 모드) ── */}
-        {isEdit && (
+        {isEdit && (() => {
+          const detailGroups = detail?.optionGroups ?? [];
+          const totalCols = 1 + detailGroups.length + 3; // SKU + groups + price + stock + actions
+          return (
           <Section title="변형 (Variants)">
             <Box overflowX="auto">
               <Table.Root size="sm">
                 <Table.Header>
                   <Table.Row bg="gray.50">
                     <Table.ColumnHeader fontWeight="medium" color="gray.600">SKU</Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="medium" color="gray.600">옵션명</Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="medium" color="gray.600">옵션값</Table.ColumnHeader>
+                    {detailGroups.map((g) => (
+                      <Table.ColumnHeader key={g.id} fontWeight="medium" color="gray.600">
+                        {g.name}
+                      </Table.ColumnHeader>
+                    ))}
                     <Table.ColumnHeader fontWeight="medium" color="gray.600">가격</Table.ColumnHeader>
                     <Table.ColumnHeader fontWeight="medium" color="gray.600">재고</Table.ColumnHeader>
                     <Table.ColumnHeader />
@@ -1015,19 +1044,40 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                 <Table.Body>
                   {variants.length === 0 && (
                     <Table.Row>
-                      <Table.Cell colSpan={6}>
+                      <Table.Cell colSpan={totalCols}>
                         <Text fontSize="sm" color="gray.400" textAlign="center" py={4}>
                           등록된 변형이 없습니다. 아래에서 추가하세요.
                         </Text>
                       </Table.Cell>
                     </Table.Row>
                   )}
-                  {variants.map((v) =>
-                    editingVariantId === v.id ? (
+                  {variants.map((v) => {
+                    const valueByGroup: Record<string, string> = {};
+                    for (const opt of v.options) valueByGroup[opt.groupName] = opt.value;
+                    return editingVariantId === v.id ? (
                       <Table.Row key={v.id} bg="blue.50">
                         <Table.Cell><Input size="xs" value={editingVariant.sku} onChange={(e) => setEditingVariant((p) => ({ ...p, sku: e.target.value }))} /></Table.Cell>
-                        <Table.Cell><Input size="xs" value={editingVariant.optionName} onChange={(e) => setEditingVariant((p) => ({ ...p, optionName: e.target.value }))} /></Table.Cell>
-                        <Table.Cell><Input size="xs" value={editingVariant.optionValue} onChange={(e) => setEditingVariant((p) => ({ ...p, optionValue: e.target.value }))} /></Table.Cell>
+                        {detailGroups.map((g) => (
+                          <Table.Cell key={g.id}>
+                            <Input
+                              size="xs"
+                              list={`mp-vals-${g.id}`}
+                              value={editingVariant.optionValues[g.name] ?? ""}
+                              onChange={(e) =>
+                                setEditingVariant((p) => ({
+                                  ...p,
+                                  optionValues: { ...p.optionValues, [g.name]: e.target.value },
+                                }))
+                              }
+                              placeholder={g.values.map((vv) => vv.value).join(", ").slice(0, 30)}
+                            />
+                            <datalist id={`mp-vals-${g.id}`}>
+                              {g.values.map((vv) => (
+                                <option key={vv.id} value={vv.value} />
+                              ))}
+                            </datalist>
+                          </Table.Cell>
+                        ))}
                         <Table.Cell><Input size="xs" value={editingVariant.price} onChange={(e) => setEditingVariant((p) => ({ ...p, price: e.target.value }))} /></Table.Cell>
                         <Table.Cell><Input size="xs" type="number" value={editingVariant.stock} onChange={(e) => setEditingVariant((p) => ({ ...p, stock: e.target.value }))} /></Table.Cell>
                         <Table.Cell>
@@ -1040,8 +1090,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                     ) : (
                       <Table.Row key={v.id} _hover={{ bg: "gray.50" }}>
                         <Table.Cell><Text fontSize="sm" fontWeight="medium">{v.sku}</Text></Table.Cell>
-                        <Table.Cell><Text fontSize="sm" color="gray.600">{v.optionName ?? "-"}</Text></Table.Cell>
-                        <Table.Cell><Text fontSize="sm" color="gray.600">{v.optionValue ?? "-"}</Text></Table.Cell>
+                        {detailGroups.map((g) => (
+                          <Table.Cell key={g.id}>
+                            <Text fontSize="sm" color="gray.600">{valueByGroup[g.name] ?? "-"}</Text>
+                          </Table.Cell>
+                        ))}
                         <Table.Cell><Text fontSize="sm">{v.price ?? "-"}</Text></Table.Cell>
                         <Table.Cell><Text fontSize="sm">{v.stock}</Text></Table.Cell>
                         <Table.Cell>
@@ -1051,10 +1104,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                               variant="outline"
                               onClick={() => {
                                 setEditingVariantId(v.id);
+                                const initialValues: Record<string, string> = {};
+                                for (const opt of v.options) initialValues[opt.groupName] = opt.value;
                                 setEditingVariant({
                                   sku: v.sku,
-                                  optionName: v.optionName ?? "",
-                                  optionValue: v.optionValue ?? "",
+                                  optionValues: initialValues,
                                   price: v.price ?? "",
                                   stock: String(v.stock),
                                 });
@@ -1066,14 +1120,30 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                           </Flex>
                         </Table.Cell>
                       </Table.Row>
-                    )
-                  )}
+                    );
+                  })}
 
                   {/* 신규 변형 입력 행 */}
                   <Table.Row bg="gray.50">
                     <Table.Cell><Input size="xs" value={newVariantSku} onChange={(e) => setNewVariantSku(e.target.value)} placeholder="SKU *" /></Table.Cell>
-                    <Table.Cell><Input size="xs" value={newVariantOptionName} onChange={(e) => setNewVariantOptionName(e.target.value)} placeholder="옵션명" /></Table.Cell>
-                    <Table.Cell><Input size="xs" value={newVariantOptionValue} onChange={(e) => setNewVariantOptionValue(e.target.value)} placeholder="옵션값" /></Table.Cell>
+                    {detailGroups.map((g) => (
+                      <Table.Cell key={g.id}>
+                        <Input
+                          size="xs"
+                          list={`mp-newvals-${g.id}`}
+                          value={newVariantOptionValues[g.name] ?? ""}
+                          onChange={(e) =>
+                            setNewVariantOptionValues((prev) => ({ ...prev, [g.name]: e.target.value }))
+                          }
+                          placeholder={g.name}
+                        />
+                        <datalist id={`mp-newvals-${g.id}`}>
+                          {g.values.map((vv) => (
+                            <option key={vv.id} value={vv.value} />
+                          ))}
+                        </datalist>
+                      </Table.Cell>
+                    ))}
                     <Table.Cell><Input size="xs" value={newVariantPrice} onChange={(e) => setNewVariantPrice(e.target.value)} placeholder="가격" /></Table.Cell>
                     <Table.Cell><Input size="xs" type="number" value={newVariantStock} onChange={(e) => setNewVariantStock(e.target.value)} placeholder="재고" /></Table.Cell>
                     <Table.Cell>
@@ -1084,7 +1154,8 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
               </Table.Root>
             </Box>
           </Section>
-        )}
+          );
+        })()}
 
         {/* ── 플랫폼별 추가 정보 ── */}
         <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" overflow="hidden">
@@ -1781,6 +1852,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         <ListToChannelModal
           masterProductId={id}
           variants={variants}
+          listedProducts={detail?.listedProducts ?? []}
           open={listModalOpen}
           onOpenChange={setListModalOpen}
           onSuccess={() => {

@@ -10,6 +10,7 @@ import {
   boolean,
   varchar,
   unique,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 // ─── Enums ──────────────────────────────────────────────────────
@@ -191,19 +192,80 @@ export const masterProducts = pgTable('master_products', {
 });
 
 // ─── master_product_variants ─────────────────────────────────────
+// 다축 옵션 모델: 옵션 명/값은 master_product_option_groups / option_values 로 정규화.
+// variant 자체는 sku/price/stock 만 보유하고, 옵션 조합은 variant_option_values join 으로 결정.
 
 export const masterProductVariants = pgTable('master_product_variants', {
   id: uuid('id').primaryKey().defaultRandom(),
   masterProductId: uuid('master_product_id').notNull().references(() => masterProducts.id, { onDelete: 'cascade' }),
   sku: varchar('sku', { length: 128 }).notNull(),
-  optionName: varchar('option_name', { length: 128 }),       // 예: "색상"
-  optionValue: varchar('option_value', { length: 128 }),     // 예: "빨강"
   price: numeric('price', { precision: 12, scale: 2 }),
   stock: integer('stock').notNull().default(0),
   extraAttributes: jsonb('extra_attributes').default({}),   // 변형별 확장 필드
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+// ─── master_product_option_groups ────────────────────────────────
+// 옵션 축 (예: "색상", "사이즈"). 마스터상품 단위.
+
+export const masterProductOptionGroups = pgTable(
+  'master_product_option_groups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    masterProductId: uuid('master_product_id')
+      .notNull()
+      .references(() => masterProducts.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 128 }).notNull(),         // "색상"
+    position: integer('position').notNull().default(0),       // 축 순서 (0=첫번째)
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique('uq_mpog_master_name').on(t.masterProductId, t.name),
+    unique('uq_mpog_master_position').on(t.masterProductId, t.position),
+  ],
+);
+
+// ─── master_product_option_values ────────────────────────────────
+// 옵션 값 (예: "빨강", "파랑", "S", "M"). 그룹 단위.
+
+export const masterProductOptionValues = pgTable(
+  'master_product_option_values',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => masterProductOptionGroups.id, { onDelete: 'cascade' }),
+    value: varchar('value', { length: 128 }).notNull(),       // "빨강"
+    position: integer('position').notNull().default(0),       // 값 순서
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique('uq_mpov_group_value').on(t.groupId, t.value),
+    unique('uq_mpov_group_position').on(t.groupId, t.position),
+  ],
+);
+
+// ─── master_product_variant_option_values ────────────────────────
+// variant ↔ optionValue 다대다 매핑.
+// 한 variant 는 한 group 당 정확히 하나의 value 를 가져야 한다 (앱 레이어에서 검증).
+
+export const masterProductVariantOptionValues = pgTable(
+  'master_product_variant_option_values',
+  {
+    variantId: uuid('variant_id')
+      .notNull()
+      .references(() => masterProductVariants.id, { onDelete: 'cascade' }),
+    optionValueId: uuid('option_value_id')
+      .notNull()
+      .references(() => masterProductOptionValues.id, { onDelete: 'restrict' }),
+  },
+  (t) => [
+    primaryKey({ name: 'pk_mpvov', columns: [t.variantId, t.optionValueId] }),
+  ],
+);
 
 // ─── listed_products ─────────────────────────────────────────────
 // 마스터 ↔ 채널 상품 간 연결(link) 정보만 저장. 채널 상품 본체는 항상 API 실시간 fetch.

@@ -21,15 +21,21 @@ import {
 import { useListToChannel, type MasterProductVariant } from "@/entities/master-product";
 import { appToaster } from "@/shared/ui/app-toaster";
 
+interface ListedProduct {
+  channelId: string;
+  channelType: string;
+}
+
 interface Props {
   masterProductId: string;
   variants?: MasterProductVariant[];
+  listedProducts?: ListedProduct[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
-export function ListToChannelModal({ masterProductId, variants = [], open, onOpenChange, onSuccess }: Props): React.JSX.Element | null {
+export function ListToChannelModal({ masterProductId, variants = [], listedProducts = [], open, onOpenChange, onSuccess }: Props): React.JSX.Element | null {
   const { data: channels, isLoading: loadingChannels } = useChannels();
   const { data: platformData } = usePlatformConstraints();
   const { mutateAsync: listToChannel, isPending } = useListToChannel(masterProductId);
@@ -41,6 +47,7 @@ export function ListToChannelModal({ masterProductId, variants = [], open, onOpe
 
   const totalStock = variants.reduce((sum, v) => sum + (v.stock ?? 0), 0);
   const firstPrice = variants[0]?.price ?? '';
+  const listedChannelIds = new Set(listedProducts.map((lp) => lp.channelId));
 
   const handleChannelSelect = (ch: ChannelRecord): void => {
     setSelectedChannel(ch);
@@ -125,34 +132,57 @@ export function ListToChannelModal({ masterProductId, variants = [], open, onOpe
             <Text fontSize="sm" color="gray.500">연결된 채널이 없습니다. 채널 설정 페이지에서 먼저 채널을 연결해 주세요.</Text>
           ) : (
             <Stack gap={2}>
-              {channels.map((ch) => (
-                <Box
-                  key={ch.id}
-                  borderWidth="1px"
-                  borderRadius="md"
-                  px={3}
-                  py={2.5}
-                  cursor="pointer"
-                  borderColor={selectedChannel?.id === ch.id ? "gray.800" : "gray.200"}
-                  bg={selectedChannel?.id === ch.id ? "gray.50" : "white"}
-                  onClick={() => handleChannelSelect(ch)}
-                  _hover={{ borderColor: "gray.400" }}
-                  transition="all 0.1s"
-                >
-                  <Flex justify="space-between" align="center">
-                    <Box>
-                      <Text fontSize="sm" fontWeight="medium">{ch.name}</Text>
-                      <Text fontSize="xs" color="gray.500">{ch.channelType}</Text>
-                    </Box>
-                    <Box
-                      w={2}
-                      h={2}
-                      borderRadius="full"
-                      bg={ch.status === "ACTIVE" ? "green.400" : "gray.300"}
-                    />
-                  </Flex>
-                </Box>
-              ))}
+              {channels.map((ch) => {
+                const alreadyListed = listedChannelIds.has(ch.id);
+                return (
+                  <Box
+                    key={ch.id}
+                    borderWidth="1px"
+                    borderRadius="md"
+                    px={3}
+                    py={2.5}
+                    cursor={alreadyListed ? "not-allowed" : "pointer"}
+                    borderColor={
+                      alreadyListed
+                        ? "gray.200"
+                        : selectedChannel?.id === ch.id
+                          ? "gray.800"
+                          : "gray.200"
+                    }
+                    bg={
+                      alreadyListed
+                        ? "gray.50"
+                        : selectedChannel?.id === ch.id
+                          ? "gray.50"
+                          : "white"
+                    }
+                    opacity={alreadyListed ? 0.6 : 1}
+                    onClick={() => !alreadyListed && handleChannelSelect(ch)}
+                    _hover={alreadyListed ? undefined : { borderColor: "gray.400" }}
+                    transition="all 0.1s"
+                  >
+                    <Flex justify="space-between" align="center">
+                      <Box>
+                        <Flex align="center" gap={2}>
+                          <Text fontSize="sm" fontWeight="medium">{ch.name}</Text>
+                          {alreadyListed && (
+                            <Text fontSize="xs" color="green.600" fontWeight="medium" bg="green.50" px={1.5} py={0.5} borderRadius="sm">
+                              등록됨
+                            </Text>
+                          )}
+                        </Flex>
+                        <Text fontSize="xs" color="gray.500">{ch.channelType}</Text>
+                      </Box>
+                      <Box
+                        w={2}
+                        h={2}
+                        borderRadius="full"
+                        bg={ch.status === "ACTIVE" ? "green.400" : "gray.300"}
+                      />
+                    </Flex>
+                  </Box>
+                );
+              })}
             </Stack>
           )}
         </Box>

@@ -24,13 +24,26 @@ const masterProductBody = z.object({
   attributes: z.record(z.unknown()).optional(),
 });
 
+const variantOptionValueSchema = z.object({
+  groupName: z.string().min(1).max(128),
+  value: z.string().min(1).max(128),
+});
+
 const variantBody = z.object({
   sku: z.string().min(1, 'SKU를 입력해 주세요').max(128),
-  optionName: z.string().max(128).optional(),
-  optionValue: z.string().max(128).optional(),
+  optionValues: z.array(variantOptionValueSchema).optional(),
   price: z.string().optional(),
   stock: z.number().int().min(0).optional(),
   extraAttributes: z.record(z.unknown()).optional(),
+});
+
+const optionGroupsBody = z.object({
+  groups: z.array(
+    z.object({
+      name: z.string().min(1, '옵션 그룹명을 입력해 주세요').max(128),
+      values: z.array(z.string().min(1).max(128)).min(1, '옵션 값을 1개 이상 입력해 주세요'),
+    }),
+  ),
 });
 
 const linkToChannelBody = z.object({
@@ -107,6 +120,26 @@ export async function masterProductRoutes(app: FastifyInstance): Promise<void> {
       const deleted = await getSvc(request.user.userId).deleteMasterProduct(request.params.id);
       if (!deleted) return reply.status(404).send({ error: 'NOT_FOUND' });
       return { ok: true };
+    },
+  );
+
+  // ─── 옵션 그룹 (다축 옵션) 일괄 설정 ────────────────────────
+
+  app.put<{ Params: { id: string } }>(
+    '/master-products/:id/option-groups',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = optionGroupsBody.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+      }
+      try {
+        const result = await getSvc(request.user.userId).setOptionGroups(request.params.id, parsed.data.groups);
+        return result;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : '옵션 그룹 설정에 실패했습니다.';
+        return reply.status(400).send({ error: 'SET_OPTION_GROUPS_FAILED', message: msg });
+      }
     },
   );
 

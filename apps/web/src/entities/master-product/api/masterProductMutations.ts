@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/shared/api";
 import { masterProductsQueryRoot } from "./masterProductQueries";
-import type { MasterProduct, MasterProductVariant } from "../model/types";
+import type { MasterProduct, MasterProductOptionGroup, MasterProductVariant } from "../model/types";
 
 export interface CreateMasterProductInput {
   code: string;
@@ -22,16 +22,36 @@ export interface CreateMasterProductInput {
 
 export interface UpdateMasterProductInput extends Partial<CreateMasterProductInput> {}
 
+export interface VariantOptionValueInput {
+  groupName: string;
+  value: string;
+}
+
 export interface AddVariantInput {
   sku: string;
-  optionName?: string;
-  optionValue?: string;
+  optionValues?: VariantOptionValueInput[];
   price?: string;
   stock: number;
   extraAttributes?: Record<string, unknown>;
 }
 
 export interface UpdateVariantInput extends Partial<AddVariantInput> {}
+
+export interface SetOptionGroupsInput {
+  groups: Array<{ name: string; values: string[] }>;
+}
+
+export function useSetOptionGroups(masterProductId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: SetOptionGroupsInput): Promise<MasterProductOptionGroup[]> =>
+      http.put<MasterProductOptionGroup[]>(`/api/master-products/${masterProductId}/option-groups`, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
+    },
+  });
+}
 
 export function useCreateMasterProduct() {
   const queryClient = useQueryClient();

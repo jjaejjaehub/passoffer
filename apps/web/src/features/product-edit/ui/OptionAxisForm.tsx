@@ -12,7 +12,7 @@ import {
 import { useRef } from "react";
 
 import type { OptionAxisState } from "@/entities/product";
-import { QOO10_SIMPLE_OPTION_PRESETS } from "@/shared/constants/qoo10OptionPresets";
+import { PRODUCT_OPTION_AXIS_PRESETS } from "@/shared/constants/qoo10OptionPresets";
 import { appToaster } from "@/shared/ui/app-toaster";
 
 interface OptionAxisFormProps {
@@ -147,13 +147,7 @@ export function OptionAxisForm({
     <VStack align="stretch" gap={3} mb={4}>
       <HStack flexWrap="wrap" gap={2} justify="space-between">
         <HStack flexWrap="wrap" gap={2}>
-          {QOO10_SIMPLE_OPTION_PRESETS.filter(
-            (preset) =>
-              preset.id !== "additional_purchase" &&
-              preset.id !== "bonus" &&
-              preset.id !== "gift_wrap" &&
-              preset.id !== "custom",
-          ).map((preset) => (
+          {PRODUCT_OPTION_AXIS_PRESETS.map((preset) => (
             <Button
               key={preset.id}
               size="xs"
@@ -165,6 +159,15 @@ export function OptionAxisForm({
               {preset.label}
             </Button>
           ))}
+          <Button
+            size="xs"
+            variant="outline"
+            disabled={!canAddAxis}
+            title={!canAddAxis ? disableReason : undefined}
+            onClick={() => addAxis("")}
+          >
+            + 직접 추가
+          </Button>
         </HStack>
       </HStack>
 

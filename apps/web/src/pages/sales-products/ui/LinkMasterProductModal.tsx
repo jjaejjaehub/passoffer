@@ -92,7 +92,7 @@ export function LinkMasterProductModal({
       return {
         masterVariantId: mv.id,
         masterSku: mv.sku,
-        masterLabel: [mv.optionName, mv.optionValue].filter(Boolean).join(" / ") || mv.sku,
+        masterLabel: mv.optionLabel || mv.sku,
         channelVariantId: matched?.channelVariantId ?? "",
         overrideSellerCode: false,
         channelCurrentSellerCode: matched?.optionCode,

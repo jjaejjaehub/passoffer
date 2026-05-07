@@ -18,19 +18,36 @@ export interface MasterProduct {
   updatedAt: string;
 }
 
+export interface MasterProductVariantOption {
+  groupId: string;
+  groupName: string;
+  groupPosition: number;
+  optionValueId: string;
+  value: string;
+  valuePosition: number;
+}
+
 export interface MasterProductVariant {
   id: string;
   masterProductId: string;
   sku: string;
-  optionName?: string;
-  optionValue?: string;
   price?: string;
   stock: number;
   extraAttributes: Record<string, unknown>;
+  options: MasterProductVariantOption[];
+  optionLabel: string;
+}
+
+export interface MasterProductOptionGroup {
+  id: string;
+  name: string;
+  position: number;
+  values: Array<{ id: string; value: string; position: number }>;
 }
 
 export interface MasterProductDetail extends Omit<MasterProduct, 'variantCount' | 'listedChannelCount'> {
   variants: MasterProductVariant[];
+  optionGroups: MasterProductOptionGroup[];
   listedProducts: Array<{
     id: string;
     channelId: string;

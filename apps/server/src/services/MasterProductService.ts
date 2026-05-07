@@ -1,8 +1,11 @@
 import type { FastifyInstance } from 'fastify';
-import { and, eq, ilike, desc, count, sql, inArray } from 'drizzle-orm';
+import { and, eq, ilike, desc, count, sql, inArray, asc } from 'drizzle-orm';
 import {
   masterProducts,
   masterProductVariants,
+  masterProductOptionGroups,
+  masterProductOptionValues,
+  masterProductVariantOptionValues,
   listedProducts,
   listedProductVariantLinks,
   channels,
@@ -27,13 +30,31 @@ export interface MasterProductCreateInput {
   attributes?: Record<string, unknown>;
 }
 
+export interface VariantOptionValueInput {
+  groupName: string;
+  value: string;
+}
+
 export interface MasterProductVariantInput {
   sku: string;
-  optionName?: string;
-  optionValue?: string;
   price?: string;
   stock?: number;
   extraAttributes?: Record<string, unknown>;
+  optionValues?: VariantOptionValueInput[];
+}
+
+export interface OptionGroupInput {
+  name: string;
+  values: string[];
+}
+
+export interface VariantOptionView {
+  groupId: string;
+  groupName: string;
+  groupPosition: number;
+  optionValueId: string;
+  value: string;
+  valuePosition: number;
 }
 
 export class MasterProductService {
@@ -79,7 +100,7 @@ export class MasterProductService {
               cnt: count(),
             })
             .from(masterProductVariants)
-            .where(sql`${masterProductVariants.masterProductId} = ANY(${sql.raw(`ARRAY[${ids.map((id) => `'${id}'`).join(',')}]::uuid[]`)})`)
+            .where(inArray(masterProductVariants.masterProductId, ids))
             .groupBy(masterProductVariants.masterProductId)
         : [];
 
@@ -91,7 +112,7 @@ export class MasterProductService {
               cnt: count(),
             })
             .from(listedProducts)
-            .where(sql`${listedProducts.masterProductId} = ANY(${sql.raw(`ARRAY[${ids.map((id) => `'${id}'`).join(',')}]::uuid[]`)})`)
+            .where(inArray(listedProducts.masterProductId, ids))
             .groupBy(listedProducts.masterProductId)
         : [];
 
@@ -121,7 +142,7 @@ export class MasterProductService {
 
     if (!product) return null;
 
-    const [variants, listed] = await Promise.all([
+    const [variantRows, listed, optionGroups] = await Promise.all([
       this.app.db
         .select()
         .from(masterProductVariants)
@@ -139,9 +160,24 @@ export class MasterProductService {
         .from(listedProducts)
         .innerJoin(channels, eq(listedProducts.channelId, channels.id))
         .where(eq(listedProducts.masterProductId, id)),
+      this.loadOptionGroups(id),
     ]);
 
-    return { ...product, variants, listedProducts: listed };
+    const variantOptionMap = await this.loadVariantOptions(variantRows.map((v) => v.id));
+    const variants = variantRows.map((v) => {
+      const opts = variantOptionMap.get(v.id) ?? [];
+      return {
+        ...v,
+        options: opts,
+        optionLabel: opts
+          .slice()
+          .sort((a, b) => a.groupPosition - b.groupPosition)
+          .map((o) => `${o.groupName}=${o.value}`)
+          .join(' / '),
+      };
+    });
+
+    return { ...product, variants, listedProducts: listed, optionGroups };
   }
 
   // ─── 마스터 상품 생성 ─────────────────────────────────────────
@@ -217,8 +253,64 @@ export class MasterProductService {
         .where(eq(listedProducts.masterProductId, id));
     }
 
+    // option groups/values/mapping → CASCADE from masterProducts.id
     await this.app.db.delete(masterProducts).where(eq(masterProducts.id, id));
     return true;
+  }
+
+  // ─── 옵션 그룹 / 값 일괄 설정 ────────────────────────────────
+
+  /**
+   * 마스터 상품의 옵션 축을 일괄 설정한다.
+   * - 기존 그룹/값/매핑을 모두 제거하고 새로 생성한다 (단순/예측 가능).
+   * - groups 배열의 순서가 position(0..n-1) 으로 매핑된다.
+   */
+  async setOptionGroups(masterProductId: string, groups: OptionGroupInput[]) {
+    await this.assertOwnership(masterProductId);
+
+    // 기존 그룹 제거 → CASCADE 로 값/매핑까지 정리됨
+    await this.app.db
+      .delete(masterProductOptionGroups)
+      .where(eq(masterProductOptionGroups.masterProductId, masterProductId));
+
+    if (groups.length === 0) return [];
+
+    const seenGroupNames = new Set<string>();
+    for (const g of groups) {
+      const name = g.name.trim();
+      if (!name) throw new Error('옵션 그룹 이름은 비워둘 수 없습니다.');
+      if (seenGroupNames.has(name)) throw new Error(`옵션 그룹 이름이 중복됩니다: ${name}`);
+      seenGroupNames.add(name);
+    }
+
+    const insertedGroups: Array<typeof masterProductOptionGroups.$inferSelect> = [];
+    for (let i = 0; i < groups.length; i++) {
+      const g = groups[i]!;
+      const [created] = await this.app.db
+        .insert(masterProductOptionGroups)
+        .values({
+          masterProductId,
+          name: g.name.trim(),
+          position: i,
+        })
+        .returning();
+      insertedGroups.push(created);
+
+      const seenValues = new Set<string>();
+      for (let j = 0; j < g.values.length; j++) {
+        const v = g.values[j]!.trim();
+        if (!v) continue;
+        if (seenValues.has(v)) throw new Error(`옵션 값이 중복됩니다: ${g.name}=${v}`);
+        seenValues.add(v);
+        await this.app.db.insert(masterProductOptionValues).values({
+          groupId: created.id,
+          value: v,
+          position: j,
+        });
+      }
+    }
+
+    return this.loadOptionGroups(masterProductId);
   }
 
   // ─── 변형 추가 ────────────────────────────────────────────────
@@ -226,23 +318,35 @@ export class MasterProductService {
   async addVariant(masterProductId: string, input: MasterProductVariantInput) {
     await this.assertOwnership(masterProductId);
 
+    const optionValueIds = await this.resolveOptionValueIds(masterProductId, input.optionValues ?? []);
+    await this.assertNoVariantWithSameOptions(masterProductId, optionValueIds);
+
     const row: MasterProductVariantInsert = {
       masterProductId,
       sku: input.sku,
-      optionName: input.optionName,
-      optionValue: input.optionValue,
       price: input.price,
       stock: input.stock ?? 0,
       extraAttributes: input.extraAttributes ?? {},
     };
 
     const [created] = await this.app.db.insert(masterProductVariants).values(row).returning();
-    return created;
+
+    if (optionValueIds.length > 0) {
+      await this.app.db
+        .insert(masterProductVariantOptionValues)
+        .values(optionValueIds.map((ovId) => ({ variantId: created.id, optionValueId: ovId })));
+    }
+
+    return this.getVariantWithOptions(created.id);
   }
 
   // ─── 변형 수정 ────────────────────────────────────────────────
 
-  async updateVariant(masterProductId: string, variantId: string, input: Partial<MasterProductVariantInput>) {
+  async updateVariant(
+    masterProductId: string,
+    variantId: string,
+    input: Partial<MasterProductVariantInput>,
+  ) {
     await this.assertOwnership(masterProductId);
 
     const [before] = await this.app.db
@@ -255,9 +359,18 @@ export class MasterProductService {
         ),
       );
 
+    if (!before) return null;
+
+    // optionValues 컬럼은 별도 테이블이므로 update.set 에서 분리
+    const { optionValues, ...scalarPatch } = input;
+    const setPatch: Partial<typeof masterProductVariants.$inferInsert> = {
+      ...scalarPatch,
+      updatedAt: new Date(),
+    };
+
     const [updated] = await this.app.db
       .update(masterProductVariants)
-      .set({ ...input, updatedAt: new Date() })
+      .set(setPatch)
       .where(
         and(
           eq(masterProductVariants.id, variantId),
@@ -265,6 +378,21 @@ export class MasterProductService {
         ),
       )
       .returning();
+
+    if (optionValues !== undefined) {
+      const optionValueIds = await this.resolveOptionValueIds(masterProductId, optionValues);
+      await this.assertNoVariantWithSameOptions(masterProductId, optionValueIds, variantId);
+
+      await this.app.db
+        .delete(masterProductVariantOptionValues)
+        .where(eq(masterProductVariantOptionValues.variantId, variantId));
+
+      if (optionValueIds.length > 0) {
+        await this.app.db
+          .insert(masterProductVariantOptionValues)
+          .values(optionValueIds.map((ovId) => ({ variantId, optionValueId: ovId })));
+      }
+    }
 
     if (before && updated && typeof input.stock === 'number' && before.stock !== updated.stock) {
       const now = new Date();
@@ -326,7 +454,7 @@ export class MasterProductService {
       }
     }
 
-    return updated ?? null;
+    return this.getVariantWithOptions(variantId);
   }
 
   // ─── 변형 삭제 ────────────────────────────────────────────────
@@ -342,6 +470,54 @@ export class MasterProductService {
           eq(masterProductVariants.masterProductId, masterProductId),
         ),
       );
+  }
+
+  // ─── 변형 단건 조회 (옵션값 join 포함) ───────────────────────
+
+  async getVariantWithOptions(variantId: string) {
+    const [variant] = await this.app.db
+      .select()
+      .from(masterProductVariants)
+      .where(eq(masterProductVariants.id, variantId));
+    if (!variant) return null;
+
+    const optMap = await this.loadVariantOptions([variantId]);
+    const opts = optMap.get(variantId) ?? [];
+    return {
+      ...variant,
+      options: opts,
+      optionLabel: opts
+        .slice()
+        .sort((a, b) => a.groupPosition - b.groupPosition)
+        .map((o) => `${o.groupName}=${o.value}`)
+        .join(' / '),
+    };
+  }
+
+  // ─── 변형 목록 (옵션값 join 포함) ────────────────────────────
+
+  async listVariants(masterProductId: string) {
+    await this.assertOwnership(masterProductId);
+
+    const variants = await this.app.db
+      .select()
+      .from(masterProductVariants)
+      .where(eq(masterProductVariants.masterProductId, masterProductId))
+      .orderBy(masterProductVariants.createdAt);
+
+    const optMap = await this.loadVariantOptions(variants.map((v) => v.id));
+    return variants.map((v) => {
+      const opts = optMap.get(v.id) ?? [];
+      return {
+        ...v,
+        options: opts,
+        optionLabel: opts
+          .slice()
+          .sort((a, b) => a.groupPosition - b.groupPosition)
+          .map((o) => `${o.groupName}=${o.value}`)
+          .join(' / '),
+      };
+    });
   }
 
   // ─── 판매상품(링크) 목록 ──────────────────────────────────────
@@ -512,7 +688,7 @@ export class MasterProductService {
     const dbVariants = await this.app.db
       .select()
       .from(masterProductVariants)
-      .where(sql`${masterProductVariants.id} = ANY(${sql.raw(`ARRAY[${masterVariantIds.map((id) => `'${id}'`).join(',')}]::uuid[]`)})`);
+      .where(inArray(masterProductVariants.id, masterVariantIds));
     const variantById = new Map(dbVariants.map((v) => [v.id, v]));
 
     const channelData = (item.channelData as Record<string, unknown> | null) ?? {};
@@ -711,21 +887,49 @@ export class MasterProductService {
     const vendorKey = channel.channelType === 'QOO10_JP' ? 'qoo10' : channel.channelType.toLowerCase();
     const channelAttrs = ((master.attributes as Record<string, unknown> | null)?.[vendorKey] ?? {}) as Record<string, unknown>;
 
-    // 변형 → Qoo10 ItemType 문자열 구성
     const variants = master.variants ?? [];
+    const optionGroups = master.optionGroups ?? [];
+
+    // ── 다축 옵션 인코딩 ───────────────────────────
+    // Qoo10 ItemType: "그룹1||*값1$값2||*그룹2||*값1$값2"
     let itemTypeStr: string | undefined;
-    if (channel.channelType === 'QOO10_JP' && variants.length > 1) {
-      // optionName이 같은 경우 단일 축 처리
-      const firstOptionName = variants[0]?.optionName ?? '옵션';
-      const optionValues = variants
-        .map((v) => v.optionValue ?? v.sku)
-        .filter(Boolean)
-        .join('$');
-      itemTypeStr = `${firstOptionName}||*${optionValues}`;
+    let qoo10Variants:
+      | Array<{
+          optionPath: string;
+          sku: string;
+          price: string;
+          qty: number;
+        }>
+      | undefined;
+    if (channel.channelType === 'QOO10_JP' && optionGroups.length > 0 && variants.length > 1) {
+      // Qoo10 ItemType format per combination row:
+      // 그룹1||*값1||*그룹2||*값2||*가격||*수량||*판매자코드  — rows joined by $$
+      qoo10Variants = variants.map((v) => {
+        const optionPath = optionGroups
+          .map((g) => {
+            const match = v.options.find((o) => o.groupId === g.id);
+            return `${g.name}||*${match ? match.value : ''}`;
+          })
+          .join('$$');
+        return {
+          optionPath,
+          sku: v.sku,
+          price: String(v.price ?? master.retailPrice ?? '0'),
+          qty: v.stock ?? 0,
+        };
+      });
+      itemTypeStr = qoo10Variants
+        .map((v) => {
+          // optionPath: "그룹1||*값1$$그룹2||*값2" → "그룹1||*값1||*그룹2||*값2"
+          const axesPart = v.optionPath.replace(/\$\$/g, '||*');
+          const sellerCode = v.sku || '0';
+          // 가격은 0 (차액=0, 실가격은 ItemPrice 기준), 수량은 실제값
+          return `${axesPart}||*0||*${v.qty}||*${sellerCode}`;
+        })
+        .join('$$');
     }
 
-    // Shopify multi-variant: options(name+values) + variants(options:string[]) 주입
-    // ShopifyAdapter는 variants[i].options: string[] 형태를 기대하고 내부에서 optionValues로 변환함
+    // Shopify productOptions/variants — 그룹별 name 과 값 배열을 보낸다.
     let shopifyOptions: Array<{ name: string; values: string[] }> | undefined;
     let shopifyVariants:
       | Array<{
@@ -735,24 +939,24 @@ export class MasterProductService {
           inventoryQuantity?: number;
         }>
       | undefined;
-    if (channel.channelType === 'SHOPIFY' && variants.length > 1) {
-      const firstOptionName = variants[0]?.optionName ?? 'Option';
-      const seenValues = new Set<string>();
-      const optionValueList: string[] = [];
-      for (const v of variants) {
-        const val = v.optionValue ?? v.sku ?? '';
-        if (val && !seenValues.has(val)) {
-          seenValues.add(val);
-          optionValueList.push(val);
-        }
-      }
-      shopifyOptions = [{ name: firstOptionName, values: optionValueList }];
-      shopifyVariants = variants.map((v) => ({
-        options: [v.optionValue ?? v.sku ?? ''],
-        price: String(v.price ?? master.retailPrice ?? '0'),
-        sku: v.sku,
-        inventoryQuantity: v.stock ?? 0,
+    if (channel.channelType === 'SHOPIFY' && optionGroups.length > 0 && variants.length > 1) {
+      shopifyOptions = optionGroups.map((g) => ({
+        name: g.name,
+        values: g.values.map((v) => v.value),
       }));
+      shopifyVariants = variants.map((v) => {
+        // 그룹 position 순서로 옵션값을 배열한다 — Shopify 는 productOptions 순서와 1:1 매칭을 기대.
+        const optionValuesOrdered = optionGroups.map((g) => {
+          const match = v.options.find((o) => o.groupId === g.id);
+          return match ? match.value : '';
+        });
+        return {
+          options: optionValuesOrdered,
+          price: String(v.price ?? master.retailPrice ?? '0'),
+          sku: v.sku,
+          inventoryQuantity: v.stock ?? 0,
+        };
+      });
     }
 
     // countryOfOrigin → originType 추론 (Qoo10 어댑터 폴백용)
@@ -779,6 +983,7 @@ export class MasterProductService {
       inventoryQuantity: variants[0]?.stock ?? 0,
       stock: variants[0]?.stock ?? 0,
       ...(itemTypeStr ? { ItemType: itemTypeStr } : {}),
+      ...(qoo10Variants ? { qoo10Variants } : {}),
       ...(shopifyOptions ? { options: shopifyOptions } : {}),
       ...(shopifyVariants ? { variants: shopifyVariants } : {}),
       ...overrides,
@@ -789,6 +994,7 @@ export class MasterProductService {
         channelType: channel.channelType,
         masterRetailPrice: master.retailPrice,
         variantCount: variants.length,
+        optionGroupCount: optionGroups.length,
         firstVariantPrice: variants[0]?.price,
         firstVariantStock: variants[0]?.stock,
         flatInputPrice: flatInput.price,
@@ -796,6 +1002,7 @@ export class MasterProductService {
         flatInputQty: flatInput.inventoryQuantity,
         hasShopifyOptions: !!shopifyOptions,
         hasShopifyVariants: !!shopifyVariants,
+        itemTypeStr,
         overrideKeys: Object.keys(overrides),
       },
       '[registerToChannel] dispatching to adapter',
@@ -987,7 +1194,7 @@ export class MasterProductService {
     const dbVariants = await this.app.db
       .select()
       .from(masterProductVariants)
-      .where(sql`${masterProductVariants.id} = ANY(${sql.raw(`ARRAY[${masterVariantIds.map((id) => `'${id}'`).join(',')}]::uuid[]`)})`);
+      .where(inArray(masterProductVariants.id, masterVariantIds));
     const variantById = new Map(dbVariants.map((v) => [v.id, v]));
 
     // Qoo10 single-product (channelVariantId === channelItemId, OptionCode 없음): updateProduct로 라우팅
@@ -1063,26 +1270,49 @@ export class MasterProductService {
     const vendorKey = channel?.channelType === 'QOO10_JP' ? 'qoo10' : (channel?.channelType ?? '').toLowerCase();
     const channelAttrs = ((master.attributes as Record<string, unknown> | null)?.[vendorKey] ?? {}) as Record<string, unknown>;
 
-    // 연결된 변형의 재고 합산
+    // 연결된 변형의 재고 합산 — 다축 옵션값 join 포함
     const variantLinkRows = await this.app.db
       .select()
       .from(listedProductVariantLinks)
       .where(eq(listedProductVariantLinks.listedProductId, listedProductId));
 
     let totalStock: number | undefined;
-    let linkedVariants: typeof master.variants = [];
+    type LinkedVariant = {
+      id: string;
+      sku: string;
+      price: string | null;
+      stock: number;
+      options: VariantOptionView[];
+    };
+    let linkedVariants: LinkedVariant[] = [];
     if (variantLinkRows.length > 0) {
       const masterVariantIds = variantLinkRows.map((vl) => vl.masterVariantId);
       const dbVariants = await this.app.db
         .select()
         .from(masterProductVariants)
-        .where(sql`${masterProductVariants.id} = ANY(${sql.raw(`ARRAY[${masterVariantIds.map((id) => `'${id}'`).join(',')}]::uuid[]`)})`);
+        .where(inArray(masterProductVariants.id, masterVariantIds));
       totalStock = dbVariants.reduce((sum, v) => sum + (v.stock ?? 0), 0);
-      linkedVariants = dbVariants;
+      const optMap = await this.loadVariantOptions(masterVariantIds);
+      linkedVariants = dbVariants.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        stock: v.stock,
+        options: optMap.get(v.id) ?? [],
+      }));
     }
 
-    // 가격: 연결된 변형이 있으면 거기서, 없으면 master.variants 첫 변형, 그것도 없으면 retailPrice
-    const allVariants = linkedVariants.length > 0 ? linkedVariants : (master.variants ?? []);
+    type AnyVariantWithOptions = { id: string; sku: string; price: string | null; stock: number; options: VariantOptionView[] };
+    const allVariants: AnyVariantWithOptions[] =
+      linkedVariants.length > 0
+        ? linkedVariants
+        : (master.variants ?? []).map((v) => ({
+            id: v.id,
+            sku: v.sku,
+            price: v.price,
+            stock: v.stock,
+            options: v.options,
+          }));
     const firstVariant = allVariants[0];
     const firstPrice = firstVariant?.price ?? master.retailPrice ?? null;
     const firstSku = firstVariant?.sku ?? null;
@@ -1105,12 +1335,18 @@ export class MasterProductService {
       ...(firstSku ? { sku: firstSku } : {}),
     };
 
-    // Shopify 다중 변형: variantPriceUpdates로 옵션값 조합별 가격 전송
+    // Shopify 다중 변형: variantPriceUpdates 로 옵션값 조합별 가격 전송
+    // combination 은 그룹 position 순서대로 { name, value } 쌍을 보낸다.
+    // 어댑터 측에서 selectedOptions 와 정확히 매칭하기 위해 name 까지 포함.
     if (channel?.channelType === 'SHOPIFY' && allVariants.length > 1) {
+      const groups = master.optionGroups ?? [];
       payload.variantPriceUpdates = allVariants
         .filter((v) => v.price !== null && v.price !== undefined)
         .map((v) => ({
-          combination: [v.optionValue ?? v.sku ?? ''],
+          combination: groups.map((g) => {
+            const match = v.options.find((o) => o.groupId === g.id);
+            return { name: g.name, value: match ? match.value : '' };
+          }),
           price: String(v.price),
         }));
     }
@@ -1139,5 +1375,174 @@ export class MasterProductService {
       .from(masterProducts)
       .where(and(eq(masterProducts.id, masterProductId), eq(masterProducts.userId, this.userId)));
     if (!p) throw new Error('마스터 상품을 찾을 수 없습니다.');
+  }
+
+  /**
+   * 마스터 상품의 옵션 그룹 + 그룹별 값 목록을 position 순으로 반환.
+   */
+  private async loadOptionGroups(masterProductId: string) {
+    const groups = await this.app.db
+      .select()
+      .from(masterProductOptionGroups)
+      .where(eq(masterProductOptionGroups.masterProductId, masterProductId))
+      .orderBy(asc(masterProductOptionGroups.position));
+
+    if (groups.length === 0) return [] as Array<{
+      id: string;
+      name: string;
+      position: number;
+      values: Array<{ id: string; value: string; position: number }>;
+    }>;
+
+    const groupIds = groups.map((g) => g.id);
+    const values = await this.app.db
+      .select()
+      .from(masterProductOptionValues)
+      .where(inArray(masterProductOptionValues.groupId, groupIds))
+      .orderBy(asc(masterProductOptionValues.position));
+
+    const valuesByGroup = new Map<string, Array<{ id: string; value: string; position: number }>>();
+    for (const v of values) {
+      const arr = valuesByGroup.get(v.groupId) ?? [];
+      arr.push({ id: v.id, value: v.value, position: v.position });
+      valuesByGroup.set(v.groupId, arr);
+    }
+
+    return groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      position: g.position,
+      values: valuesByGroup.get(g.id) ?? [],
+    }));
+  }
+
+  /**
+   * variantId 배열에 대해 (groupId, groupName, groupPosition, optionValueId, value, valuePosition) 매핑을 한 번에 로드.
+   */
+  private async loadVariantOptions(variantIds: string[]): Promise<Map<string, VariantOptionView[]>> {
+    if (variantIds.length === 0) return new Map();
+    const rows = await this.app.db
+      .select({
+        variantId: masterProductVariantOptionValues.variantId,
+        optionValueId: masterProductVariantOptionValues.optionValueId,
+        groupId: masterProductOptionGroups.id,
+        groupName: masterProductOptionGroups.name,
+        groupPosition: masterProductOptionGroups.position,
+        value: masterProductOptionValues.value,
+        valuePosition: masterProductOptionValues.position,
+      })
+      .from(masterProductVariantOptionValues)
+      .innerJoin(
+        masterProductOptionValues,
+        eq(masterProductVariantOptionValues.optionValueId, masterProductOptionValues.id),
+      )
+      .innerJoin(
+        masterProductOptionGroups,
+        eq(masterProductOptionValues.groupId, masterProductOptionGroups.id),
+      )
+      .where(inArray(masterProductVariantOptionValues.variantId, variantIds));
+
+    const map = new Map<string, VariantOptionView[]>();
+    for (const r of rows) {
+      const arr = map.get(r.variantId) ?? [];
+      arr.push({
+        groupId: r.groupId,
+        groupName: r.groupName,
+        groupPosition: r.groupPosition,
+        optionValueId: r.optionValueId,
+        value: r.value,
+        valuePosition: r.valuePosition,
+      });
+      map.set(r.variantId, arr);
+    }
+    return map;
+  }
+
+  /**
+   * 입력 (groupName, value) 배열을 해당 마스터 상품의 optionValueId 배열로 변환.
+   * 존재하지 않는 그룹/값이 있으면 에러.
+   */
+  private async resolveOptionValueIds(
+    masterProductId: string,
+    optionValues: VariantOptionValueInput[],
+  ): Promise<string[]> {
+    if (optionValues.length === 0) return [];
+
+    const groups = await this.loadOptionGroups(masterProductId);
+    if (groups.length === 0) {
+      throw new Error('이 마스터 상품에는 옵션 그룹이 정의되어 있지 않습니다. setOptionGroups 를 먼저 호출하세요.');
+    }
+
+    // 한 그룹당 한 값만 허용
+    const seenGroupIds = new Set<string>();
+    const result: string[] = [];
+
+    for (const ov of optionValues) {
+      const group = groups.find((g) => g.name === ov.groupName);
+      if (!group) {
+        throw new Error(`존재하지 않는 옵션 그룹: ${ov.groupName}`);
+      }
+      if (seenGroupIds.has(group.id)) {
+        throw new Error(`한 변형에는 그룹당 옵션값을 하나만 지정할 수 있습니다: ${ov.groupName}`);
+      }
+      seenGroupIds.add(group.id);
+
+      const value = group.values.find((v) => v.value === ov.value);
+      if (!value) {
+        throw new Error(`존재하지 않는 옵션 값: ${ov.groupName}=${ov.value}`);
+      }
+      result.push(value.id);
+    }
+
+    return result;
+  }
+
+  /**
+   * 동일한 (그룹별 옵션값) 조합을 가진 다른 variant 가 이미 있는지 검증.
+   * excludeVariantId 가 주어지면 그 variant 는 제외하고 검사 (update 시 자기 자신 제외).
+   */
+  private async assertNoVariantWithSameOptions(
+    masterProductId: string,
+    optionValueIds: string[],
+    excludeVariantId?: string,
+  ) {
+    if (optionValueIds.length === 0) {
+      // 옵션 0개 변형은 마스터당 1개만 허용
+      const variants = await this.app.db
+        .select({ id: masterProductVariants.id })
+        .from(masterProductVariants)
+        .where(eq(masterProductVariants.masterProductId, masterProductId));
+
+      for (const v of variants) {
+        if (excludeVariantId && v.id === excludeVariantId) continue;
+        const links = await this.app.db
+          .select({ ovId: masterProductVariantOptionValues.optionValueId })
+          .from(masterProductVariantOptionValues)
+          .where(eq(masterProductVariantOptionValues.variantId, v.id));
+        if (links.length === 0) {
+          throw new Error('옵션이 없는 변형은 마스터 상품당 하나만 허용됩니다.');
+        }
+      }
+      return;
+    }
+
+    const variants = await this.app.db
+      .select({ id: masterProductVariants.id })
+      .from(masterProductVariants)
+      .where(eq(masterProductVariants.masterProductId, masterProductId));
+
+    const target = new Set(optionValueIds);
+    for (const v of variants) {
+      if (excludeVariantId && v.id === excludeVariantId) continue;
+      const links = await this.app.db
+        .select({ ovId: masterProductVariantOptionValues.optionValueId })
+        .from(masterProductVariantOptionValues)
+        .where(eq(masterProductVariantOptionValues.variantId, v.id));
+      if (links.length !== target.size) continue;
+      const same = links.every((l) => target.has(l.ovId));
+      if (same) {
+        throw new Error('동일한 옵션 조합을 가진 변형이 이미 존재합니다.');
+      }
+    }
   }
 }

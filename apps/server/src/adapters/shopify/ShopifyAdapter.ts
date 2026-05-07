@@ -1065,20 +1065,6 @@ export class ShopifyAdapter implements IChannelAdapter {
         alt: img.altText ?? '',
       }));
 
-    console.log('[ShopifyAdapter.registerProduct] images count =', data.images?.length ?? 0, 'media count =', media.length);
-    if (media.length > 0) {
-      console.log('[ShopifyAdapter.registerProduct] first media =', media[0]);
-    }
-    console.log('[ShopifyAdapter.registerProduct] price/sku/qty (single):', {
-      price: data.price,
-      sku: data.sku,
-      inventoryQuantity: data.inventoryQuantity,
-    });
-    console.log('[ShopifyAdapter.registerProduct] options:', JSON.stringify(data.options));
-    console.log(
-      '[ShopifyAdapter.registerProduct] variants:',
-      JSON.stringify(data.variants?.map((v) => ({ options: v.options, price: v.price, sku: v.sku, qty: v.inventoryQuantity }))),
-    );
 
     const createRes = await this.graphql<{
       data?: {
@@ -1107,8 +1093,6 @@ export class ShopifyAdapter implements IChannelAdapter {
         '[ShopifyAdapter.registerProduct] media failed:',
         JSON.stringify(failedMedia.map((m) => ({ id: m.id, status: m.status, errors: m.mediaErrors })), null, 2),
       );
-    } else if (media.length > 0) {
-      console.log('[ShopifyAdapter.registerProduct] media accepted, nodes =', mediaNodes.length);
     }
 
     const productId = product.id;
@@ -1172,33 +1156,46 @@ export class ShopifyAdapter implements IChannelAdapter {
       // With options: create options then bulk create variants
       const options = data.options!;
 
-      await this.graphql(OPTIONS_CREATE_MUTATION, {
+      const optCreateRes = await this.graphql<{
+        data?: { productOptionsCreate?: { product: { options: Array<{ id: string; name: string; optionValues: Array<{ id: string; name: string }> }> }; userErrors: Array<{ field: string[]; message: string; code: string }> } };
+      }>(OPTIONS_CREATE_MUTATION, {
         productId,
         options: options.map((opt) => ({
           name: opt.name,
           values: opt.values.map((v) => ({ name: v })),
         })),
       });
-
+      const optCreateErrors = optCreateRes.data?.productOptionsCreate?.userErrors ?? [];
+      if (optCreateErrors.length) {
+        console.error('[ShopifyAdapter.registerProduct] productOptionsCreate errors:', JSON.stringify(optCreateErrors));
+        throw new Error(`Shopify productOptionsCreate errors: ${optCreateErrors.map((e) => e.message).join(', ')}`);
+      }
       if (data.variants?.length) {
         const variantInputs = data.variants.map((v) => ({
           optionValues: v.options.map((val, idx) => ({ optionName: options[idx]?.name ?? '', name: val })),
           price: v.price,
-          sku: v.sku ?? undefined,
           compareAtPrice: v.compareAtPrice ?? data.compareAtPrice ?? undefined,
           barcode: v.barcode ?? data.barcode ?? undefined,
           inventoryPolicy: data.inventoryPolicy ?? undefined,
-          inventoryItem: { tracked: true },
+          inventoryItem: { tracked: true, ...(v.sku ? { sku: v.sku } : {}) },
           inventoryQuantities: locationId && v.inventoryQuantity != null
             ? [{ locationId, availableQuantity: v.inventoryQuantity }]
             : undefined,
         }));
 
-        await this.graphql(VARIANTS_BULK_CREATE_MUTATION, {
+        const bulkRes = await this.graphql<{
+          data?: { productVariantsBulkCreate?: { productVariants: Array<{ id: string; title: string }>; userErrors: Array<{ field: string[]; message: string }> } };
+        }>(VARIANTS_BULK_CREATE_MUTATION, {
           productId,
           variants: variantInputs,
           strategy: 'REMOVE_STANDALONE_VARIANT',
         });
+        const bulkErrors = bulkRes.data?.productVariantsBulkCreate?.userErrors ?? [];
+        if (bulkErrors.length) {
+          console.error('[ShopifyAdapter.registerProduct] productVariantsBulkCreate errors:', JSON.stringify(bulkErrors));
+          throw new Error(`Shopify productVariantsBulkCreate errors: ${bulkErrors.map((e) => e.message).join(', ')}`);
+        }
+        // REMOVE_STANDALONE_VARIANT removes the auto-created placeholder and replaces with our variants
       }
     }
 
@@ -1252,7 +1249,7 @@ export class ShopifyAdapter implements IChannelAdapter {
       seo?: { title?: string; description?: string };
       options?: Array<{ id: string; name: string; values: Array<{ id?: string; name: string }> }>;
       variants?: Array<{ id?: string; price?: string; sku?: string; inventoryQuantity?: number }>;
-      variantPriceUpdates?: Array<{ combination: string[]; price: string }>;
+      variantPriceUpdates?: Array<{ combination: Array<{ name: string; value: string }>; price: string }>;
       price?: string | number;
       sku?: string;
       inventoryQuantity?: number | string;
@@ -1314,8 +1311,12 @@ export class ShopifyAdapter implements IChannelAdapter {
         const currentVariants = detailRes.data?.product?.variants?.nodes ?? [];
 
         const bulkVariants = input.variantPriceUpdates.map((update) => {
+          // 모든 그룹 (name, value) 쌍이 selectedOptions 에 정확히 일치해야 함 — 다축 안전 매칭
           const matched = currentVariants.find((v) =>
-            update.combination.every((val) => v.selectedOptions.some((o) => o.value === val)),
+            update.combination.every((pair) =>
+              v.selectedOptions.some((o) => o.name === pair.name && o.value === pair.value),
+            ) &&
+            update.combination.length === v.selectedOptions.length,
           );
           return matched ? { id: matched.id, price: update.price } : null;
         }).filter(Boolean);
