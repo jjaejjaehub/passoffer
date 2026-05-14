@@ -40,3 +40,4 @@ bun-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+apps/server/drizzle.backup-*/

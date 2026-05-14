@@ -21,6 +21,10 @@ export function ChannelsSettingsPage(): React.JSX.Element {
   const [selectedChannelId, setSelectedChannelId] = useState<ChannelId>('qoo10');
   const [showConnectForm, setShowConnectForm] = useState<boolean>(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState<boolean>(false);
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   const {
     keys: qoo10Keys,
@@ -47,7 +51,10 @@ export function ChannelsSettingsPage(): React.JSX.Element {
   } = useChannelApiKey('shopify');
 
   // 채널별 연결 상태 — React Query 캐시에서 직접 파생 (별도 로컬 state 불필요)
+  // 서버 렌더 시점에는 캐시가 비어있어 false → hydration 후 true가 되면 mismatch가 나므로,
+  // hydrate 완료 전에는 일괄 false로 그린다.
   const isChannelConnected = (channelId: ChannelId): boolean => {
+    if (!hydrated) return false;
     if (channelId === 'qoo10') return hasQoo10Key;
     if (channelId === 'rakuten') return hasRakutenKey;
     if (channelId === 'shopee') return hasShopeeKey;

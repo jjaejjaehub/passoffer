@@ -1,0 +1,1 @@
+ALTER TABLE "order_items" ADD COLUMN "picked_quantity_by_warehouse" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -14,9 +14,8 @@ export const ROUTES = {
   orders: '/orders',
   claims: '/claims',
   inventory: '/inventory',
-  warehouses: '/warehouses',
-  warehouseDetail: (id: string) => `/warehouses/${id}`,
   adminWarehouses: {
+    connections: '/admin/warehouses',
     inbound: '/admin/warehouses/inbound',
     inventory: '/admin/warehouses/inventory',
     adjustments: '/admin/warehouses/adjustments',

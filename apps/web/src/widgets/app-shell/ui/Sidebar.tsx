@@ -103,6 +103,12 @@ export function Sidebar(): React.JSX.Element {
     return pathname === href || (pathname?.startsWith(`${href}/`) ?? false);
   };
 
+  // 정확 일치 활성화 (자식 경로가 별도 메뉴인 경우용)
+  const isExactActive = (href: string): boolean => {
+    if (pendingHref !== null) return pendingHref === href;
+    return pathname === href;
+  };
+
   const navItemStyle = (active: boolean | undefined) => ({
     align: "center" as const,
     gap: 3,
@@ -264,16 +270,17 @@ export function Sidebar(): React.JSX.Element {
                     <Text fontSize="sm">배송 관리</Text>
                   </Flex>
                 </Link>
-                {/* 클레임 관리 — 개발 중, 미노출
                 <Box mt={1}>
-                  <Link href={ROUTES.claims} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.claims} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.claims)}
+                    onMouseEnter={() => prefetch(ROUTES.claims)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.claims))}>
                       <Icon as={Package2} boxSize={3} color="gray.400" mr={1} />
                       <Text fontSize="sm">클레임 관리</Text>
                     </Flex>
                   </Link>
                 </Box>
-                */}
               </Box>
             )}
           </Box>
@@ -290,11 +297,11 @@ export function Sidebar(): React.JSX.Element {
             </Flex>
           </Link>
 
-          {/* 창고 관리 — 개발 중, 미노출
+          {/* 창고 관리 */}
           <Box>
             <Flex
               {...navItemStyle(
-                isActive(ROUTES.warehouses) ||
+                isActive(ROUTES.adminWarehouses.connections) ||
                   isActive(ROUTES.adminWarehouses.inbound) ||
                   isActive(ROUTES.adminWarehouses.inventory) ||
                   isActive(ROUTES.adminWarehouses.adjustments) ||
@@ -310,41 +317,59 @@ export function Sidebar(): React.JSX.Element {
             </Flex>
             {isWarehouseOpen && (
               <Box pl={9} pt={1}>
-                <Link href={ROUTES.warehouses} style={{ textDecoration: "none" }}>
-                  <Flex {...subItemStyle(isActive(ROUTES.warehouses))}>
-                    <Text fontSize="sm">창고 목록</Text>
+                <Link href={ROUTES.adminWarehouses.connections} style={{ textDecoration: "none" }}
+                  onClick={() => setPendingHref(ROUTES.adminWarehouses.connections)}
+                  onMouseEnter={() => prefetch(ROUTES.adminWarehouses.connections)}
+                >
+                  <Flex {...subItemStyle(isExactActive(ROUTES.adminWarehouses.connections))}>
+                    <Text fontSize="sm">창고 연결</Text>
                   </Flex>
                 </Link>
                 <Box mt={1}>
-                  <Link href={ROUTES.adminWarehouses.inbound} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.adminWarehouses.inbound} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.adminWarehouses.inbound)}
+                    onMouseEnter={() => prefetch(ROUTES.adminWarehouses.inbound)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.inbound))}>
                       <Text fontSize="sm">입고 예정</Text>
                     </Flex>
                   </Link>
                 </Box>
                 <Box mt={1}>
-                  <Link href={ROUTES.adminWarehouses.inventory} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.adminWarehouses.inventory} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.adminWarehouses.inventory)}
+                    onMouseEnter={() => prefetch(ROUTES.adminWarehouses.inventory)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.inventory))}>
                       <Text fontSize="sm">재고 조회</Text>
                     </Flex>
                   </Link>
                 </Box>
                 <Box mt={1}>
-                  <Link href={ROUTES.adminWarehouses.adjustments} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.adminWarehouses.adjustments} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.adminWarehouses.adjustments)}
+                    onMouseEnter={() => prefetch(ROUTES.adminWarehouses.adjustments)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.adjustments))}>
                       <Text fontSize="sm">재고 이동/조정</Text>
                     </Flex>
                   </Link>
                 </Box>
                 <Box mt={1}>
-                  <Link href={ROUTES.adminWarehouses.history} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.adminWarehouses.history} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.adminWarehouses.history)}
+                    onMouseEnter={() => prefetch(ROUTES.adminWarehouses.history)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.history))}>
                       <Text fontSize="sm">재고 이력</Text>
                     </Flex>
                   </Link>
                 </Box>
                 <Box mt={1}>
-                  <Link href={ROUTES.adminWarehouses.locations} style={{ textDecoration: "none" }}>
+                  <Link href={ROUTES.adminWarehouses.locations} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.adminWarehouses.locations)}
+                    onMouseEnter={() => prefetch(ROUTES.adminWarehouses.locations)}
+                  >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.locations))}>
                       <Text fontSize="sm">로케이션 관리</Text>
                     </Flex>
@@ -353,16 +378,17 @@ export function Sidebar(): React.JSX.Element {
               </Box>
             )}
           </Box>
-          */}
 
-          {/* 상품 문의 — 개발 중, 미노출
-          <Link href={ROUTES.inquiry} style={{ textDecoration: "none" }}>
+          {/* 상품 문의 */}
+          <Link href={ROUTES.inquiry} style={{ textDecoration: "none" }}
+            onClick={() => setPendingHref(ROUTES.inquiry)}
+            onMouseEnter={() => prefetch(ROUTES.inquiry)}
+          >
             <Flex {...navItemStyle(isActive(ROUTES.inquiry))}>
               <Icon as={MessageCircle} boxSize={4} color="gray.500" />
               <Text fontSize="sm">상품 문의</Text>
             </Flex>
           </Link>
-          */}
 
           {/* 외부 상품 */}
           <Link href={ROUTES.externalSellers} style={{ textDecoration: "none" }}
