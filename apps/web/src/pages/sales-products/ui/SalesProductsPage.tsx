@@ -14,7 +14,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link as LinkIcon, RefreshCw, Search, Unlink, X } from "lucide-react";
+import { Link as LinkIcon, RefreshCw, Search, Sparkles, Unlink, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -39,6 +39,7 @@ import { ProductDetailModal, ShopifyProductDetailModal } from "@/features/view-p
 import { ROUTES, qoo10ProductsQueryRoot } from "@/shared/config";
 import { ErrorState, EmptyState, PageHeader } from "@/shared/ui";
 import { appToaster } from "@/shared/ui/app-toaster";
+import { CreateMasterFromChannelModal } from "./CreateMasterFromChannelModal";
 import { LinkMasterProductModal } from "./LinkMasterProductModal";
 
 type StatusTab = { id: string; label: string };
@@ -138,6 +139,7 @@ function SalesProductRow({
 }) {
   const router = useRouter();
   const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const { mutateAsync: unlinkProduct, isPending: isUnlinking } =
     useUnlinkChannelProduct();
   const { mutateAsync: pullSales, isPending: isPulling } =
@@ -299,14 +301,25 @@ function SalesProductRow({
                 </Button>
               </>
             ) : (
-              <Button
-                size="xs"
-                colorScheme="blue"
-                onClick={() => setLinkModalOpen(true)}
-              >
-                <LinkIcon size={12} />
-                마스터 연결
-              </Button>
+              <>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  colorPalette="purple"
+                  onClick={() => setCreateModalOpen(true)}
+                >
+                  <Sparkles size={12} />
+                  마스터 추출
+                </Button>
+                <Button
+                  size="xs"
+                  colorScheme="blue"
+                  onClick={() => setLinkModalOpen(true)}
+                >
+                  <LinkIcon size={12} />
+                  마스터 연결
+                </Button>
+              </>
             )}
           </Flex>
         </Table.Cell>
@@ -319,6 +332,18 @@ function SalesProductRow({
           onClose={() => setLinkModalOpen(false)}
           onSuccess={() => {
             setLinkModalOpen(false);
+            onLinkSuccess();
+          }}
+        />
+      )}
+
+      {createModalOpen && (
+        <CreateMasterFromChannelModal
+          channelId={channelId}
+          channelProduct={item}
+          onClose={() => setCreateModalOpen(false)}
+          onSuccess={() => {
+            setCreateModalOpen(false);
             onLinkSuccess();
           }}
         />

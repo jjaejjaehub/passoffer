@@ -11,7 +11,7 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, Plus, XCircle } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useMasterProducts } from "@/entities/master-product";
@@ -19,6 +19,7 @@ import { useMasterProduct } from "@/entities/master-product";
 import { useLinkChannelProduct, useChannelProduct } from "@/entities/channel";
 import type { ChannelProductItem, ChannelProductVariant } from "@/entities/channel";
 import { appToaster } from "@/shared/ui/app-toaster";
+import { CreateMasterFromChannelModal } from "./CreateMasterFromChannelModal";
 
 type Step = "select-master" | "map-variants" | "confirm-seller-code" | "result";
 
@@ -56,6 +57,7 @@ export function LinkMasterProductModal({
   const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
   const [variantMappings, setVariantMappings] = useState<VariantMapping[]>([]);
   const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { data: masterList, isLoading: masterListLoading } = useMasterProducts({
     search: masterSearch,
@@ -149,16 +151,29 @@ export function LinkMasterProductModal({
   const totalCount = variantMappings.length;
 
   return createPortal(
-    <Box
-      position="fixed"
-      inset={0}
-      zIndex={1000}
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      bg="blackAlpha.500"
-      onClick={onClose}
-    >
+    <>
+      {showCreateModal && (
+        <CreateMasterFromChannelModal
+          channelId={channelId}
+          channelProduct={channelProduct}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            onSuccess();
+            onClose();
+          }}
+        />
+      )}
+      <Box
+        position="fixed"
+        inset={0}
+        zIndex={1000}
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        bg="blackAlpha.500"
+        onClick={onClose}
+      >
       <Box
         bg="white"
         borderRadius="lg"
@@ -195,6 +210,33 @@ export function LinkMasterProductModal({
                   </Text>
                 </Box>
               )}
+              <Flex
+                px={3}
+                py={3}
+                bg="blue.50"
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="blue.200"
+                align="center"
+                justify="space-between"
+                gap={3}
+              >
+                <Stack gap={0} flex="1">
+                  <Text fontSize="sm" fontWeight="medium" color="blue.800">
+                    마스터 상품이 없나요?
+                  </Text>
+                  <Text fontSize="xs" color="blue.600">
+                    이 판매상품 정보로 새 마스터 상품을 만들 수 있습니다.
+                  </Text>
+                </Stack>
+                <Button
+                  size="xs"
+                  colorPalette="blue"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  <Plus size={12} /> 새 마스터 생성
+                </Button>
+              </Flex>
               <Input
                 placeholder="마스터 상품 검색..."
                 size="sm"
@@ -481,7 +523,8 @@ export function LinkMasterProductModal({
           )}
         </Flex>
       </Box>
-    </Box>,
+      </Box>
+    </>,
     document.body
   );
 }

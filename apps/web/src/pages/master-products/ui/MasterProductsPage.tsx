@@ -113,7 +113,7 @@ function MasterProductsTab({
   }
 
   return (
-    <Box position="relative">
+    <Box position="relative" display="flex" flexDirection="column" flex="1" minH={0}>
       {pendingHref !== null && (
         <Box
           position="absolute"
@@ -140,6 +140,7 @@ function MasterProductsTab({
           bg="gray.900"
           borderRadius="md"
           color="white"
+          flexShrink={0}
         >
           <Text fontSize="sm" fontWeight="medium">{selectedIds.size}개 선택됨</Text>
           <Flex gap={2}>
@@ -166,8 +167,8 @@ function MasterProductsTab({
         </Flex>
       )}
 
-      <Box overflowX="auto">
-        <Table.Root size="sm">
+      <Box flex="1" minH={0} overflowY="auto" overflowX="auto">
+        <Table.Root size="sm" stickyHeader>
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeader w="40px" onClick={(e) => e.stopPropagation()}>
@@ -296,7 +297,7 @@ function MasterProductsTab({
         }}
       />
 
-      <Flex mt={4} align="center" justify="center" gap={2}>
+      <Flex mt={4} align="center" justify="center" gap={2} flexShrink={0}>
         <Button
           size="sm"
           variant="outline"
@@ -421,8 +422,8 @@ function ListedProductsTab({
   }
 
   return (
-    <Box>
-      <Flex justify="flex-end" mb={3}>
+    <Box display="flex" flexDirection="column" flex="1" minH={0}>
+      <Flex justify="flex-end" mb={3} flexShrink={0}>
         <Button
           size="xs"
           variant="outline"
@@ -436,7 +437,7 @@ function ListedProductsTab({
       </Flex>
 
       {channels && channels.length > 0 && (
-        <Flex gap={1.5} mb={3} flexWrap="wrap">
+        <Flex gap={1.5} mb={3} flexWrap="wrap" flexShrink={0}>
           <Button
             size="xs"
             variant={selectedChannelId === undefined ? "solid" : "outline"}
@@ -464,8 +465,8 @@ function ListedProductsTab({
           ))}
         </Flex>
       )}
-      <Box overflowX="auto">
-        <Table.Root size="sm">
+      <Box flex="1" minH={0} overflowY="auto" overflowX="auto">
+        <Table.Root size="sm" stickyHeader>
           <Table.Header>
             <Table.Row>
               <Table.ColumnHeader>상품명</Table.ColumnHeader>
@@ -586,7 +587,7 @@ function ListedProductsTab({
         </Table.Root>
       </Box>
 
-      <Flex mt={4} align="center" justify="center" gap={2}>
+      <Flex mt={4} align="center" justify="center" gap={2} flexShrink={0}>
         <Button
           size="sm"
           variant="outline"
@@ -646,8 +647,8 @@ function MasterProductsPageContent(): React.JSX.Element {
   };
 
   return (
-    <Box display="flex" flexDirection="column" height="100%">
-      <Flex align="flex-start" justify="space-between" mb={4}>
+    <Box display="flex" flexDirection="column" height="100%" minH={0}>
+      <Flex align="flex-start" justify="space-between" mb={4} flexShrink={0}>
         <PageHeader
           title="마스터 상품"
           description="채널에 등록할 마스터 상품을 관리합니다."
@@ -669,6 +670,7 @@ function MasterProductsPageContent(): React.JSX.Element {
         borderBottomWidth="1px"
         borderColor="gray.200"
         mb={4}
+        flexShrink={0}
       >
         <Flex gap={1}>
           {TABS.map((tab) => {
@@ -706,7 +708,7 @@ function MasterProductsPageContent(): React.JSX.Element {
         </Flex>
       </Box>
 
-      <Flex mb={4}>
+      <Flex mb={4} flexShrink={0}>
         <Box position="relative" minW="260px" maxW="360px" w="100%">
           <Input
             value={searchInput}
