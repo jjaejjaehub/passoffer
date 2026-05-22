@@ -11,17 +11,112 @@ import {
   Table,
   Text,
 } from "@chakra-ui/react";
-import { CheckCircle, Plus, XCircle } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, CheckCircle, Plus, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { useMasterProducts } from "@/entities/master-product";
+import { useRouter } from "next/navigation";
+import { useMasterProducts, useSyncProductInfoToChannel } from "@/entities/master-product";
 import { useMasterProduct } from "@/entities/master-product";
 import { useLinkChannelProduct, useChannelProduct } from "@/entities/channel";
+import { useChannels } from "@/entities/channel";
 import type { ChannelProductItem, ChannelProductVariant } from "@/entities/channel";
+import { PLATFORM_DEFS, type PlatformDef } from "@/shared/config/platformFields";
+import { ROUTES } from "@/shared/config/routes";
 import { appToaster } from "@/shared/ui/app-toaster";
 import { CreateMasterFromChannelModal } from "./CreateMasterFromChannelModal";
 
-type Step = "select-master" | "map-variants" | "confirm-seller-code" | "result";
+type Step =
+  | "select-master"
+  | "check-platform-fields"
+  | "map-variants"
+  | "confirm-seller-code"
+  | "confirm-overwrite"
+  | "result";
+
+interface MissingPlatformField {
+  key: string;
+  label: string;
+  type: "common" | "platform";
+}
+
+const COMMON_LABEL_MAP: Record<string, string> = {
+  title: "상품명",
+  descriptionHtml: "상품 설명",
+  images: "이미지",
+  brand: "브랜드",
+  hsCode: "HS 코드",
+  countryOfOrigin: "원산지",
+  weightG: "무게(g)",
+  material: "소재",
+};
+
+function computeMissingPlatformFields(
+  def: PlatformDef,
+  master: {
+    title?: string;
+    descriptionHtml?: string;
+    images?: Array<unknown>;
+    brand?: string;
+    hsCode?: string;
+    countryOfOrigin?: string;
+    material?: string;
+    weightG?: number;
+    attributes?: Record<string, unknown>;
+  },
+): MissingPlatformField[] {
+  const missing: MissingPlatformField[] = [];
+
+  const commonMap: Record<string, string> = {
+    title: master.title ?? "",
+    descriptionHtml: master.descriptionHtml ?? "",
+    images: master.images && master.images.length > 0 ? "yes" : "",
+    brand: master.brand ?? "",
+    hsCode: master.hsCode ?? "",
+    countryOfOrigin: master.countryOfOrigin ?? "",
+    material: master.material ?? "",
+    weightG: master.weightG != null ? String(master.weightG) : "",
+  };
+  const nsValues = (master.attributes?.[def.channelId] as Record<string, unknown> | undefined) ?? {};
+  const platformValues: Record<string, string> = {};
+  for (const [k, v] of Object.entries(nsValues)) {
+    platformValues[`${def.channelId}.${k}`] = v != null ? String(v) : "";
+  }
+
+  const platformDescriptionKey =
+    def.key === "QOO10_JP" ? "qoo10.ItemDescription" :
+    def.key === "SHOPIFY" ? "shopify.descriptionHtml" : null;
+  for (const commonKey of def.requiredCommonFields) {
+    const val = (commonMap[commonKey] ?? "").trim();
+    if (!val) {
+      if (
+        commonKey === "descriptionHtml" &&
+        platformDescriptionKey &&
+        (platformValues[platformDescriptionKey] ?? "").trim()
+      ) {
+        continue;
+      }
+      missing.push({
+        key: commonKey,
+        label: COMMON_LABEL_MAP[commonKey] ?? commonKey,
+        type: "common",
+      });
+    }
+  }
+  for (const field of def.fields) {
+    const isRequired =
+      field.required ||
+      (field.conditionalRequired &&
+        field.conditionalRequired.values.includes(
+          platformValues[field.conditionalRequired.dependsOn] ?? "",
+        ));
+    if (!isRequired) continue;
+    const val = (platformValues[field.key] ?? "").trim();
+    if (!val) {
+      missing.push({ key: field.key, label: field.label, type: "platform" });
+    }
+  }
+  return missing;
+}
 
 interface VariantMapping {
   masterVariantId: string;
@@ -37,6 +132,8 @@ interface ResultData {
   linkedVariantCount: number;
   sellerCodeUpdates: Array<{ channelVariantId: string; status: string; error?: string }>;
   stockPushStatus: string;
+  syncInfoStatus: "OK" | "FAILED";
+  syncInfoError?: string;
 }
 
 interface Props {
@@ -59,6 +156,14 @@ export function LinkMasterProductModal({
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const router = useRouter();
+  const { data: channelsList } = useChannels();
+  const channelRecord = channelsList?.find((c) => c.id === channelId);
+  const vendorDef = useMemo<PlatformDef | undefined>(
+    () => PLATFORM_DEFS.find((d) => d.key === channelRecord?.channelType),
+    [channelRecord?.channelType],
+  );
+
   const { data: masterList, isLoading: masterListLoading } = useMasterProducts({
     search: masterSearch,
     pageSize: 30,
@@ -69,13 +174,18 @@ export function LinkMasterProductModal({
     channelId,
     channelProduct.channelItemId,
   );
+  const { mutateAsync: syncInfo, isPending: syncing } = useSyncProductInfoToChannel();
 
   const channelVariants: ChannelProductVariant[] =
     channelDetail?.variants ?? channelProduct.variants ?? [];
 
-  const handleSelectMaster = (): void => {
-    if (!selectedMasterId || !masterDetail) return;
+  const missingFields = useMemo<MissingPlatformField[]>(
+    () => (vendorDef && masterDetail ? computeMissingPlatformFields(vendorDef, masterDetail) : []),
+    [vendorDef, masterDetail],
+  );
 
+  const proceedToVariantMapping = (): void => {
+    if (!masterDetail) return;
     const masterVariants = masterDetail.variants ?? [];
     const effectiveChannelVariants =
       channelVariants.length > 0
@@ -105,6 +215,17 @@ export function LinkMasterProductModal({
     setStep("map-variants");
   };
 
+  const handleSelectMaster = (): void => {
+    if (!selectedMasterId || !masterDetail) return;
+
+    if (missingFields.length > 0) {
+      setStep("check-platform-fields");
+      return;
+    }
+
+    proceedToVariantMapping();
+  };
+
   const handleVariantSelect = (masterVariantId: string, channelVariantId: string): void => {
     const cv = channelVariants.find((v) => v.channelVariantId === channelVariantId);
     setVariantMappings((prev) =>
@@ -123,7 +244,7 @@ export function LinkMasterProductModal({
     if (conflicted.length > 0) {
       setStep("confirm-seller-code");
     } else {
-      void handleSubmit(variantMappings);
+      setStep("confirm-overwrite");
     }
   };
 
@@ -139,10 +260,33 @@ export function LinkMasterProductModal({
             overrideSellerCode: m.overrideSellerCode,
           })),
       });
-      setResultData(result);
+
+      let syncInfoStatus: "OK" | "FAILED" = "OK";
+      let syncInfoError: string | undefined;
+      try {
+        await syncInfo(result.listedProductId);
+      } catch (err) {
+        syncInfoStatus = "FAILED";
+        syncInfoError = err instanceof Error ? err.message : "동기화 실패";
+      }
+
+      setResultData({ ...result, syncInfoStatus, syncInfoError });
       setStep("result");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "연결에 실패했습니다.";
+      appToaster.create({ title: msg, type: "error" });
+    }
+  };
+
+  const handleRetrySync = async (): Promise<void> => {
+    if (!resultData) return;
+    try {
+      await syncInfo(resultData.listedProductId);
+      setResultData({ ...resultData, syncInfoStatus: "OK", syncInfoError: undefined });
+      appToaster.create({ title: "상품 정보 동기화 성공", type: "success" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "동기화 실패";
+      setResultData({ ...resultData, syncInfoStatus: "FAILED", syncInfoError: msg });
       appToaster.create({ title: msg, type: "error" });
     }
   };
@@ -189,8 +333,10 @@ export function LinkMasterProductModal({
         <Flex align="center" justify="space-between" px={6} py={4} borderBottomWidth="1px" borderColor="gray.100">
           <Text fontWeight="semibold" fontSize="md">
             {step === "select-master" && "마스터 상품 연결"}
+            {step === "check-platform-fields" && "마스터 필수 정보 부족"}
             {step === "map-variants" && "옵션 매핑"}
             {step === "confirm-seller-code" && "SellerCode 덮어쓰기 확인"}
+            {step === "confirm-overwrite" && "마스터 정보 덮어쓰기 확인"}
             {step === "result" && (resultData ? "연결 완료" : "연결 실패")}
           </Text>
           <Button size="xs" variant="ghost" onClick={onClose}>✕</Button>
@@ -284,6 +430,54 @@ export function LinkMasterProductModal({
                   )}
                 </Stack>
               )}
+            </Stack>
+          )}
+
+          {step === "check-platform-fields" && (
+            <Stack gap={3}>
+              <Flex
+                px={3}
+                py={3}
+                bg="orange.50"
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="orange.300"
+                gap={3}
+                align="flex-start"
+              >
+                <Box flexShrink={0} pt="2px">
+                  <AlertTriangle size={20} color="var(--chakra-colors-orange-500)" />
+                </Box>
+                <Stack gap={1} flex="1">
+                  <Text fontSize="sm" fontWeight="semibold" color="orange.800">
+                    {vendorDef?.label ?? "채널"} 필수 정보가 마스터 상품에 입력되어 있지 않습니다.
+                  </Text>
+                  <Text fontSize="xs" color="orange.700">
+                    아래 항목을 마스터 상품에 입력한 뒤 다시 연결을 진행해주세요. 누락된 상태로 연결하면 채널 동기화 시 오류가 발생할 수 있습니다.
+                  </Text>
+                </Stack>
+              </Flex>
+
+              <Stack gap={1}>
+                <Text fontSize="xs" fontWeight="semibold" color="gray.700">
+                  마스터 상품: <b>{masterDetail?.title}</b>
+                </Text>
+                <Box px={3} py={2} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.200">
+                  <Stack gap={1}>
+                    {missingFields.map((f) => (
+                      <Flex key={f.key} align="center" gap={2}>
+                        <XCircle size={12} color="var(--chakra-colors-red-500)" />
+                        <Text fontSize="xs" color="gray.700">
+                          {f.label}{" "}
+                          <Text as="span" fontSize="2xs" color="gray.400">
+                            ({f.type === "common" ? "공통" : f.key})
+                          </Text>
+                        </Text>
+                      </Flex>
+                    ))}
+                  </Stack>
+                </Box>
+              </Stack>
             </Stack>
           )}
 
@@ -424,6 +618,68 @@ export function LinkMasterProductModal({
             </Stack>
           )}
 
+          {step === "confirm-overwrite" && (
+            <Stack gap={3}>
+              <Flex
+                px={3}
+                py={3}
+                bg="orange.50"
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="orange.300"
+                gap={3}
+                align="flex-start"
+              >
+                <Box flexShrink={0} pt="2px">
+                  <AlertTriangle size={20} color="var(--chakra-colors-orange-500)" />
+                </Box>
+                <Stack gap={1} flex="1">
+                  <Text fontSize="sm" fontWeight="semibold" color="orange.800">
+                    채널 상품 정보가 마스터 상품 정보로 덮어쓰여집니다.
+                  </Text>
+                  <Text fontSize="xs" color="orange.700">
+                    연결 완료 시 채널(Qoo10 등)에 등록된 다음 항목들이 마스터 상품 기준으로 자동 수정됩니다. 이 작업은 되돌릴 수 없습니다.
+                  </Text>
+                </Stack>
+              </Flex>
+
+              <Stack gap={1}>
+                <Text fontSize="xs" fontWeight="semibold" color="gray.700">
+                  덮어쓰기 대상 항목
+                </Text>
+                <Box px={3} py={2} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor="gray.200">
+                  <Stack gap={1}>
+                    <Text fontSize="xs" color="gray.700">• 상품명 / 부제목</Text>
+                    <Text fontSize="xs" color="gray.700">• 대표 이미지 및 추가 이미지</Text>
+                    <Text fontSize="xs" color="gray.700">• 상품 설명 (HTML)</Text>
+                    <Text fontSize="xs" color="gray.700">• 판매가 / 정가</Text>
+                    <Text fontSize="xs" color="gray.700">• 브랜드 / 제조사 / 원산지</Text>
+                    <Text fontSize="xs" color="gray.700">• 카테고리 정보 (지원 시)</Text>
+                  </Stack>
+                </Box>
+              </Stack>
+
+              <Stack gap={1}>
+                <Text fontSize="xs" fontWeight="semibold" color="gray.700">
+                  연결 정보
+                </Text>
+                <Box px={3} py={2} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+                  <Stack gap={1}>
+                    <Text fontSize="xs" color="blue.800">
+                      채널 상품: <b>{channelProduct.title}</b>
+                    </Text>
+                    <Text fontSize="xs" color="blue.800">
+                      마스터 상품: <b>{masterDetail?.title}</b>
+                    </Text>
+                    <Text fontSize="xs" color="blue.700">
+                      매핑된 옵션: {mappedCount} / {totalCount}
+                    </Text>
+                  </Stack>
+                </Box>
+              </Stack>
+            </Stack>
+          )}
+
           {step === "result" && resultData && (
             <Stack gap={3} align="center" py={4}>
               <CheckCircle size={48} color="var(--chakra-colors-green-500)" />
@@ -441,6 +697,20 @@ export function LinkMasterProductModal({
                   </Text>
                 )}
                 <Text fontSize="sm">• 재고 동기화: {resultData.stockPushStatus}</Text>
+                <Text
+                  fontSize="sm"
+                  color={resultData.syncInfoStatus === "OK" ? "green.600" : "red.600"}
+                >
+                  • 상품 정보 동기화: {resultData.syncInfoStatus === "OK" ? "성공" : "실패"}
+                  {resultData.syncInfoError ? ` (${resultData.syncInfoError})` : ""}
+                </Text>
+                {resultData.syncInfoStatus === "FAILED" && (
+                  <Flex justify="center" pt={2}>
+                    <Button size="xs" variant="outline" loading={syncing} onClick={() => void handleRetrySync()}>
+                      다시 동기화
+                    </Button>
+                  </Flex>
+                )}
               </Stack>
             </Stack>
           )}
@@ -477,6 +747,23 @@ export function LinkMasterProductModal({
               </Button>
             </>
           )}
+          {step === "check-platform-fields" && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setStep("select-master")}>← 이전</Button>
+              <Button
+                size="sm"
+                bg="gray.900"
+                color="white"
+                _hover={{ bg: "gray.800" }}
+                onClick={() => {
+                  if (!selectedMasterId) return;
+                  router.push(ROUTES.masterProductEdit(selectedMasterId));
+                }}
+              >
+                마스터 편집하기 →
+              </Button>
+            </>
+          )}
           {step === "map-variants" && (
             <>
               <Button size="sm" variant="outline" onClick={() => setStep("select-master")}>← 이전</Button>
@@ -500,10 +787,39 @@ export function LinkMasterProductModal({
                 bg="gray.900"
                 color="white"
                 _hover={{ bg: "gray.800" }}
-                loading={linking}
+                onClick={() => setStep("confirm-overwrite")}
+              >
+                다음 →
+              </Button>
+            </>
+          )}
+          {step === "confirm-overwrite" && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={linking || syncing}
+                onClick={() => {
+                  const conflicted = variantMappings.filter(
+                    (m) =>
+                      m.channelVariantId &&
+                      m.channelCurrentSellerCode &&
+                      m.channelCurrentSellerCode !== m.masterSku,
+                  );
+                  setStep(conflicted.length > 0 ? "confirm-seller-code" : "map-variants");
+                }}
+              >
+                ← 이전
+              </Button>
+              <Button
+                size="sm"
+                bg="orange.600"
+                color="white"
+                _hover={{ bg: "orange.700" }}
+                loading={linking || syncing}
                 onClick={() => void handleSubmit(variantMappings)}
               >
-                연결 완료
+                연결 + 덮어쓰기
               </Button>
             </>
           )}

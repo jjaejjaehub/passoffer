@@ -26,6 +26,42 @@ export interface ChannelProductItem {
   status?: string;
 }
 
+export interface Qoo10ProductRaw {
+  ItemCode?: string;
+  ItemTitle?: string;
+  PromotionName?: string;
+  SellerCode?: string;
+  MainCatCd?: string;
+  FirstSubCatCd?: string;
+  SecondSubCatCd?: string;
+  OuterSecondSubCatCd?: string;
+  ItemPrice?: number | string;
+  RetailPrice?: number | string;
+  SettlePrice?: number | string;
+  ItemQty?: number | string;
+  TaxRate?: string;
+  ShippingNo?: string;
+  AvailableDateType?: string;
+  AvailableDateValue?: string;
+  DesiredShippingDate?: string;
+  ProductionPlaceType?: string;
+  ProductionPlace?: string;
+  Material?: string;
+  Weight?: number | string;
+  ModelNM?: string;
+  ManufacturerDate?: string;
+  ManufactureDate?: string;
+  BrandNo?: string;
+  AdultYN?: string;
+  Keyword?: string | string[];
+  ItemDetail?: string;
+  ImageUrl?: string;
+  VideoURL?: string;
+  ContactInfo?: string;
+  ExpireDate?: string;
+  [key: string]: unknown;
+}
+
 export interface ChannelProductDetail extends ChannelProductItem {
   variantLinks: Array<{
     id: string;
@@ -33,6 +69,7 @@ export interface ChannelProductDetail extends ChannelProductItem {
     channelVariantId: string;
     channelSellerCode?: string;
   }>;
+  raw?: Qoo10ProductRaw | Record<string, unknown>;
 }
 
 export interface ChannelProductsResult {

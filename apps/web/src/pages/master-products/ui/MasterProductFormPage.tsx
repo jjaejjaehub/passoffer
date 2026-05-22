@@ -121,11 +121,21 @@ function checkPlatformReadiness(
   platformValues: Record<string, string>,
 ): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
+  const platformDescriptionKey =
+    def.key === "QOO10_JP" ? "qoo10.ItemDescription" :
+    def.key === "SHOPIFY" ? "shopify.descriptionHtml" : null;
   for (const commonKey of def.requiredCommonFields) {
     const val = commonValues[commonKey] ?? "";
     if (commonKey === "images") {
       if (!val) missing.push("이미지");
     } else if (!val.trim()) {
+      if (
+        commonKey === "descriptionHtml" &&
+        platformDescriptionKey &&
+        (platformValues[platformDescriptionKey] ?? "").trim()
+      ) {
+        continue;
+      }
       const labelMap: Record<string, string> = {
         title: "상품명",
         weightG: "무게(g)",

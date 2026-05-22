@@ -1234,7 +1234,27 @@ export class Qoo10Adapter implements IChannelAdapter {
   }
 
   async getChannelProduct(channelItemId: string): Promise<ChannelProduct> {
-    const detail = await this.getProductDetail(channelItemId);
+    const url = 'https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ItemsLookup.qapi/GetItemDetailInfo';
+    const form = new URLSearchParams({ ItemCode: channelItemId, returnType: 'json' });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        GiosisCertificationKey: this.certKey,
+        QAPIVersion: '1.2',
+        Accept: 'application/json',
+      },
+      body: form.toString(),
+    });
+    if (!res.ok) throw new Error(`Qoo10 HTTP error: ${res.status}`);
+    const data = (await res.json()) as Qoo10ApiResponse<Qoo10ItemDetailRaw[]>;
+    if (data.ResultCode !== 0) {
+      throw new Error(`Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`);
+    }
+    const rawDetail = data.ResultObject[0];
+    if (!rawDetail) throw new Error(`Product not found: ${channelItemId}`);
+    const detail = adaptItemDetail(rawDetail, this.channelId);
+
     let variants = await this.fetchItemOptions(channelItemId);
     if (variants.length === 0) {
       variants = [{ channelVariantId: channelItemId, optionCode: detail.sellerCode || undefined }];
@@ -1246,7 +1266,7 @@ export class Qoo10Adapter implements IChannelAdapter {
       price: String(detail.price) || undefined,
       images: detail.imageUrl ? [detail.imageUrl] : [],
       variants,
-      raw: detail,
+      raw: rawDetail,
     };
   }
 
