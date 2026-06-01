@@ -18,15 +18,6 @@ type MasterProductVariantInsert = typeof masterProductVariants.$inferInsert;
 export interface MasterProductCreateInput {
   code: string;
   title: string;
-  descriptionHtml?: string;
-  brand?: string;
-  hsCode?: string;
-  countryOfOrigin?: string;
-  material?: string;
-  weightG?: number;
-  retailPrice?: string;
-  images?: Array<{ url: string; altText?: string; order?: number }>;
-  tags?: string[];
   attributes?: Record<string, unknown>;
 }
 
@@ -187,15 +178,6 @@ export class MasterProductService {
       userId: this.userId,
       code: input.code,
       title: input.title,
-      descriptionHtml: input.descriptionHtml,
-      brand: input.brand,
-      hsCode: input.hsCode,
-      countryOfOrigin: input.countryOfOrigin,
-      material: input.material,
-      weightG: input.weightG,
-      retailPrice: input.retailPrice,
-      images: input.images ?? [],
-      tags: input.tags ?? [],
       attributes: input.attributes ?? {},
     };
 
@@ -223,6 +205,13 @@ export class MasterProductService {
       .select({ id: listedProducts.id })
       .from(listedProducts)
       .where(eq(listedProducts.masterProductId, id));
+
+    if (linked.length > 0) {
+      await this.app.db
+        .update(listedProducts)
+        .set({ syncStatus: 'PENDING', updatedAt: new Date() })
+        .where(eq(listedProducts.masterProductId, id));
+    }
 
     return { ...updated, linkedCount: linked.length };
   }
@@ -619,6 +608,7 @@ export class MasterProductService {
           channelId,
           channelItemId,
           linkedAt: new Date(),
+          syncStatus: 'PENDING',
         })
         .returning();
       listedProduct = created;
@@ -885,10 +875,22 @@ export class MasterProductService {
 
     // vendor key: QTEN → qoo10, SHOPIFY → shopify, etc.
     const vendorKey = channel.channelType === 'QOO10_JP' ? 'qoo10' : channel.channelType.toLowerCase();
-    const channelAttrs = ((master.attributes as Record<string, unknown> | null)?.[vendorKey] ?? {}) as Record<string, unknown>;
+    const attrsRoot = (master.attributes as Record<string, unknown> | null) ?? {};
+    const commonAttrs = (attrsRoot['common'] as Record<string, unknown> | undefined) ?? {};
+    const channelAttrs = (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
 
     const variants = master.variants ?? [];
     const optionGroups = master.optionGroups ?? [];
+
+    const commonStr = (key: string) => (typeof commonAttrs[key] === 'string' ? (commonAttrs[key] as string) : '');
+    const commonArr = (key: string) => (Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : []);
+    const commonNum = (key: string) => (typeof commonAttrs[key] === 'number' ? (commonAttrs[key] as number) : undefined);
+    const commonRetailPrice = (() => {
+      const v = commonAttrs['retailPrice'];
+      if (typeof v === 'string') return v;
+      if (typeof v === 'number') return String(v);
+      return undefined;
+    })();
 
     // ── 다축 옵션 인코딩 ───────────────────────────
     // Qoo10 ItemType: "그룹1||*값1$값2||*그룹2||*값1$값2"
@@ -914,7 +916,7 @@ export class MasterProductService {
         return {
           optionPath,
           sku: v.sku,
-          price: String(v.price ?? master.retailPrice ?? '0'),
+          price: String(v.price ?? commonRetailPrice ?? '0'),
           qty: v.stock ?? 0,
         };
       });
@@ -952,7 +954,7 @@ export class MasterProductService {
         });
         return {
           options: optionValuesOrdered,
-          price: String(v.price ?? master.retailPrice ?? '0'),
+          price: String(v.price ?? commonRetailPrice ?? '0'),
           sku: v.sku,
           inventoryQuantity: v.stock ?? 0,
         };
@@ -960,8 +962,9 @@ export class MasterProductService {
     }
 
     // countryOfOrigin → originType 추론 (Qoo10 어댑터 폴백용)
+    const countryOfOrigin = commonStr('countryOfOrigin');
     const originTypeFromCountry = (() => {
-      const co = (master.countryOfOrigin ?? '').trim();
+      const co = countryOfOrigin.trim();
       if (!co || co === '대한민국' || co === '국내') return 'domestic';
       if (co === '기타' || co === '기타(ETC)') return 'other';
       return 'overseas';
@@ -970,16 +973,16 @@ export class MasterProductService {
     const flatInput: Record<string, unknown> = {
       ...channelAttrs,
       title: master.title,
-      descriptionHtml: master.descriptionHtml ?? '',
-      images: master.images ?? [],
-      tags: master.tags ?? [],
-      material: master.material ?? '',
-      weightG: master.weightG,
-      brand: master.brand ?? '',
-      countryOfOrigin: master.countryOfOrigin ?? '',
+      descriptionHtml: commonStr('descriptionHtml'),
+      images: commonArr('images'),
+      tags: commonArr('tags'),
+      material: commonStr('material'),
+      weightG: commonNum('weightG'),
+      brand: commonStr('brand'),
+      countryOfOrigin,
       originType: originTypeFromCountry,
       sku: variants[0]?.sku ?? '',
-      price: String(variants[0]?.price ?? master.retailPrice ?? '0'),
+      price: String(variants[0]?.price ?? commonRetailPrice ?? '0'),
       inventoryQuantity: variants[0]?.stock ?? 0,
       stock: variants[0]?.stock ?? 0,
       ...(itemTypeStr ? { ItemType: itemTypeStr } : {}),
@@ -992,7 +995,7 @@ export class MasterProductService {
     this.app.log.info(
       {
         channelType: channel.channelType,
-        masterRetailPrice: master.retailPrice,
+        commonRetailPrice,
         variantCount: variants.length,
         optionGroupCount: optionGroups.length,
         firstVariantPrice: variants[0]?.price,
@@ -1268,7 +1271,19 @@ export class MasterProductService {
       .where(eq(channels.id, item.channelId));
 
     const vendorKey = channel?.channelType === 'QOO10_JP' ? 'qoo10' : (channel?.channelType ?? '').toLowerCase();
-    const channelAttrs = ((master.attributes as Record<string, unknown> | null)?.[vendorKey] ?? {}) as Record<string, unknown>;
+    const attrsRoot = (master.attributes as Record<string, unknown> | null) ?? {};
+    const commonAttrs = (attrsRoot['common'] as Record<string, unknown> | undefined) ?? {};
+    const channelAttrs = (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
+
+    const commonStr = (key: string) => (typeof commonAttrs[key] === 'string' ? (commonAttrs[key] as string) : '');
+    const commonArr = (key: string) => (Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : []);
+    const commonNum = (key: string) => (typeof commonAttrs[key] === 'number' ? (commonAttrs[key] as number) : undefined);
+    const commonRetailPrice = (() => {
+      const v = commonAttrs['retailPrice'];
+      if (typeof v === 'string') return v;
+      if (typeof v === 'number') return String(v);
+      return undefined;
+    })();
 
     // 연결된 변형의 재고 합산 — 다축 옵션값 join 포함
     const variantLinkRows = await this.app.db
@@ -1314,22 +1329,23 @@ export class MasterProductService {
             options: v.options,
           }));
     const firstVariant = allVariants[0];
-    const firstPrice = firstVariant?.price ?? master.retailPrice ?? null;
+    const firstPrice = firstVariant?.price ?? commonRetailPrice ?? null;
     const firstSku = firstVariant?.sku ?? null;
-    const masterTags = Array.isArray(master.tags) ? (master.tags as string[]) : [];
+    const masterTags = commonArr('tags') as string[];
+    const brandStr = commonStr('brand');
 
     const payload: Record<string, unknown> = {
       ...channelAttrs,
       title: master.title,
-      descriptionHtml: master.descriptionHtml ?? '',
-      images: master.images ?? [],
-      brand: master.brand ?? '',
-      vendor: master.brand ?? '',
-      material: master.material ?? '',
-      weightG: master.weightG,
+      descriptionHtml: commonStr('descriptionHtml'),
+      images: commonArr('images'),
+      brand: brandStr,
+      vendor: brandStr,
+      material: commonStr('material'),
+      weightG: commonNum('weightG'),
       tags: masterTags,
-      hsCode: master.hsCode ?? '',
-      countryOfOrigin: master.countryOfOrigin ?? '',
+      hsCode: commonStr('hsCode'),
+      countryOfOrigin: commonStr('countryOfOrigin'),
       ...(totalStock !== undefined ? { inventoryQuantity: totalStock } : {}),
       ...(firstPrice !== null && firstPrice !== undefined ? { price: String(firstPrice) } : {}),
       ...(firstSku ? { sku: firstSku } : {}),

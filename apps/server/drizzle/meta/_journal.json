@@ -8,6 +8,34 @@
       "when": 1777863308594,
       "tag": "0000_init_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778471886000,
+      "tag": "0001_misty_strong_guy",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778486463000,
+      "tag": "0002_fantastic_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778489267000,
+      "tag": "0003_easy_mister_fear",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779000000000,
+      "tag": "0004_master_slim_and_sync_status",
+      "breakpoints": true
     }
   ]
 }

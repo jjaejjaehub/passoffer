@@ -8,15 +8,6 @@ import type { MasterProduct, MasterProductOptionGroup, MasterProductVariant } fr
 export interface CreateMasterProductInput {
   code: string;
   title: string;
-  brand?: string;
-  hsCode?: string;
-  countryOfOrigin?: string;
-  material?: string;
-  weightG?: number;
-  retailPrice?: string;
-  descriptionHtml?: string;
-  images?: Array<{ url: string; altText?: string; order?: number }>;
-  tags?: string[];
   attributes?: Record<string, unknown>;
 }
 

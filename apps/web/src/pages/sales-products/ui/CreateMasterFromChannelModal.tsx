@@ -580,23 +580,27 @@ export function CreateMasterFromChannelModal({
 
       const attributes = buildAttributes();
 
+      const common: Record<string, unknown> = {};
+      if (!noBrand && brand.trim()) common.brand = brand.trim();
+      if (hsCode.trim()) common.hsCode = hsCode.trim();
+      if (countryOfOrigin.trim()) common.countryOfOrigin = countryOfOrigin.trim();
+      if (material.trim()) common.material = material.trim();
+      if (weightG.trim()) common.weightG = Number(weightG);
+      if (retailPrice.trim()) common.retailPrice = retailPrice.trim();
+      if (tags.length > 0) common.tags = tags;
+      if (descriptionHtml.trim()) common.descriptionHtml = descriptionHtml.trim();
+      const imgArr = images
+        .filter((img) => img.url)
+        .map((img, i) => ({ url: img.url, altText: img.altText || undefined, order: i }));
+      if (imgArr.length > 0) common.images = imgArr;
+
+      const merged: Record<string, unknown> = { ...attributes };
+      if (Object.keys(common).length > 0) merged.common = common;
+
       const input: CreateMasterProductInput = {
         code: code.trim(),
         title: title.trim(),
-        brand: noBrand ? undefined : brand.trim() || undefined,
-        hsCode: hsCode.trim() || undefined,
-        countryOfOrigin: countryOfOrigin.trim() || undefined,
-        material: material.trim() || undefined,
-        weightG: weightG.trim() ? Number(weightG) : undefined,
-        retailPrice: retailPrice.trim() || undefined,
-        tags: tags.length > 0 ? tags : undefined,
-        descriptionHtml: descriptionHtml.trim() || undefined,
-        images: images.map((img, i) => ({
-          url: img.url,
-          altText: img.altText || undefined,
-          order: i,
-        })),
-        attributes: Object.keys(attributes).length > 0 ? attributes : undefined,
+        attributes: Object.keys(merged).length > 0 ? merged : undefined,
       };
 
       const master = await createMaster(input);

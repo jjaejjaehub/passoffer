@@ -301,8 +301,15 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       qoo10: qoo10Connected,
       shopify: shopifyConnected,
     };
-    return PLATFORM_DEFS.filter((def) => def.apiAvailable && map[def.channelId]);
-  }, [qoo10Connected, shopifyConnected]);
+    const apiAvailable = PLATFORM_DEFS.filter(
+      (def) => def.apiAvailable && map[def.channelId],
+    );
+    if (!isEdit) return apiAvailable;
+    const linkedKeys = new Set(
+      (detail?.listedProducts ?? []).map((lp) => lp.channelType),
+    );
+    return apiAvailable.filter((def) => linkedKeys.has(def.key));
+  }, [qoo10Connected, shopifyConnected, isEdit, detail?.listedProducts]);
 
   const [listModalOpen, setListModalOpen] = useState(false);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
@@ -313,26 +320,38 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
     if (!detail) return;
     setCode(detail.code);
     setTitle(detail.title);
-    const b = detail.brand ?? "";
+
+    const attrs = detail.attributes as Record<string, unknown>;
+    const common = (attrs?.common as Record<string, unknown> | undefined) ?? {};
+    const commonStr = (k: string) => (typeof common[k] === "string" ? (common[k] as string) : "");
+    const commonNum = (k: string) => (typeof common[k] === "number" ? (common[k] as number) : undefined);
+    const commonArr = <T,>(k: string) => (Array.isArray(common[k]) ? (common[k] as T[]) : []);
+
+    const b = commonStr("brand");
     if (!b) { setNoBrand(true); setBrand(""); }
     else { setNoBrand(false); setBrand(b); }
-    setHsCode(detail.hsCode ?? "");
+    setHsCode(commonStr("hsCode"));
 
-    const origin = detail.countryOfOrigin ?? "";
+    const origin = commonStr("countryOfOrigin");
     setCountryOfOrigin(origin);
     if (!origin || origin === "대한민국" || origin === "국내") setOriginType("domestic");
     else if (origin === "기타" || origin === "기타(ETC)") setOriginType("other");
     else setOriginType("overseas");
 
-    setMaterial(detail.material ?? "");
-    setWeightG(detail.weightG != null ? String(detail.weightG) : "");
-    setRetailPrice(detail.retailPrice ?? "");
-    setTagsInput(detail.tags.join(", "));
-    setDescriptionHtml(detail.descriptionHtml ?? "");
-    setImages(detail.images.map((img) => ({ url: img.url, altText: img.altText ?? "" })));
+    setMaterial(commonStr("material"));
+    const w = commonNum("weightG");
+    setWeightG(w != null ? String(w) : "");
+    setRetailPrice(commonStr("retailPrice"));
+    setTagsInput(commonArr<string>("tags").join(", "));
+    setDescriptionHtml(commonStr("descriptionHtml"));
+    setImages(
+      commonArr<{ url: string; altText?: string }>("images").map((img) => ({
+        url: img.url,
+        altText: img.altText ?? "",
+      })),
+    );
 
     const restored: Record<string, string> = {};
-    const attrs = detail.attributes as Record<string, unknown>;
     for (const [ns, obj] of Object.entries(attrs)) {
       if (typeof obj === "object" && obj !== null) {
         for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
@@ -436,6 +455,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
     setPlatformValues((prev) => ({ ...prev, [key]: value }));
   };
 
+  const buildOriginValue = (): string | undefined => {
+    if (originType === "domestic") return countryOfOrigin.trim() || "대한민국";
+    return countryOfOrigin.trim() || undefined;
+  };
+
   const buildAttributes = (): Record<string, unknown> => {
     const result: Record<string, Record<string, unknown>> = {};
     for (const [flatKey, value] of Object.entries(platformValues)) {
@@ -447,30 +471,34 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       if (!result[ns]) result[ns] = {};
       result[ns][field] = value;
     }
-    return result;
-  };
 
-  const buildOriginValue = (): string | undefined => {
-    if (originType === "domestic") return countryOfOrigin.trim() || "대한민국";
-    return countryOfOrigin.trim() || undefined;
+    const common: Record<string, unknown> = {};
+    if (!noBrand && brand.trim()) common.brand = brand.trim();
+    if (hsCode.trim()) common.hsCode = hsCode.trim();
+    const origin = buildOriginValue();
+    if (origin) common.countryOfOrigin = origin;
+    if (material.trim()) common.material = material.trim();
+    if (weightG.trim()) common.weightG = Number(weightG.trim());
+    if (retailPrice.trim()) common.retailPrice = retailPrice.trim();
+    if (descriptionHtml.trim()) common.descriptionHtml = descriptionHtml.trim();
+    const tagArr = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+    if (tagArr.length > 0) common.tags = tagArr;
+    const imgArr = images
+      .filter((img) => img.url)
+      .map((img, i) => ({
+        url: img.url,
+        altText: img.altText || undefined,
+        order: i,
+      }));
+    if (imgArr.length > 0) common.images = imgArr;
+    if (Object.keys(common).length > 0) result.common = common;
+
+    return result;
   };
 
   const buildPayload = () => ({
     code: code.trim(),
     title: title.trim(),
-    brand: noBrand ? undefined : (brand.trim() || undefined),
-    hsCode: hsCode.trim() || undefined,
-    countryOfOrigin: buildOriginValue(),
-    material: material.trim() || undefined,
-    weightG: weightG.trim() ? Number(weightG.trim()) : undefined,
-    retailPrice: retailPrice.trim() || undefined,
-    tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
-    descriptionHtml: descriptionHtml.trim() || undefined,
-    images: images.map((img, i) => ({
-      url: img.url,
-      altText: img.altText || undefined,
-      order: i,
-    })),
     attributes: buildAttributes(),
   });
 
@@ -1178,9 +1206,13 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
 
           {connectedPlatformKeys.length === 0 ? (
             <Box px={5} py={10} textAlign="center">
-              <Text fontSize="sm" color="gray.500" fontWeight="medium">연결된 플랫폼이 없습니다</Text>
+              <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                {isEdit ? "연결된 채널이 없습니다" : "연결된 플랫폼이 없습니다"}
+              </Text>
               <Text fontSize="xs" color="gray.400" mt={1}>
-                설정 &gt; 채널 연결에서 API 키를 등록하면 여기에 표시됩니다.
+                {isEdit
+                  ? "이 상품을 채널에 등록하면 해당 플랫폼 전용 필드가 여기에 표시됩니다."
+                  : "설정 > 채널 연결에서 API 키를 등록하면 여기에 표시됩니다."}
               </Text>
             </Box>
           ) : (
@@ -1827,10 +1859,10 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                     )}
                     <Box
                       px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium"
-                      bg={lp.syncStatus === "SYNCED" ? "green.100" : lp.syncStatus === "FAILED" ? "red.100" : "orange.100"}
-                      color={lp.syncStatus === "SYNCED" ? "green.700" : lp.syncStatus === "FAILED" ? "red.700" : "orange.700"}
+                      bg={lp.syncStatus === "SYNCED" ? "green.100" : lp.syncStatus === "ERROR" ? "red.100" : "orange.100"}
+                      color={lp.syncStatus === "SYNCED" ? "green.700" : lp.syncStatus === "ERROR" ? "red.700" : "orange.700"}
                     >
-                      {lp.syncStatus === "SYNCED" ? "동기화됨" : lp.syncStatus === "FAILED" ? "실패" : "대기중"}
+                      {lp.syncStatus === "SYNCED" ? "동기화됨" : lp.syncStatus === "ERROR" ? "실패" : "대기중"}
                     </Box>
                   </Flex>
                 </Flex>

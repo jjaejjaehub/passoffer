@@ -20,6 +20,35 @@ export type LedgerRefType =
   | "OVERSELL"
   | "UNMATCHED_SKU";
 
+type DbRefType = "ORDER" | "USER" | "SYNC";
+type DbLedgerType = "SALE" | "MANUAL_ADJUST" | "SYNC_RESET";
+
+function toDbRefType(refType: LedgerRefType): DbRefType {
+  switch (refType) {
+    case "ORDER_RESERVE":
+    case "ORDER_CANCEL":
+    case "OVERSELL":
+    case "UNMATCHED_SKU":
+      return "ORDER";
+    case "SYNC_RESET":
+      return "SYNC";
+    default:
+      return "USER";
+  }
+}
+
+function toDbLedgerType(refType: LedgerRefType): DbLedgerType {
+  switch (refType) {
+    case "ORDER_RESERVE":
+    case "ORDER_CANCEL":
+      return "SALE";
+    case "SYNC_RESET":
+      return "SYNC_RESET";
+    default:
+      return "MANUAL_ADJUST";
+  }
+}
+
 export interface StockMovementInput {
   userId: string;
   scope: LedgerScope;
@@ -128,17 +157,19 @@ export class StockService {
     input: StockMovementInput,
   ): Promise<StockMovementResult> {
     try {
+      if (!input.variantId) {
+        return { ok: true, duplicated: true };
+      }
       const [row] = await db
         .insert(masterStockLedger)
         .values({
           userId: input.userId,
-          variantId: input.variantId ?? null,
-          scope: input.scope,
-          warehouseId: input.warehouseId ?? null,
+          variantId: input.variantId,
+          type: toDbLedgerType(input.refType),
           qtyDelta: 0,
           prevStock: 0,
           newStock: 0,
-          refType: input.refType,
+          refType: toDbRefType(input.refType),
           refId: input.refId,
           channelId: input.channelId ?? null,
           listedProductId: input.listedProductId ?? null,
@@ -186,12 +217,11 @@ export class StockService {
           .values({
             userId: input.userId,
             variantId: input.variantId!,
-            scope: "MASTER",
-            warehouseId: null,
+            type: toDbLedgerType(input.refType),
             qtyDelta: input.qtyDelta,
             prevStock: prev,
             newStock: next,
-            refType: input.refType,
+            refType: toDbRefType(input.refType),
             refId: input.refId,
             channelId: input.channelId ?? null,
             listedProductId: input.listedProductId ?? null,
@@ -247,17 +277,19 @@ export class StockService {
       }
 
       try {
+        if (!input.variantId) {
+          return { ok: true, duplicated: true };
+        }
         const [row] = await tx
           .insert(masterStockLedger)
           .values({
             userId: input.userId,
-            variantId: input.variantId ?? null,
-            scope: "WAREHOUSE",
-            warehouseId: ws.warehouseId,
+            variantId: input.variantId,
+            type: toDbLedgerType(input.refType),
             qtyDelta: input.qtyDelta,
             prevStock: prev,
             newStock: next,
-            refType: input.refType,
+            refType: toDbRefType(input.refType),
             refId: input.refId,
             channelId: input.channelId ?? null,
             listedProductId: input.listedProductId ?? null,

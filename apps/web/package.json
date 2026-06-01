@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "biome check",
+    "typecheck": "tsc --noEmit",
     "format": "biome format --write",
     "test": "../../node_modules/.bin/vitest run",
     "test:watch": "../../node_modules/.bin/vitest",

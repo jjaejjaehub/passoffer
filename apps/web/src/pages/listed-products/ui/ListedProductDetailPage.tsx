@@ -9,21 +9,27 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useListedProduct } from "@/entities/master-product";
+import {
+  usePushStockToChannel,
+  useListedProduct,
+  useSyncProductInfoToChannel,
+} from "@/entities/master-product";
 import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/shared/ui";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 const SYNC_STATUS_LABEL: Record<string, string> = {
   SYNCED: "동기화됨",
-  PENDING: "대기중",
-  FAILED: "실패",
+  PENDING: "동기화 필요",
+  ERROR: "동기화 오류",
 };
 
 const SYNC_STATUS_COLOR: Record<string, string> = {
   SYNCED: "green",
   PENDING: "orange",
-  FAILED: "red",
+  ERROR: "red",
 };
 
 interface Props {
@@ -33,6 +39,20 @@ interface Props {
 export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
   const router = useRouter();
   const { data: product, isLoading } = useListedProduct(id);
+  const { mutateAsync: syncInfo, isPending: isSyncingInfo } =
+    useSyncProductInfoToChannel();
+  const { mutateAsync: pushStock, isPending: isPushingStock } =
+    usePushStockToChannel();
+
+  async function handleSync() {
+    try {
+      await syncInfo(id);
+      await pushStock(id);
+      appToaster.success({ title: "동기화 완료" });
+    } catch {
+      appToaster.error({ title: "동기화 실패" });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -140,7 +160,18 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
         )}
 
         {product.masterProductId && (
-          <Flex justify="flex-end">
+          <Flex justify="flex-end" gap={2}>
+            {product.syncStatus === "PENDING" && (
+              <Button
+                size="sm"
+                colorPalette="orange"
+                onClick={handleSync}
+                loading={isSyncingInfo || isPushingStock}
+              >
+                <RefreshCw size={14} />
+                동기화
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"

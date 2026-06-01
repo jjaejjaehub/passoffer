@@ -104,6 +104,25 @@ function getLinkStatusBadge(item: ChannelProductItem) {
   );
 }
 
+function getSyncStatusBadge(item: ChannelProductItem) {
+  if (item.linkStatus !== "linked" || !item.syncStatus) return null;
+  if (item.syncStatus === "PENDING") {
+    return (
+      <Badge colorPalette="orange" px={2} py={0.5} borderRadius="md" fontSize="xs">
+        동기화 필요
+      </Badge>
+    );
+  }
+  if (item.syncStatus === "ERROR") {
+    return (
+      <Badge colorPalette="red" px={2} py={0.5} borderRadius="md" fontSize="xs">
+        동기화 오류
+      </Badge>
+    );
+  }
+  return null;
+}
+
 function SalesProductRow({
   item,
   channelId,
@@ -242,7 +261,12 @@ function SalesProductRow({
         <Table.Cell>
           <Text fontSize="sm">{item.variants.length}개</Text>
         </Table.Cell>
-        <Table.Cell>{getLinkStatusBadge(item)}</Table.Cell>
+        <Table.Cell>
+          <Flex gap={1} wrap="wrap">
+            {getLinkStatusBadge(item)}
+            {getSyncStatusBadge(item)}
+          </Flex>
+        </Table.Cell>
         <Table.Cell>
           <Flex gap={2} justify="flex-end" wrap="wrap">
             {canManage && (
@@ -278,6 +302,20 @@ function SalesProductRow({
             )}
             {item.linkStatus === "linked" ? (
               <>
+                {item.syncStatus === "PENDING" && (
+                  <Button
+                    size="xs"
+                    colorPalette="orange"
+                    onClick={async () => {
+                      await handleSyncInfo();
+                      await handlePushStock();
+                    }}
+                    loading={isSyncingInfo || isPushingStock}
+                  >
+                    <RefreshCw size={12} />
+                    동기화
+                  </Button>
+                )}
                 {item.masterProductId && (
                   <Button
                     size="xs"

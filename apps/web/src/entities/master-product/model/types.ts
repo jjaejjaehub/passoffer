@@ -1,16 +1,9 @@
+export type ListedProductSyncStatus = 'SYNCED' | 'PENDING' | 'ERROR';
+
 export interface MasterProduct {
   id: string;
   code: string;
   title: string;
-  brand?: string;
-  hsCode?: string;
-  countryOfOrigin?: string;
-  material?: string;
-  weightG?: number;
-  retailPrice?: string;
-  descriptionHtml?: string;
-  images: Array<{ url: string; altText?: string; order?: number }>;
-  tags: string[];
   attributes: Record<string, unknown>;
   variantCount: number;
   listedChannelCount: number;
@@ -54,7 +47,8 @@ export interface MasterProductDetail extends Omit<MasterProduct, 'variantCount' 
     channelItemCode?: string;
     title?: string;
     status?: string;
-    syncStatus: 'SYNCED' | 'PENDING' | 'FAILED';
+    syncStatus: ListedProductSyncStatus;
+    syncError?: string | null;
     lastSyncedAt?: string;
     channelType: string;
     channelName: string;
@@ -68,7 +62,8 @@ export interface ListedProduct {
   channelItemCode?: string;
   title?: string;
   status?: string;
-  syncStatus: 'SYNCED' | 'PENDING' | 'FAILED';
+  syncStatus: ListedProductSyncStatus;
+  syncError?: string | null;
   lastSyncedAt?: string;
   createdAt: string;
   channelType: string;

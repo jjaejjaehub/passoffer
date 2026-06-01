@@ -46,6 +46,12 @@ export const orderStatusEnum = pgEnum('order_status', [
   'RETURNED',
 ]);
 
+export const listedProductSyncStatusEnum = pgEnum('listed_product_sync_status', [
+  'PENDING',
+  'SYNCED',
+  'ERROR',
+]);
+
 // ─── users ──────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
@@ -169,24 +175,11 @@ export const products = pgTable('products', {
 export const masterProducts = pgTable('master_products', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  // 기본 정보
+  // 기본 정보 (채널 공통)
   code: varchar('code', { length: 64 }).notNull(),           // passoffer 내부 상품 코드
   title: varchar('title', { length: 255 }).notNull(),        // 원본 상품명 (제약 없음)
-  descriptionHtml: text('description_html'),                 // 상품 설명 (HTML)
-  brand: varchar('brand', { length: 128 }),
-  // 통관 정보
-  hsCode: varchar('hs_code', { length: 20 }),
-  countryOfOrigin: varchar('country_of_origin', { length: 64 }),
-  // 물리 정보
-  material: varchar('material', { length: 256 }),
-  weightG: integer('weight_g'),                              // 무게 (g)
-  // 가격
-  retailPrice: numeric('retail_price', { precision: 12, scale: 2 }),
-  // 미디어
-  images: jsonb('images').default([]),                       // Array<{ url, altText, order }>
-  // 확장 필드 (플랫폼 추가 시 마이그레이션 없이 확장)
-  tags: jsonb('tags').default([]),                           // string[]
-  attributes: jsonb('attributes').default({}),              // { [key]: value } 플랫폼별 메타
+  // 플랫폼별 추가정보 — { "qoo10.ItemDescription": "...", "shopify.brand": "..." } 네임스페이스 키
+  attributes: jsonb('attributes').default({}),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -277,6 +270,9 @@ export const listedProducts = pgTable('listed_products', {
   channelId: uuid('channel_id').notNull().references(() => channels.id, { onDelete: 'cascade' }),
   channelItemId: varchar('channel_item_id', { length: 256 }).notNull(), // 채널 고유 상품 ID (Qoo10 ItemCode 등)
   linkedAt: timestamp('linked_at').notNull().defaultNow(),
+  syncStatus: listedProductSyncStatusEnum('sync_status').notNull().default('SYNCED'),
+  syncError: text('sync_error'),                                     // 마지막 동기화 실패 메시지
+  lastSyncedAt: timestamp('last_synced_at'),
   channelData: jsonb('channel_data').default({}),                   // _salesPullBaselineAt, _lastSalesPullAt, _processedOrderIds
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

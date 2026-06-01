@@ -23,6 +23,7 @@ export interface ChannelProductItem {
   linkStatus: "linked" | "unlinked";
   listedProductId?: string;
   masterProductId?: string;
+  syncStatus?: "SYNCED" | "PENDING" | "ERROR" | null;
   status?: string;
 }
 
