@@ -21,9 +21,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/entities/auth";
+import { LocaleSwitcher } from "@/features/locale-switcher";
 import { ROUTES } from "@/shared/config";
 import { credentialQueries } from "@/shared/lib/credentialQueryKeys";
 import { usePrefetchRoute } from "@/shared/lib/usePrefetchRoute";
@@ -31,6 +33,7 @@ import { usePrefetchRoute } from "@/shared/lib/usePrefetchRoute";
 export function Sidebar(): React.JSX.Element {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const t = useTranslations("sidebar");
   // 클릭 즉시 사이드바 하이라이트 피드백용 (실제 이동은 Link가 담당)
   const [pendingHref, setPendingHref] = useState<string | null>(null);
 
@@ -165,10 +168,10 @@ export function Sidebar(): React.JSX.Element {
         </Flex>
         <Box>
           <Text fontSize="sm" fontWeight="bold" lineHeight="1.2">
-            PassOffer
+            {t("logo.brand")}
           </Text>
           <Text fontSize="xs" color="gray.400" lineHeight="1.2">
-            OMS
+            {t("logo.subtitle")}
           </Text>
         </Box>
       </Flex>
@@ -176,7 +179,7 @@ export function Sidebar(): React.JSX.Element {
 
       <Box>
         <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>
-          Navigation
+          {t("navigation")}
         </Text>
         <Stack gap={1}>
           {/* 대시보드 */}
@@ -186,7 +189,7 @@ export function Sidebar(): React.JSX.Element {
           >
             <Flex {...navItemStyle(isActive(ROUTES.dashboard))}>
               <Icon as={LayoutDashboard} boxSize={4} color="gray.500" />
-              <Text fontSize="sm">대시보드</Text>
+              <Text fontSize="sm">{t("dashboard")}</Text>
             </Flex>
           </Link>
 
@@ -203,7 +206,7 @@ export function Sidebar(): React.JSX.Element {
                 color={(isActive(ROUTES.products) || isActive(ROUTES.productNew) || isActive(ROUTES.items) || isActive(ROUTES.masterProducts) || isActive(ROUTES.skus)) ? "gray.900" : "gray.500"}
               />
               <Text fontSize="sm" flex="1">
-                상품 관리
+                {t("products.root")}
               </Text>
               <Icon
                 as={isProductOpen ? ChevronDown : ChevronRight}
@@ -220,7 +223,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.masterProducts))}>
                       <Icon as={BookOpen} boxSize={3.5} mr={2} color="gray.400" />
-                      <Text fontSize="sm">마스터 상품</Text>
+                      <Text fontSize="sm">{t("products.master")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -231,7 +234,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.salesProducts))}>
                       <Icon as={Tag} boxSize={3.5} mr={2} color="gray.400" />
-                      <Text fontSize="sm">판매 상품</Text>
+                      <Text fontSize="sm">{t("products.sales")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -242,7 +245,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.skus))}>
                       <Icon as={Boxes} boxSize={3.5} mr={2} color="gray.400" />
-                      <Text fontSize="sm">SKU 관리</Text>
+                      <Text fontSize="sm">{t("products.skus")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -277,7 +280,7 @@ export function Sidebar(): React.JSX.Element {
                 }
               />
               <Text fontSize="sm" flex="1">
-                주문 관리
+                {t("orders.root")}
               </Text>
               <Icon
                 as={isOrderOpen ? ChevronDown : ChevronRight}
@@ -293,7 +296,7 @@ export function Sidebar(): React.JSX.Element {
                 >
                   <Flex {...subItemStyle(isExactActive(ROUTES.orders))}>
                     <Icon as={ShoppingCart} boxSize={3} color="gray.400" mr={1} />
-                    <Text fontSize="sm">주문</Text>
+                    <Text fontSize="sm">{t("orders.orders")}</Text>
                   </Flex>
                 </Link>
                 <Box mt={1}>
@@ -303,7 +306,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.dispatch))}>
                       <Icon as={Package2} boxSize={3} color="gray.400" mr={1} />
-                      <Text fontSize="sm">출고관리</Text>
+                      <Text fontSize="sm">{t("orders.dispatch")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -314,7 +317,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.shipping))}>
                       <Icon as={Truck} boxSize={3} color="gray.400" mr={1} />
-                      <Text fontSize="sm">배송관리</Text>
+                      <Text fontSize="sm">{t("orders.shipping")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -325,7 +328,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.allOrders))}>
                       <Icon as={BookOpen} boxSize={3} color="gray.400" mr={1} />
-                      <Text fontSize="sm">전체조회</Text>
+                      <Text fontSize="sm">{t("orders.all")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -336,7 +339,7 @@ export function Sidebar(): React.JSX.Element {
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.claims))}>
                       <Icon as={MessageCircle} boxSize={3} color="gray.400" mr={1} />
-                      <Text fontSize="sm">클레임</Text>
+                      <Text fontSize="sm">{t("orders.claims")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -352,7 +355,7 @@ export function Sidebar(): React.JSX.Element {
           >
             <Flex {...navItemStyle(isActive(ROUTES.inventory))}>
               <Icon as={Warehouse} boxSize={4} color="gray.500" />
-              <Text fontSize="sm">재고 관리</Text>
+              <Text fontSize="sm">{t("inventory")}</Text>
             </Flex>
           </Link>
 
@@ -371,7 +374,7 @@ export function Sidebar(): React.JSX.Element {
               onClick={() => setIsWarehouseOpen((prev) => !prev)}
             >
               <Icon as={Building2} boxSize={4} color="gray.500" />
-              <Text fontSize="sm" flex="1">창고 관리</Text>
+              <Text fontSize="sm" flex="1">{t("warehouses.root")}</Text>
               <Icon as={isWarehouseOpen ? ChevronDown : ChevronRight} boxSize={4} color="gray.500" />
             </Flex>
             {isWarehouseOpen && (
@@ -381,7 +384,7 @@ export function Sidebar(): React.JSX.Element {
                   onMouseEnter={() => prefetch(ROUTES.adminWarehouses.connections)}
                 >
                   <Flex {...subItemStyle(isExactActive(ROUTES.adminWarehouses.connections))}>
-                    <Text fontSize="sm">창고 연결</Text>
+                    <Text fontSize="sm">{t("warehouses.connections")}</Text>
                   </Flex>
                 </Link>
                 <Box mt={1}>
@@ -390,7 +393,7 @@ export function Sidebar(): React.JSX.Element {
                     onMouseEnter={() => prefetch(ROUTES.adminWarehouses.inbound)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.inbound))}>
-                      <Text fontSize="sm">입고 예정</Text>
+                      <Text fontSize="sm">{t("warehouses.inbound")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -400,7 +403,7 @@ export function Sidebar(): React.JSX.Element {
                     onMouseEnter={() => prefetch(ROUTES.adminWarehouses.inventory)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.inventory))}>
-                      <Text fontSize="sm">재고 조회</Text>
+                      <Text fontSize="sm">{t("warehouses.inventory")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -410,7 +413,7 @@ export function Sidebar(): React.JSX.Element {
                     onMouseEnter={() => prefetch(ROUTES.adminWarehouses.adjustments)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.adjustments))}>
-                      <Text fontSize="sm">재고 이동/조정</Text>
+                      <Text fontSize="sm">{t("warehouses.adjustments")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -420,7 +423,7 @@ export function Sidebar(): React.JSX.Element {
                     onMouseEnter={() => prefetch(ROUTES.adminWarehouses.history)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.history))}>
-                      <Text fontSize="sm">재고 이력</Text>
+                      <Text fontSize="sm">{t("warehouses.history")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -430,7 +433,7 @@ export function Sidebar(): React.JSX.Element {
                     onMouseEnter={() => prefetch(ROUTES.adminWarehouses.locations)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.adminWarehouses.locations))}>
-                      <Text fontSize="sm">로케이션 관리</Text>
+                      <Text fontSize="sm">{t("warehouses.locations")}</Text>
                     </Flex>
                   </Link>
                 </Box>
@@ -445,7 +448,7 @@ export function Sidebar(): React.JSX.Element {
           >
             <Flex {...navItemStyle(isActive(ROUTES.inquiry))}>
               <Icon as={MessageCircle} boxSize={4} color="gray.500" />
-              <Text fontSize="sm">상품 문의</Text>
+              <Text fontSize="sm">{t("inquiry")}</Text>
             </Flex>
           </Link>
 
@@ -457,7 +460,7 @@ export function Sidebar(): React.JSX.Element {
           >
             <Flex {...navItemStyle(isActive(ROUTES.externalSellers))}>
               <Icon as={Globe} boxSize={4} color="gray.500" />
-              <Text fontSize="sm">외부 상품</Text>
+              <Text fontSize="sm">{t("externalSellers")}</Text>
             </Flex>
           </Link>
 
@@ -469,7 +472,7 @@ export function Sidebar(): React.JSX.Element {
           >
             <Flex {...navItemStyle(isActive(ROUTES.settings.channels))}>
               <Icon as={Settings2} boxSize={4} color="gray.500" />
-              <Text fontSize="sm">채널 관리</Text>
+              <Text fontSize="sm">{t("channels")}</Text>
             </Flex>
           </Link>
         </Stack>
@@ -477,6 +480,12 @@ export function Sidebar(): React.JSX.Element {
 
       {/* 하단 유저 정보 */}
       <Box mt="auto" pt={4} borderTopWidth="1px" borderColor="gray.100">
+        <Flex justify="space-between" align="center" mb={3}>
+          <Text fontSize="xs" color="gray.500">
+            {t("language")}
+          </Text>
+          <LocaleSwitcher />
+        </Flex>
         <Flex align="center" gap={2.5}>
           {/* 아바타 */}
           <Flex
@@ -495,7 +504,7 @@ export function Sidebar(): React.JSX.Element {
 
           <Box flex="1" minW={0}>
             <Text fontSize="sm" fontWeight="medium" color="gray.800" truncate>
-              {user?.name ?? "로딩 중..."}
+              {user?.name ?? t("userLoading")}
             </Text>
             <Text fontSize="xs" color="gray.400" truncate>
               {user?.email ?? ""}
@@ -510,7 +519,7 @@ export function Sidebar(): React.JSX.Element {
             _hover={{ color: "gray.700" }}
             p={1}
             borderRadius="md"
-            title="로그아웃"
+            title={t("logout")}
             flexShrink={0}
           >
             <Icon as={LogOut} boxSize={4} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Box, Flex } from "@chakra-ui/react";
 
 import { useAllOrders } from "@/entities/all-orders";
@@ -31,6 +32,7 @@ function buildInitialParams(pageSize: PageSize): OrderListParams {
 }
 
 export function AllOrdersPage(): React.JSX.Element {
+  const t = useTranslations("pages.allOrders");
   const [pageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     DEFAULT_PAGE_SIZE,
@@ -49,8 +51,8 @@ export function AllOrdersPage(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <PageHeader
-        title="전체조회"
-        description="모든 상태의 주문을 단일 뷰에서 조회합니다."
+        title={t("title")}
+        description={t("description")}
         mb={2}
       />
 

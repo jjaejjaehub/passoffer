@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Box, Flex } from "@chakra-ui/react";
 
 import { useShipping } from "@/entities/shipping";
@@ -34,6 +35,7 @@ function buildInitialParams(pageSize: PageSize): OrderListParams {
 }
 
 export function ShippingPage(): React.JSX.Element {
+  const t = useTranslations("pages.shipping");
   const [pageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     DEFAULT_PAGE_SIZE,
@@ -52,8 +54,8 @@ export function ShippingPage(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <PageHeader
-        title="배송관리"
-        description="배송 추적과 완료 처리 단계를 관리합니다."
+        title={t("title")}
+        description={t("description")}
         mb={2}
       />
 

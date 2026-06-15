@@ -1,0 +1,63 @@
+{
+  "sidebar": {
+    "logo": {
+      "brand": "PassOffer",
+      "subtitle": "OMS"
+    },
+    "navigation": "Navigation",
+    "dashboard": "대시보드",
+    "products": {
+      "root": "상품 관리",
+      "master": "마스터 상품",
+      "sales": "판매 상품",
+      "skus": "SKU 관리"
+    },
+    "orders": {
+      "root": "주문 관리",
+      "orders": "주문",
+      "dispatch": "출고관리",
+      "shipping": "배송관리",
+      "all": "전체조회",
+      "claims": "클레임"
+    },
+    "inventory": "재고 관리",
+    "warehouses": {
+      "root": "창고 관리",
+      "connections": "창고 연결",
+      "inbound": "입고 예정",
+      "inventory": "재고 조회",
+      "adjustments": "재고 이동/조정",
+      "history": "재고 이력",
+      "locations": "로케이션 관리"
+    },
+    "inquiry": "상품 문의",
+    "externalSellers": "외부 상품",
+    "channels": "채널 관리",
+    "userLoading": "로딩 중...",
+    "logout": "로그아웃",
+    "language": "언어"
+  },
+  "common": {
+    "language": "언어",
+    "korean": "한국어",
+    "japanese": "일본어"
+  },
+  "pages": {
+    "allOrders": {
+      "title": "전체조회",
+      "description": "모든 상태의 주문을 단일 뷰에서 조회합니다."
+    },
+    "shipping": {
+      "title": "배송관리",
+      "description": "배송 추적과 완료 처리 단계를 관리합니다."
+    },
+    "dispatch": {
+      "title": "출고관리",
+      "description": "송장 발급과 출고 처리 단계를 관리합니다."
+    },
+    "claims": {
+      "title": "클레임 관리",
+      "description": "취소·반품·교환 클레임 현황을 조회합니다."
+    }
+  }
+}

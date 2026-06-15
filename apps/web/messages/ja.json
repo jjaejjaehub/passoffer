@@ -1,0 +1,63 @@
+{
+  "sidebar": {
+    "logo": {
+      "brand": "PassOffer",
+      "subtitle": "OMS"
+    },
+    "navigation": "ナビゲーション",
+    "dashboard": "ダッシュボード",
+    "products": {
+      "root": "商品管理",
+      "master": "マスター商品",
+      "sales": "販売商品",
+      "skus": "SKU管理"
+    },
+    "orders": {
+      "root": "注文管理",
+      "orders": "注文",
+      "dispatch": "出荷管理",
+      "shipping": "配送管理",
+      "all": "全件照会",
+      "claims": "クレーム"
+    },
+    "inventory": "在庫管理",
+    "warehouses": {
+      "root": "倉庫管理",
+      "connections": "倉庫連携",
+      "inbound": "入荷予定",
+      "inventory": "在庫照会",
+      "adjustments": "在庫移動/調整",
+      "history": "在庫履歴",
+      "locations": "ロケーション管理"
+    },
+    "inquiry": "商品問い合わせ",
+    "externalSellers": "外部商品",
+    "channels": "チャネル管理",
+    "userLoading": "読み込み中...",
+    "logout": "ログアウト",
+    "language": "言語"
+  },
+  "common": {
+    "language": "言語",
+    "korean": "韓国語",
+    "japanese": "日本語"
+  },
+  "pages": {
+    "allOrders": {
+      "title": "全件照会",
+      "description": "すべてのステータスの注文を単一ビューで照会します。"
+    },
+    "shipping": {
+      "title": "配送管理",
+      "description": "配送追跡と完了処理ステップを管理します。"
+    },
+    "dispatch": {
+      "title": "出荷管理",
+      "description": "送り状発行と出荷処理ステップを管理します。"
+    },
+    "claims": {
+      "title": "クレーム管理",
+      "description": "キャンセル・返品・交換のクレーム状況を照会します。"
+    }
+  }
+}

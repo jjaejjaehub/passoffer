@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Box, Flex } from "@chakra-ui/react";
 
 import { useDispatch } from "@/entities/dispatch";
@@ -34,6 +35,7 @@ function buildInitialParams(pageSize: PageSize): OrderListParams {
 }
 
 export function DispatchPage(): React.JSX.Element {
+  const t = useTranslations("pages.dispatch");
   const [pageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     DEFAULT_PAGE_SIZE,
@@ -52,8 +54,8 @@ export function DispatchPage(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <PageHeader
-        title="출고관리"
-        description="송장 발급과 출고 처리 단계를 관리합니다."
+        title={t("title")}
+        description={t("description")}
         mb={2}
       />
 

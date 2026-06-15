@@ -2,6 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { format, subDays } from "date-fns";
 import { AlertTriangle, KeyIcon } from "lucide-react";
@@ -422,6 +423,7 @@ function UnsupportedChannelSection({ channelName }: { channelName: string }): Re
 // ─── 메인 페이지 ──────────────────────────────────────────────
 
 function ClaimsPageContent(): React.JSX.Element {
+  const t = useTranslations("pages.claims");
   const { activeChannel, setActiveChannel } = useActiveChannel();
   const [statusFilter, setStatusFilter] = useState<ClaimStatusFilter>("전체");
   const [dateRange, setDateRange] = useState<string>("30일");
@@ -455,8 +457,8 @@ function ClaimsPageContent(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <PageHeader
-        title="클레임 관리"
-        description="취소·반품·교환 클레임 현황을 조회합니다."
+        title={t("title")}
+        description={t("description")}
         mb={2}
       />
 
