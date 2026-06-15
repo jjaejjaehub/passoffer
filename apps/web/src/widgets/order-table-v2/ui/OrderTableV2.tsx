@@ -19,6 +19,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
+
+const ROW_HEIGHT = 36;
 import {
   CHANNEL_CONFIG,
   type ChannelId,
@@ -282,6 +285,23 @@ export function OrderTableV2({
     getCoreRowModel: getCoreRowModel(),
   });
 
+  // ── 가상 스크롤 (1000+ 행 렌더 비용 감소)
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const rows = table.getRowModel().rows;
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 8,
+  });
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const paddingTop = virtualItems.length > 0 ? virtualItems[0].start : 0;
+  const paddingBottom =
+    virtualItems.length > 0
+      ? totalHeight - virtualItems[virtualItems.length - 1].end
+      : 0;
+
   // ── 헤더 드래그 reorder (기본 모드 전용)
   const dragKey = useRef<string | null>(null);
   function onHeaderDragStart(key: string): void {
@@ -445,8 +465,13 @@ export function OrderTableV2({
         </HStack>
       </Flex>
 
-      {/* 테이블 */}
-      <Box overflowX="auto" maxH="calc(100vh - 360px)" overflowY="auto">
+      {/* 테이블 — 가상 스크롤 컨테이너 */}
+      <Box
+        ref={scrollRef}
+        overflowX="auto"
+        overflowY="auto"
+        maxH="calc(100vh - 360px)"
+      >
         <Box
           as="table"
           w="full"
@@ -491,7 +516,7 @@ export function OrderTableV2({
             ))}
           </Box>
           <Box as="tbody">
-            {isLoading && items.length === 0 && (
+            {isLoading && rows.length === 0 && (
               <Box as="tr">
                 <ChakraTd
                   colSpan={columns.length}
@@ -504,7 +529,7 @@ export function OrderTableV2({
                 </ChakraTd>
               </Box>
             )}
-            {!isLoading && items.length === 0 && (
+            {!isLoading && rows.length === 0 && (
               <Box as="tr">
                 <ChakraTd
                   colSpan={columns.length}
@@ -517,29 +542,47 @@ export function OrderTableV2({
                 </ChakraTd>
               </Box>
             )}
-            {table.getRowModel().rows.map((row) => (
-              <Box
-                as="tr"
-                key={row.id}
-                onClick={() => onRowClick?.(row.original)}
-                cursor={onRowClick ? "pointer" : "default"}
-                _hover={{ bg: "gray.50" }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <Box
-                    as="td"
-                    key={cell.id}
-                    px={3}
-                    py={2}
-                    borderBottomWidth="1px"
-                    borderColor="gray.100"
-                    whiteSpace="nowrap"
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </Box>
-                ))}
+            {paddingTop > 0 && (
+              <Box as="tr" style={{ height: `${paddingTop}px` }}>
+                <ChakraTd colSpan={columns.length} p={0} border="none" />
               </Box>
-            ))}
+            )}
+            {virtualItems.map((vi) => {
+              const row = rows[vi.index];
+              return (
+                <Box
+                  as="tr"
+                  key={row.id}
+                  data-index={vi.index}
+                  ref={rowVirtualizer.measureElement}
+                  onClick={() => onRowClick?.(row.original)}
+                  cursor={onRowClick ? "pointer" : "default"}
+                  _hover={{ bg: "gray.50" }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <Box
+                      as="td"
+                      key={cell.id}
+                      px={3}
+                      py={2}
+                      borderBottomWidth="1px"
+                      borderColor="gray.100"
+                      whiteSpace="nowrap"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              );
+            })}
+            {paddingBottom > 0 && (
+              <Box as="tr" style={{ height: `${paddingBottom}px` }}>
+                <ChakraTd colSpan={columns.length} p={0} border="none" />
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
