@@ -157,6 +157,41 @@
         "returnShippingCompanyTracking": "返品配送会社/伝票番号"
       }
     },
+    "orderFilterPanel": {
+      "dateFieldLabel": "基準",
+      "channelLabel": "チャネル",
+      "allChannels": "全て",
+      "searchPlaceholder": "注文番号 / 購入者名",
+      "reset": "リセット"
+    },
+    "orderTableV2": {
+      "totalCount": "計 {count}件",
+      "sortPrefix": "· 並び順: {field} ({dir})",
+      "exposeAll65": "65フィールド表示",
+      "sortMenu": "データ並び替え",
+      "pageSizeLabel": "表示",
+      "loading": "読み込み中…",
+      "empty": "該当する注文がありません。",
+      "pageLabel": "{page} / {total} ページ"
+    },
+    "ordersAuxPanel": {
+      "sectionTitle": "ルール / マッピング",
+      "slots": {
+        "matching": {
+          "label": "マッチングルール",
+          "hint": "チャネル↔商品の自動マッチング"
+        },
+        "gift": {
+          "label": "サンプルルール",
+          "hint": "条件別サンプル付与"
+        },
+        "skuMatch": {
+          "label": "SKUマッチング",
+          "hint": "オプション↔SKUマッピング"
+        }
+      },
+      "reservedNote": "※ スロット予約 (メニュー非表示)"
+    },
     "shopifyReturnTable": {
       "statuses": {
         "OPEN": "返品進行中",

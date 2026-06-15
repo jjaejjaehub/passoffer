@@ -20,6 +20,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { useTranslations } from "next-intl";
 
 const ROW_HEIGHT = 36;
 import {
@@ -148,6 +149,7 @@ export function OrderTableV2({
   onParamsChange,
   onRowClick,
 }: OrderTableV2Props): React.JSX.Element {
+  const t = useTranslations("widgets.orderTableV2");
   const [pageSize, setPageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     (params.pageSize as PageSize) ?? 100,
@@ -356,12 +358,14 @@ export function OrderTableV2({
       >
         <HStack gap={2}>
           <Text fontSize="xs" color="gray.500">
-            총 {total.toLocaleString()}건
+            {t("totalCount", { count: total })}
           </Text>
           {params.sortBy && (
             <Text fontSize="xs" color="gray.400">
-              · 정렬: {SORT_FIELD_LABEL[params.sortBy as SortableField]} (
-              {params.sortDir ?? "desc"})
+              {t("sortPrefix", {
+                field: SORT_FIELD_LABEL[params.sortBy as SortableField],
+                dir: params.sortDir ?? "desc",
+              })}
             </Text>
           )}
         </HStack>
@@ -370,7 +374,7 @@ export function OrderTableV2({
           {/* 65필드 토글 */}
           <Flex align="center" gap={1.5}>
             <Text fontSize="xs" color="gray.600">
-              65필드 노출
+              {t("exposeAll65")}
             </Text>
             <Switch.Root
               size="sm"
@@ -389,7 +393,7 @@ export function OrderTableV2({
               variant="outline"
               onClick={() => setShowSortMenu((v) => !v)}
             >
-              데이터 정렬
+              {t("sortMenu")}
             </Button>
             {showSortMenu && (
               <Box
@@ -437,7 +441,7 @@ export function OrderTableV2({
           {/* 페이지 사이즈 */}
           <Flex align="center" gap={1}>
             <Text fontSize="xs" color="gray.500">
-              표시
+              {t("pageSizeLabel")}
             </Text>
             <select
               value={pageSize}
@@ -525,7 +529,7 @@ export function OrderTableV2({
                   color="gray.400"
                   fontSize="sm"
                 >
-                  불러오는 중…
+                  {t("loading")}
                 </ChakraTd>
               </Box>
             )}
@@ -538,7 +542,7 @@ export function OrderTableV2({
                   color="gray.400"
                   fontSize="sm"
                 >
-                  조회된 주문이 없습니다.
+                  {t("empty")}
                 </ChakraTd>
               </Box>
             )}
@@ -597,7 +601,7 @@ export function OrderTableV2({
         borderColor="gray.100"
       >
         <Text fontSize="xs" color="gray.500">
-          {page} / {totalPages} 페이지
+          {t("pageLabel", { page, total: totalPages })}
         </Text>
         <HStack gap={1}>
           <Button

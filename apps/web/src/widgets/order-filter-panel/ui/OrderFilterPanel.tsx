@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Flex, HStack, Icon, Input, Text } from "@chakra-ui/react";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   CHANNEL_CONFIG,
   type ChannelId,
@@ -41,6 +42,7 @@ export function OrderFilterPanel({
   onChange,
   onSearchChange,
 }: OrderFilterPanelProps): React.JSX.Element {
+  const t = useTranslations("widgets.orderFilterPanel");
   const [localSearch, setLocalSearch] = useState<string>(search);
   const debounced = useDebouncedValue(localSearch, 300);
 
@@ -75,7 +77,7 @@ export function OrderFilterPanel({
         {/* 날짜 기준 select */}
         <Flex align="center" gap={1.5}>
           <Text fontSize="xs" color="gray.500" fontWeight="medium">
-            기준
+            {t("dateFieldLabel")}
           </Text>
           <select
             value={dateField}
@@ -121,7 +123,7 @@ export function OrderFilterPanel({
         {/* 채널 select */}
         <Flex align="center" gap={1.5}>
           <Text fontSize="xs" color="gray.500" fontWeight="medium">
-            채널
+            {t("channelLabel")}
           </Text>
           <select
             value={channelId}
@@ -138,7 +140,7 @@ export function OrderFilterPanel({
               minWidth: 120,
             }}
           >
-            <option value="">전체</option>
+            <option value="">{t("allChannels")}</option>
             {LIVE_CHANNELS.map((channel) => (
               <option key={channel.id} value={channel.id}>
                 {CHANNEL_CONFIG[channel.id as ChannelId].name}
@@ -150,7 +152,7 @@ export function OrderFilterPanel({
         {/* 검색 */}
         <Box position="relative" flex="1" minW="220px" maxW="360px">
           <Input
-            placeholder="주문번호 / 구매자명"
+            placeholder={t("searchPlaceholder")}
             size="sm"
             pl={8}
             pr={8}
@@ -191,7 +193,7 @@ export function OrderFilterPanel({
           onClick={handleReset}
           height="32px"
         >
-          초기화
+          {t("reset")}
         </Button>
       </Flex>
     </Box>

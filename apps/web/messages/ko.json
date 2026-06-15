@@ -157,6 +157,41 @@
         "returnShippingCompanyTracking": "반품배송사/운송장"
       }
     },
+    "orderFilterPanel": {
+      "dateFieldLabel": "기준",
+      "channelLabel": "채널",
+      "allChannels": "전체",
+      "searchPlaceholder": "주문번호 / 구매자명",
+      "reset": "초기화"
+    },
+    "orderTableV2": {
+      "totalCount": "총 {count}건",
+      "sortPrefix": "· 정렬: {field} ({dir})",
+      "exposeAll65": "65필드 노출",
+      "sortMenu": "데이터 정렬",
+      "pageSizeLabel": "표시",
+      "loading": "불러오는 중…",
+      "empty": "조회된 주문이 없습니다.",
+      "pageLabel": "{page} / {total} 페이지"
+    },
+    "ordersAuxPanel": {
+      "sectionTitle": "규칙 / 매핑",
+      "slots": {
+        "matching": {
+          "label": "매칭규칙",
+          "hint": "채널↔상품 자동 매칭"
+        },
+        "gift": {
+          "label": "사은품규칙",
+          "hint": "조건별 사은품 부여"
+        },
+        "skuMatch": {
+          "label": "SKU매칭",
+          "hint": "옵션↔SKU 매핑"
+        }
+      },
+      "reservedNote": "※ 슬롯 예약 (메뉴 미노출)"
+    },
     "shopifyReturnTable": {
       "statuses": {
         "OPEN": "반품 진행중",

@@ -2,6 +2,7 @@
 
 import { Box, Flex, Icon, Text } from "@chakra-ui/react";
 import { Link2, Gift, Package } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type SlotProps = {
   icon: React.ElementType;
@@ -34,6 +35,7 @@ function Slot({ icon, label, hint }: SlotProps): React.JSX.Element {
 }
 
 export function OrdersAuxPanel(): React.JSX.Element {
+  const t = useTranslations("widgets.ordersAuxPanel");
   return (
     <Box
       as="aside"
@@ -45,15 +47,27 @@ export function OrdersAuxPanel(): React.JSX.Element {
       p={3}
     >
       <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={2} px={1}>
-        규칙 / 매핑
+        {t("sectionTitle")}
       </Text>
       <Flex direction="column" gap={2}>
-        <Slot icon={Link2} label="매칭규칙" hint="채널↔상품 자동 매칭" />
-        <Slot icon={Gift} label="사은품규칙" hint="조건별 사은품 부여" />
-        <Slot icon={Package} label="SKU매칭" hint="옵션↔SKU 매핑" />
+        <Slot
+          icon={Link2}
+          label={t("slots.matching.label")}
+          hint={t("slots.matching.hint")}
+        />
+        <Slot
+          icon={Gift}
+          label={t("slots.gift.label")}
+          hint={t("slots.gift.hint")}
+        />
+        <Slot
+          icon={Package}
+          label={t("slots.skuMatch.label")}
+          hint={t("slots.skuMatch.hint")}
+        />
       </Flex>
       <Text fontSize="2xs" color="gray.400" mt={3} px={1}>
-        ※ 슬롯 예약 (메뉴 미노출)
+        {t("reservedNote")}
       </Text>
     </Box>
   );
