@@ -13,10 +13,18 @@
     "build": "bun run --filter '*' build",
     "lint": "biome check .",
     "format": "biome format --write .",
-    "typecheck": "bun run --filter '*' typecheck"
+    "typecheck": "bun run --filter '*' typecheck",
+    "graph": "bun run graph:server && bun run graph:web",
+    "graph:server": "madge --extensions ts,tsx --image docs/graph/server.svg apps/server/src/index.ts",
+    "graph:web": "madge --extensions ts,tsx --image docs/graph/web.svg apps/web/src",
+    "graph:circular": "madge --circular --extensions ts,tsx apps/server/src apps/web/src",
+    "graph:routes": "madge --extensions ts,tsx --image docs/graph/server-routes.svg apps/server/src/routes",
+    "graph:services": "madge --extensions ts,tsx --image docs/graph/server-services.svg apps/server/src/services",
+    "graph:adapters": "madge --extensions ts,tsx --image docs/graph/server-adapters.svg apps/server/src/adapters"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
-    "@fastify/env": "^5.0.3"
+    "@fastify/env": "^5.0.3",
+    "madge": "^8.0.0"
   }
 }
