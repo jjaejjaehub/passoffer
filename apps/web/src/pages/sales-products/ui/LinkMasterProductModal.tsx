@@ -193,8 +193,11 @@ export function LinkMasterProductModal({
         : [{ channelVariantId: channelProduct.channelItemId, optionCode: undefined }];
 
     const mappings: VariantMapping[] = masterVariants.map((mv, i) => {
+      const attachedCodes = (mv.attachedSkus ?? []).map((s) => s.code).filter(Boolean);
+      const primarySku = attachedCodes[0] ?? "";
+      const skuLabel = attachedCodes.join(", ");
       const autoMatch = effectiveChannelVariants.find(
-        (cv) => cv.optionCode && cv.optionCode === mv.sku,
+        (cv) => cv.optionCode && attachedCodes.includes(cv.optionCode),
       );
       const fallback =
         masterVariants.length === 1
@@ -203,8 +206,8 @@ export function LinkMasterProductModal({
       const matched = autoMatch ?? fallback;
       return {
         masterVariantId: mv.id,
-        masterSku: mv.sku,
-        masterLabel: mv.optionLabel || mv.sku,
+        masterSku: primarySku,
+        masterLabel: mv.optionLabel || skuLabel || primarySku,
         channelVariantId: matched?.channelVariantId ?? "",
         overrideSellerCode: false,
         channelCurrentSellerCode: matched?.optionCode,

@@ -1,6 +1,8 @@
 export * from './model/types';
 export * from './model/constants';
 
+export { ordersQueries, useOrders } from './api/ordersQueries';
+
 export {
   useQoo10MonthlyDashboard,
   useQoo10Claims,

@@ -19,10 +19,8 @@ export interface VariantOptionValueInput {
 }
 
 export interface AddVariantInput {
-  sku: string;
   optionValues?: VariantOptionValueInput[];
   price?: string;
-  stock: number;
   extraAttributes?: Record<string, unknown>;
 }
 

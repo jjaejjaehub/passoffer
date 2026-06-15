@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import {
   masterProductVariants,
   masterStockLedger,
+  skus,
   warehouseStocks,
 } from "../db/schema";
 
@@ -233,6 +234,70 @@ export class StockService {
           .update(masterProductVariants)
           .set({ stock: next, updatedAt: new Date() })
           .where(eq(masterProductVariants.id, input.variantId!));
+
+        return { ok: true, prev, next, ledgerId: row.id } as const;
+      } catch (err) {
+        if (isUniqueViolation(err))
+          return { ok: true, duplicated: true } as const;
+        throw err;
+      }
+    });
+  }
+
+  /**
+   * SKU 기반 재고 변동. 0006 이후 applyMaster 를 대체할 단일 경로.
+   * 현재(0005 단계)는 ledger 가 variant_id 컬럼만 가지므로 caller 가 연결된 variantId 를 함께 넘긴다.
+   * 0006 마이그레이션에서 ledger.variant_id → ledger.sku_id 로 변환 후, 이 메서드 시그니처에서 variantId 를 제거한다.
+   */
+  async applySku(
+    input: Omit<StockMovementInput, "scope" | "variantId"> & {
+      skuId: string;
+      variantId: string;
+    },
+  ): Promise<StockMovementResult> {
+    return this.app.db.transaction(async (tx) => {
+      const [sku] = await tx
+        .select({ id: skus.id, stock: skus.stock })
+        .from(skus)
+        .where(eq(skus.id, input.skuId))
+        .for("update")
+        .limit(1);
+
+      if (!sku) return { ok: false, reason: "VARIANT_NOT_FOUND" } as const;
+
+      const prev = sku.stock;
+      const next = prev + input.qtyDelta;
+      if (next < 0 && !input.allowNegative) {
+        return {
+          ok: false,
+          reason: "NEGATIVE_BLOCKED",
+          current: prev,
+          attempted: next,
+        } as const;
+      }
+
+      try {
+        const [row] = await tx
+          .insert(masterStockLedger)
+          .values({
+            userId: input.userId,
+            variantId: input.variantId,
+            type: toDbLedgerType(input.refType),
+            qtyDelta: input.qtyDelta,
+            prevStock: prev,
+            newStock: next,
+            refType: toDbRefType(input.refType),
+            refId: input.refId,
+            channelId: input.channelId ?? null,
+            listedProductId: input.listedProductId ?? null,
+            note: input.note,
+          })
+          .returning({ id: masterStockLedger.id });
+
+        await tx
+          .update(skus)
+          .set({ stock: next, updatedAt: new Date() })
+          .where(eq(skus.id, input.skuId));
 
         return { ok: true, prev, next, ledgerId: row.id } as const;
       } catch (err) {

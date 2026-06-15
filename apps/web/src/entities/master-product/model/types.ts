@@ -20,15 +20,23 @@ export interface MasterProductVariantOption {
   valuePosition: number;
 }
 
+export interface MasterProductVariantAttachedSku {
+  skuId: string;
+  code: string;
+  qty: number;
+  position: number;
+  stock: number;
+}
+
 export interface MasterProductVariant {
   id: string;
   masterProductId: string;
-  sku: string;
   price?: string;
   stock: number;
   extraAttributes: Record<string, unknown>;
   options: MasterProductVariantOption[];
   optionLabel: string;
+  attachedSkus: MasterProductVariantAttachedSku[];
 }
 
 export interface MasterProductOptionGroup {

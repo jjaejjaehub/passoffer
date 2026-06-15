@@ -8,9 +8,12 @@ import {
   masterProductVariantOptionValues,
   listedProducts,
   listedProductVariantLinks,
+  listedProductSkus,
+  masterVariantSkus,
+  skus,
   channels,
-  masterStockLedger,
 } from '../db/schema';
+import { StockService } from './StockService';
 
 type MasterProductInsert = typeof masterProducts.$inferInsert;
 type MasterProductVariantInsert = typeof masterProductVariants.$inferInsert;
@@ -27,9 +30,7 @@ export interface VariantOptionValueInput {
 }
 
 export interface MasterProductVariantInput {
-  sku: string;
   price?: string;
-  stock?: number;
   extraAttributes?: Record<string, unknown>;
   optionValues?: VariantOptionValueInput[];
 }
@@ -154,17 +155,27 @@ export class MasterProductService {
       this.loadOptionGroups(id),
     ]);
 
-    const variantOptionMap = await this.loadVariantOptions(variantRows.map((v) => v.id));
+    const variantIds = variantRows.map((v) => v.id);
+    const [variantOptionMap, attachedSkuMap] = await Promise.all([
+      this.loadVariantOptions(variantIds),
+      this.loadAttachedSkusForVariants(variantIds),
+    ]);
     const variants = variantRows.map((v) => {
       const opts = variantOptionMap.get(v.id) ?? [];
+      const attached = attachedSkuMap.get(v.id) ?? [];
+      const availableStock = this.computeAvailableStock(
+        attached.map((a) => ({ qty: a.qty, stock: a.stock })),
+      );
       return {
         ...v,
+        stock: availableStock,
         options: opts,
         optionLabel: opts
           .slice()
           .sort((a, b) => a.groupPosition - b.groupPosition)
           .map((o) => `${o.groupName}=${o.value}`)
           .join(' / '),
+        attachedSkus: attached,
       };
     });
 
@@ -312,9 +323,9 @@ export class MasterProductService {
 
     const row: MasterProductVariantInsert = {
       masterProductId,
-      sku: input.sku,
+      sku: '',
       price: input.price,
-      stock: input.stock ?? 0,
+      stock: 0,
       extraAttributes: input.extraAttributes ?? {},
     };
 
@@ -383,66 +394,6 @@ export class MasterProductService {
       }
     }
 
-    if (before && updated && typeof input.stock === 'number' && before.stock !== updated.stock) {
-      const now = new Date();
-      await this.app.db.insert(masterStockLedger).values({
-        userId: this.userId,
-        variantId,
-        type: 'MANUAL_ADJUST',
-        qtyDelta: updated.stock - before.stock,
-        prevStock: before.stock,
-        newStock: updated.stock,
-        refType: 'USER',
-        refId: this.userId,
-        note: '수동 재고 변경',
-      });
-
-      // 이 마스터에 연결된 모든 listedProducts의 _salesPullBaselineAt 갱신 + 채널 재고 push
-      const linked = await this.app.db
-        .select()
-        .from(listedProducts)
-        .where(eq(listedProducts.masterProductId, masterProductId));
-
-      const { ChannelService } = await import('./ChannelService');
-      const channelSvc = new ChannelService(this.app, this.userId);
-
-      for (const lp of linked) {
-        const cd = (lp.channelData as Record<string, unknown> | null) ?? {};
-        await this.app.db
-          .update(listedProducts)
-          .set({
-            channelData: { ...cd, _salesPullBaselineAt: now.toISOString() },
-            updatedAt: now,
-          })
-          .where(eq(listedProducts.id, lp.id));
-
-        // 이 variant에 매핑된 채널 variantId를 찾아 재고 push
-        const variantLinks = await this.app.db
-          .select({ channelVariantId: listedProductVariantLinks.channelVariantId })
-          .from(listedProductVariantLinks)
-          .where(
-            and(
-              eq(listedProductVariantLinks.listedProductId, lp.id),
-              eq(listedProductVariantLinks.masterVariantId, variantId),
-            ),
-          );
-
-        if (variantLinks.length > 0) {
-          try {
-            const adapter = await channelSvc.getAdapter(lp.channelId);
-            if (adapter.pushVariantStock) {
-              for (const vl of variantLinks) {
-                await adapter.pushVariantStock(lp.channelItemId, vl.channelVariantId, updated.stock);
-              }
-            }
-          } catch (pushErr) {
-            // push 실패는 비치명적 — 로그만 남기고 진행
-            this.app.log.warn({ err: pushErr, listedProductId: lp.id, variantId }, 'channel stock push failed');
-          }
-        }
-      }
-    }
-
     return this.getVariantWithOptions(variantId);
   }
 
@@ -470,16 +421,25 @@ export class MasterProductService {
       .where(eq(masterProductVariants.id, variantId));
     if (!variant) return null;
 
-    const optMap = await this.loadVariantOptions([variantId]);
+    const [optMap, attachedMap] = await Promise.all([
+      this.loadVariantOptions([variantId]),
+      this.loadAttachedSkusForVariants([variantId]),
+    ]);
     const opts = optMap.get(variantId) ?? [];
+    const attached = attachedMap.get(variantId) ?? [];
+    const availableStock = this.computeAvailableStock(
+      attached.map((a) => ({ qty: a.qty, stock: a.stock })),
+    );
     return {
       ...variant,
+      stock: availableStock,
       options: opts,
       optionLabel: opts
         .slice()
         .sort((a, b) => a.groupPosition - b.groupPosition)
         .map((o) => `${o.groupName}=${o.value}`)
         .join(' / '),
+      attachedSkus: attached,
     };
   }
 
@@ -494,17 +454,27 @@ export class MasterProductService {
       .where(eq(masterProductVariants.masterProductId, masterProductId))
       .orderBy(masterProductVariants.createdAt);
 
-    const optMap = await this.loadVariantOptions(variants.map((v) => v.id));
+    const variantIds = variants.map((v) => v.id);
+    const [optMap, attachedMap] = await Promise.all([
+      this.loadVariantOptions(variantIds),
+      this.loadAttachedSkusForVariants(variantIds),
+    ]);
     return variants.map((v) => {
       const opts = optMap.get(v.id) ?? [];
+      const attached = attachedMap.get(v.id) ?? [];
+      const availableStock = this.computeAvailableStock(
+        attached.map((a) => ({ qty: a.qty, stock: a.stock })),
+      );
       return {
         ...v,
+        stock: availableStock,
         options: opts,
         optionLabel: opts
           .slice()
           .sort((a, b) => a.groupPosition - b.groupPosition)
           .map((o) => `${o.groupName}=${o.value}`)
           .join(' / '),
+        attachedSkus: attached,
       };
     });
   }
@@ -646,6 +616,141 @@ export class MasterProductService {
     return true;
   }
 
+  // ─── 판매상품 ↔ SKU 매핑 CRUD (listed_product_skus) ──────────
+  // 채널 옵션(channelVariantId)에 어떤 SKU 가 BOM 으로 묶이는지 관리.
+  // 같은 (listedProductId, channelVariantId, skuId) 는 unique.
+
+  async listListedProductSkus(listedProductId: string) {
+    await this.getListedProduct(listedProductId); // ownership 검증
+    const rows = await this.app.db
+      .select({
+        id: listedProductSkus.id,
+        channelVariantId: listedProductSkus.channelVariantId,
+        channelSellerCode: listedProductSkus.channelSellerCode,
+        skuId: listedProductSkus.skuId,
+        skuCode: skus.code,
+        skuName: skus.name,
+        skuStock: skus.stock,
+        qty: listedProductSkus.qty,
+        createdAt: listedProductSkus.createdAt,
+      })
+      .from(listedProductSkus)
+      .innerJoin(skus, eq(listedProductSkus.skuId, skus.id))
+      .where(eq(listedProductSkus.listedProductId, listedProductId))
+      .orderBy(asc(listedProductSkus.channelVariantId), asc(listedProductSkus.createdAt));
+    return rows;
+  }
+
+  /**
+   * 한 listedProduct 의 SKU 매핑을 통째로 교체. 채널 변형별 BOM 을 새로 정의할 때 사용.
+   * 같은 (channelVariantId, skuId) 는 unique 이므로 입력 단계에서 중복 체크.
+   */
+  async replaceListedProductSkus(
+    listedProductId: string,
+    rows: Array<{ channelVariantId: string; channelSellerCode?: string | null; skuId: string; qty?: number }>,
+  ) {
+    await this.getListedProduct(listedProductId);
+    for (const r of rows) {
+      await this.assertSkuOwnership(r.skuId);
+    }
+    const seen = new Set<string>();
+    for (const r of rows) {
+      const key = `${r.channelVariantId}::${r.skuId}`;
+      if (seen.has(key)) {
+        throw new Error(`중복된 매핑입니다: channelVariantId=${r.channelVariantId}, skuId=${r.skuId}`);
+      }
+      seen.add(key);
+    }
+    return this.app.db.transaction(async (tx) => {
+      await tx.delete(listedProductSkus).where(eq(listedProductSkus.listedProductId, listedProductId));
+      if (rows.length === 0) return [] as Array<typeof listedProductSkus.$inferSelect>;
+      const inserted = await tx
+        .insert(listedProductSkus)
+        .values(
+          rows.map((r) => ({
+            listedProductId,
+            channelVariantId: r.channelVariantId,
+            channelSellerCode: r.channelSellerCode ?? null,
+            skuId: r.skuId,
+            qty: Math.max(1, r.qty ?? 1),
+          })),
+        )
+        .returning();
+      return inserted;
+    });
+  }
+
+  async addListedProductSku(
+    listedProductId: string,
+    input: { channelVariantId: string; channelSellerCode?: string | null; skuId: string; qty?: number },
+  ) {
+    await this.getListedProduct(listedProductId);
+    await this.assertSkuOwnership(input.skuId);
+    try {
+      const [row] = await this.app.db
+        .insert(listedProductSkus)
+        .values({
+          listedProductId,
+          channelVariantId: input.channelVariantId,
+          channelSellerCode: input.channelSellerCode ?? null,
+          skuId: input.skuId,
+          qty: Math.max(1, input.qty ?? 1),
+        })
+        .returning();
+      return row;
+    } catch (err) {
+      if (this.isUniqueViolation(err)) {
+        throw new Error(`이미 존재하는 매핑입니다: channelVariantId=${input.channelVariantId}, skuId=${input.skuId}`);
+      }
+      throw err;
+    }
+  }
+
+  async updateListedProductSku(
+    listedProductId: string,
+    mappingId: string,
+    patch: { channelSellerCode?: string | null; qty?: number },
+  ) {
+    await this.getListedProduct(listedProductId);
+    const setPatch: Partial<typeof listedProductSkus.$inferInsert> = {};
+    if (patch.channelSellerCode !== undefined) setPatch.channelSellerCode = patch.channelSellerCode;
+    if (patch.qty !== undefined) setPatch.qty = Math.max(1, patch.qty);
+    if (Object.keys(setPatch).length === 0) return null;
+    const [row] = await this.app.db
+      .update(listedProductSkus)
+      .set(setPatch)
+      .where(and(eq(listedProductSkus.id, mappingId), eq(listedProductSkus.listedProductId, listedProductId)))
+      .returning();
+    if (!row) throw new Error('매핑을 찾을 수 없습니다.');
+    return row;
+  }
+
+  async removeListedProductSku(listedProductId: string, mappingId: string) {
+    await this.getListedProduct(listedProductId);
+    const result = await this.app.db
+      .delete(listedProductSkus)
+      .where(and(eq(listedProductSkus.id, mappingId), eq(listedProductSkus.listedProductId, listedProductId)))
+      .returning({ id: listedProductSkus.id });
+    if (result.length === 0) throw new Error('매핑을 찾을 수 없습니다.');
+  }
+
+  private async assertSkuOwnership(skuId: string) {
+    const [row] = await this.app.db
+      .select({ id: skus.id })
+      .from(skus)
+      .where(and(eq(skus.id, skuId), eq(skus.userId, this.userId)));
+    if (!row) throw new Error(`SKU 를 찾을 수 없습니다: ${skuId}`);
+  }
+
+  private isUniqueViolation(err: unknown): boolean {
+    return (
+      !!err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      (err as { code: string }).code === '23505'
+    );
+  }
+
   // ─── 판매 동기화 (channel orders → master stock 차감) ─────────
 
   async pullSalesFromChannel(listedProductId: string) {
@@ -659,27 +764,51 @@ export class MasterProductService {
       return { status: 'UNSUPPORTED' as const, message: '이 채널은 주문 조회를 지원하지 않습니다.' };
     }
 
-    // 변형 링크 조회: channelVariantId → masterVariantId
-    const variantLinkRows = await this.app.db
-      .select()
-      .from(listedProductVariantLinks)
-      .where(eq(listedProductVariantLinks.listedProductId, listedProductId));
+    // 채널 변형 → SKU 매핑 (listed_product_skus). 같은 channelVariantId 에 여러 SKU 가 BOM 으로 묶일 수 있음.
+    // channelSellerCode 매칭도 지원해야 함 (어댑터에 따라 channelVariantId 가 비어 있고 SKU 코드만 오는 경우)
+    const skuRows = await this.app.db
+      .select({
+        channelVariantId: listedProductSkus.channelVariantId,
+        channelSellerCode: listedProductSkus.channelSellerCode,
+        skuId: listedProductSkus.skuId,
+        skuCode: skus.code,
+        qty: listedProductSkus.qty,
+      })
+      .from(listedProductSkus)
+      .innerJoin(skus, eq(listedProductSkus.skuId, skus.id))
+      .where(eq(listedProductSkus.listedProductId, listedProductId));
 
-    if (variantLinkRows.length === 0) {
-      return { status: 'NO_VARIANTS' as const, message: '연결된 변형이 없습니다.' };
+    if (skuRows.length === 0) {
+      return { status: 'NO_VARIANTS' as const, message: '연결된 SKU 매핑이 없습니다.' };
     }
 
-    const channelVariantToMasterVariantId = new Map(
-      variantLinkRows.map((vl) => [vl.channelVariantId, vl.masterVariantId]),
-    );
+    type ChannelSkuRow = { channelVariantId: string; skuId: string; skuCode: string; qty: number };
+    const skuByChannelVariant = new Map<string, ChannelSkuRow[]>();
+    const skuBySellerCode = new Map<string, ChannelSkuRow[]>();
+    for (const r of skuRows) {
+      const row: ChannelSkuRow = { channelVariantId: r.channelVariantId, skuId: r.skuId, skuCode: r.skuCode, qty: r.qty };
+      const cvList = skuByChannelVariant.get(r.channelVariantId) ?? [];
+      cvList.push(row);
+      skuByChannelVariant.set(r.channelVariantId, cvList);
+      if (r.channelSellerCode) {
+        const scList = skuBySellerCode.get(r.channelSellerCode) ?? [];
+        scList.push(row);
+        skuBySellerCode.set(r.channelSellerCode, scList);
+      }
+    }
 
-    // 마스터 변형 목록 조회
-    const masterVariantIds = variantLinkRows.map((vl) => vl.masterVariantId);
-    const dbVariants = await this.app.db
-      .select()
-      .from(masterProductVariants)
-      .where(inArray(masterProductVariants.id, masterVariantIds));
-    const variantById = new Map(dbVariants.map((v) => [v.id, v]));
+    // SKU 단위 차감을 위임할 StockService. 0006 이전 ledger 호환을 위해 variantId 를 같이 넘긴다.
+    // 같은 SKU 가 여러 variant 에 매핑돼 있으면 첫 variant 를 ledger 용으로 사용.
+    const skuToVariant = new Map<string, string>();
+    const mvsRows = await this.app.db
+      .select({ skuId: masterVariantSkus.skuId, masterVariantId: masterVariantSkus.masterVariantId })
+      .from(masterVariantSkus)
+      .where(inArray(masterVariantSkus.skuId, skuRows.map((r) => r.skuId)));
+    for (const r of mvsRows) {
+      if (!skuToVariant.has(r.skuId)) skuToVariant.set(r.skuId, r.masterVariantId);
+    }
+
+    const stockSvc = new StockService(this.app);
 
     const channelData = (item.channelData as Record<string, unknown> | null) ?? {};
     const processedOrderIds = new Set<string>(
@@ -712,8 +841,9 @@ export class MasterProductService {
       endDate: fmtYYYYMMDD(now),
     });
 
-    const variantQty = new Map<string, number>();
-    const variantOrderQty = new Map<string, Map<string, number>>();
+    // 주문 라인을 (orderId, skuId) 단위로 누적. qty 는 채널 옵션 수량 × BOM qty.
+    type SaleEntry = { orderId: string; skuId: string; qty: number };
+    const sales: SaleEntry[] = [];
     const newProcessedIds: string[] = [];
     for (const ord of orders) {
       if (processedOrderIds.has(ord.id)) continue;
@@ -724,94 +854,87 @@ export class MasterProductService {
       }
       let matched = false;
       for (const li of ord.items) {
-        // channelVariantId 기반 매핑 (SKU 대신 채널 변형 ID 사용)
-        const channelVarId = li.channelVariantId ?? li.sku;
-        if (!channelVarId) continue;
-        const masterVariantId = channelVariantToMasterVariantId.get(channelVarId);
-        if (!masterVariantId) continue;
-        const qty = li.quantity ?? 0;
-        if (qty <= 0) continue;
-        variantQty.set(masterVariantId, (variantQty.get(masterVariantId) ?? 0) + qty);
-        const m = variantOrderQty.get(masterVariantId) ?? new Map<string, number>();
-        m.set(ord.id, (m.get(ord.id) ?? 0) + qty);
-        variantOrderQty.set(masterVariantId, m);
+        const channelQty = li.quantity ?? 0;
+        if (channelQty <= 0) continue;
+        // 1순위: channelVariantId, 2순위: channelSellerCode(li.sku)
+        let skuRowsForLine: ChannelSkuRow[] | undefined;
+        if (li.channelVariantId) skuRowsForLine = skuByChannelVariant.get(li.channelVariantId);
+        if (!skuRowsForLine || skuRowsForLine.length === 0) {
+          if (li.sku) skuRowsForLine = skuBySellerCode.get(li.sku);
+        }
+        if (!skuRowsForLine || skuRowsForLine.length === 0) continue;
+        for (const r of skuRowsForLine) {
+          sales.push({ orderId: ord.id, skuId: r.skuId, qty: channelQty * Math.max(1, r.qty) });
+        }
         matched = true;
       }
       if (matched) newProcessedIds.push(ord.id);
     }
 
     const deductions: Array<{ sku: string; soldQty: number; prevStock: number; newStock: number }> = [];
-    for (const [masterVariantId, qty] of variantQty) {
-      if (qty <= 0) continue;
-      const dbVar = variantById.get(masterVariantId);
-      if (!dbVar) continue;
-      const [updated] = await this.app.db
-        .update(masterProductVariants)
-        .set({ stock: sql`GREATEST(${masterProductVariants.stock} - ${qty}, 0)`, updatedAt: new Date() })
-        .where(eq(masterProductVariants.id, masterVariantId))
-        .returning();
-
-      const orderQtys = variantOrderQty.get(masterVariantId) ?? new Map<string, number>();
-      let runningStock = dbVar.stock;
-      const ledgerRows: Array<typeof masterStockLedger.$inferInsert> = [];
-      for (const [orderId, oqty] of orderQtys) {
-        const next = Math.max(0, runningStock - oqty);
-        ledgerRows.push({
-          userId: this.userId,
-          variantId: masterVariantId,
-          type: 'SALE',
-          qtyDelta: -oqty,
-          prevStock: runningStock,
-          newStock: next,
-          refType: 'ORDER',
-          refId: orderId,
-          channelId: item.channelId,
-          listedProductId,
-        });
-        runningStock = next;
+    const touchedSkuIds = new Set<string>();
+    for (const entry of sales) {
+      const ledgerVariantId = skuToVariant.get(entry.skuId);
+      if (!ledgerVariantId) {
+        this.app.log.warn({ skuId: entry.skuId }, 'skipping sale deduction — SKU not mapped to any master variant');
+        continue;
       }
-      if (ledgerRows.length > 0) {
-        await this.app.db.insert(masterStockLedger).values(ledgerRows);
-      }
-
-      deductions.push({
-        sku: dbVar.sku ?? '',
-        soldQty: qty,
-        prevStock: dbVar.stock,
-        newStock: updated?.stock ?? dbVar.stock,
+      const result = await stockSvc.applySku({
+        userId: this.userId,
+        skuId: entry.skuId,
+        variantId: ledgerVariantId,
+        refType: 'ORDER_RESERVE',
+        refId: entry.orderId,
+        qtyDelta: -entry.qty,
+        channelId: item.channelId,
+        listedProductId,
+        allowNegative: true, // 초과 판매도 일단 기록 (음수 stock 허용) — OVERSELL ledger 는 추후 추가
       });
+      if (result.ok && 'prev' in result) {
+        deductions.push({
+          sku: result.ledgerId,
+          soldQty: entry.qty,
+          prevStock: result.prev,
+          newStock: result.next,
+        });
+        touchedSkuIds.add(entry.skuId);
+      }
     }
 
     // Phase 5: 판매 차감 후 연결된 채널에 새 재고 push (best-effort)
-    if (deductions.length > 0) {
+    // 차감된 SKU 들과 매핑된 모든 channelVariant 에 대해 push.
+    if (touchedSkuIds.size > 0) {
       const { ChannelService } = await import('./ChannelService');
       const channelSvc = new ChannelService(this.app, this.userId);
 
-      for (const [masterVariantId, qty] of variantQty) {
-        const dbVar = variantById.get(masterVariantId);
-        if (!dbVar) continue;
-        const newStock = Math.max(0, dbVar.stock - qty);
+      // 영향받은 SKU 들이 매핑된 모든 listed_product_skus (cross-listing 포함) 로드
+      const allMappings = await this.app.db
+        .select({
+          listedProductId: listedProductSkus.listedProductId,
+          channelVariantId: listedProductSkus.channelVariantId,
+          channelId: listedProducts.channelId,
+          channelItemId: listedProducts.channelItemId,
+        })
+        .from(listedProductSkus)
+        .innerJoin(listedProducts, eq(listedProductSkus.listedProductId, listedProducts.id))
+        .where(inArray(listedProductSkus.skuId, Array.from(touchedSkuIds)));
 
-        const allVariantLinks = await this.app.db
-          .select({
-            channelVariantId: listedProductVariantLinks.channelVariantId,
-            listedProductId: listedProductVariantLinks.listedProductId,
-            channelId: listedProducts.channelId,
-            channelItemId: listedProducts.channelItemId,
-          })
-          .from(listedProductVariantLinks)
-          .innerJoin(listedProducts, eq(listedProductVariantLinks.listedProductId, listedProducts.id))
-          .where(eq(listedProductVariantLinks.masterVariantId, masterVariantId));
+      // (listedProductId, channelVariantId) 별로 중복 제거
+      const uniqueTargets = new Map<string, { listedProductId: string; channelVariantId: string; channelId: string; channelItemId: string }>();
+      for (const m of allMappings) {
+        uniqueTargets.set(`${m.listedProductId}::${m.channelVariantId}`, m);
+      }
 
-        for (const vl of allVariantLinks) {
-          try {
-            const adapter = await channelSvc.getAdapter(vl.channelId);
-            if (adapter.pushVariantStock) {
-              await adapter.pushVariantStock(vl.channelItemId, vl.channelVariantId, newStock);
-            }
-          } catch (pushErr) {
-            this.app.log.warn({ err: pushErr, masterVariantId }, 'channel stock push after pull-sales failed');
+      for (const t of uniqueTargets.values()) {
+        try {
+          const rows = await this.loadSkusForChannelVariant(t.listedProductId, t.channelVariantId);
+          const newStock = this.computeAvailableStock(rows);
+          const ad = await channelSvc.getAdapter(t.channelId);
+          if (ad.pushVariantStock) {
+            await ad.pushVariantStock(t.channelItemId, t.channelVariantId, newStock);
           }
+        } catch (pushErr) {
+          this.app.log.warn({ err: pushErr, target: t }, 'channel stock push after pull-sales failed');
         }
       }
     }
@@ -1137,91 +1260,54 @@ export class MasterProductService {
 
     const channelType = item.channelType;
 
-    let variantLinkRows = await this.app.db
-      .select()
-      .from(listedProductVariantLinks)
-      .where(eq(listedProductVariantLinks.listedProductId, listedProductId));
+    // listed_product_skus 가 채널 변형 ↔ SKU 매핑의 정식 소스.
+    // 같은 channelVariantId 에 여러 SKU 가 묶일 수 있으므로 (BOM) 그룹화 후 available = min(floor(stock/qty))
+    const skuRows = await this.app.db
+      .select({
+        channelVariantId: listedProductSkus.channelVariantId,
+        channelSellerCode: listedProductSkus.channelSellerCode,
+        skuId: listedProductSkus.skuId,
+        qty: listedProductSkus.qty,
+        stock: skus.stock,
+      })
+      .from(listedProductSkus)
+      .innerJoin(skus, eq(listedProductSkus.skuId, skus.id))
+      .where(eq(listedProductSkus.listedProductId, listedProductId));
 
-    // Fallback: link이 비어있으면 채널에서 다시 가져와 생성
-    if (variantLinkRows.length === 0 && adapter.getChannelProduct && item.masterProductId) {
-      try {
-        const master = await this.getMasterProduct(item.masterProductId);
-        const masterVariants = master?.variants ?? [];
-        const channelProduct = await adapter.getChannelProduct(item.channelItemId);
-        const channelVariants = channelProduct.variants ?? [];
-        const skuToMaster = new Map<string, string>();
-        for (const v of masterVariants) {
-          if (v.sku) skuToMaster.set(v.sku, v.id);
-        }
-        const linkRows: Array<{
-          listedProductId: string;
-          masterVariantId: string;
-          channelVariantId: string;
-          channelSellerCode: string | null;
-        }> = [];
-        for (let i = 0; i < channelVariants.length; i++) {
-          const cv = channelVariants[i]!;
-          let masterVariantId: string | undefined;
-          if (cv.optionCode && skuToMaster.has(cv.optionCode)) {
-            masterVariantId = skuToMaster.get(cv.optionCode);
-          } else if (masterVariants.length === 1 && masterVariants[0]) {
-            masterVariantId = masterVariants[0].id;
-          } else if (masterVariants[i]) {
-            masterVariantId = masterVariants[i]!.id;
-          }
-          if (!masterVariantId) continue;
-          linkRows.push({
-            listedProductId,
-            masterVariantId,
-            channelVariantId: cv.channelVariantId,
-            channelSellerCode: cv.optionCode ?? null,
-          });
-        }
-        if (linkRows.length > 0) {
-          await this.app.db.insert(listedProductVariantLinks).values(linkRows).onConflictDoNothing();
-          variantLinkRows = await this.app.db
-            .select()
-            .from(listedProductVariantLinks)
-            .where(eq(listedProductVariantLinks.listedProductId, listedProductId));
-        }
-      } catch (err) {
-        this.app.log.warn({ err, listedProductId }, 'failed to recover variant links from channel');
-      }
+    if (skuRows.length === 0) {
+      return { status: 'NO_VARIANTS' as const, message: '연결된 SKU 매핑이 없습니다.' };
     }
 
-    if (variantLinkRows.length === 0) {
-      return { status: 'NO_VARIANTS' as const, message: '연결된 변형이 없습니다.' };
+    // channelVariantId → BOM rows
+    const byChannelVariant = new Map<string, Array<{ qty: number; stock: number }>>();
+    for (const r of skuRows) {
+      const list = byChannelVariant.get(r.channelVariantId) ?? [];
+      list.push({ qty: r.qty, stock: r.stock });
+      byChannelVariant.set(r.channelVariantId, list);
     }
 
-    const masterVariantIds = variantLinkRows.map((vl) => vl.masterVariantId);
-    const dbVariants = await this.app.db
-      .select()
-      .from(masterProductVariants)
-      .where(inArray(masterProductVariants.id, masterVariantIds));
-    const variantById = new Map(dbVariants.map((v) => [v.id, v]));
-
-    // Qoo10 single-product (channelVariantId === channelItemId, OptionCode 없음): updateProduct로 라우팅
+    // Qoo10 single-product (channelVariantId === channelItemId): updateProduct 로 라우팅
+    const channelVariantIds = Array.from(byChannelVariant.keys());
     const isQoo10SingleProduct =
       channelType === 'QOO10_JP' &&
-      variantLinkRows.length === 1 &&
-      variantLinkRows[0]!.channelVariantId === item.channelItemId;
+      channelVariantIds.length === 1 &&
+      channelVariantIds[0] === item.channelItemId;
 
     if (isQoo10SingleProduct && adapter.updateProduct) {
-      const vl = variantLinkRows[0]!;
-      const masterVariant = variantById.get(vl.masterVariantId);
-      const stock = masterVariant?.stock ?? 0;
+      const cvid = channelVariantIds[0]!;
+      const stock = this.computeAvailableStock(byChannelVariant.get(cvid)!);
       try {
         await adapter.updateProduct(item.channelItemId, { qty: stock });
         return {
           status: 'OK' as const,
-          updates: [{ channelVariantId: vl.channelVariantId, stock, status: 'ok' }],
+          updates: [{ channelVariantId: cvid, stock, status: 'ok' }],
         };
       } catch (err) {
         return {
           status: 'OK' as const,
           updates: [
             {
-              channelVariantId: vl.channelVariantId,
+              channelVariantId: cvid,
               stock,
               status: err instanceof Error ? err.message : 'error',
             },
@@ -1235,15 +1321,13 @@ export class MasterProductService {
     }
 
     const updates: Array<{ channelVariantId: string; stock: number; status: string }> = [];
-    for (const vl of variantLinkRows) {
-      const masterVariant = variantById.get(vl.masterVariantId);
-      if (!masterVariant) continue;
-      const stock = masterVariant.stock ?? 0;
+    for (const [channelVariantId, rows] of byChannelVariant) {
+      const stock = this.computeAvailableStock(rows);
       try {
-        await adapter.pushVariantStock(item.channelItemId, vl.channelVariantId, stock);
-        updates.push({ channelVariantId: vl.channelVariantId, stock, status: 'ok' });
+        await adapter.pushVariantStock(item.channelItemId, channelVariantId, stock);
+        updates.push({ channelVariantId, stock, status: 'ok' });
       } catch (err) {
-        updates.push({ channelVariantId: vl.channelVariantId, stock, status: err instanceof Error ? err.message : 'error' });
+        updates.push({ channelVariantId, stock, status: err instanceof Error ? err.message : 'error' });
       }
     }
 
@@ -1285,7 +1369,8 @@ export class MasterProductService {
       return undefined;
     })();
 
-    // 연결된 변형의 재고 합산 — 다축 옵션값 join 포함
+    // 연결된 변형 목록은 여전히 master_product_variants 기준이지만,
+    // 재고는 SKU(masterVariantSkus → skus) 기준 available stock 으로 환산.
     const variantLinkRows = await this.app.db
       .select()
       .from(listedProductVariantLinks)
@@ -1306,13 +1391,17 @@ export class MasterProductService {
         .select()
         .from(masterProductVariants)
         .where(inArray(masterProductVariants.id, masterVariantIds));
-      totalStock = dbVariants.reduce((sum, v) => sum + (v.stock ?? 0), 0);
       const optMap = await this.loadVariantOptions(masterVariantIds);
+      const variantStocks = await Promise.all(
+        dbVariants.map(async (v) => [v.id, this.computeAvailableStock(await this.loadSkusForMasterVariant(v.id))] as const),
+      );
+      const stockByVariant = new Map(variantStocks);
+      totalStock = Array.from(stockByVariant.values()).reduce((sum, s) => sum + s, 0);
       linkedVariants = dbVariants.map((v) => ({
         id: v.id,
         sku: v.sku,
         price: v.price,
-        stock: v.stock,
+        stock: stockByVariant.get(v.id) ?? 0,
         options: optMap.get(v.id) ?? [],
       }));
     }
@@ -1560,5 +1649,112 @@ export class MasterProductService {
         throw new Error('동일한 옵션 조합을 가진 변형이 이미 존재합니다.');
       }
     }
+  }
+
+  // ─── SKU 기반 재고 헬퍼 ─────────────────────────────────────
+  // 0006 마이그레이션 전까지 master_product_variants.stock 컬럼은 살아있지만
+  // 재고의 source of truth 는 skus.stock 으로 통일. 아래 헬퍼들이 그 변환을 담당.
+
+  /**
+   * 특정 채널 옵션(channelVariantId)에 매핑된 SKU 행과 BOM qty 를 로드.
+   */
+  private async loadSkusForChannelVariant(
+    listedProductId: string,
+    channelVariantId: string,
+  ): Promise<Array<{ skuId: string; qty: number; stock: number }>> {
+    const rows = await this.app.db
+      .select({
+        skuId: listedProductSkus.skuId,
+        qty: listedProductSkus.qty,
+        stock: skus.stock,
+      })
+      .from(listedProductSkus)
+      .innerJoin(skus, eq(listedProductSkus.skuId, skus.id))
+      .where(
+        and(
+          eq(listedProductSkus.listedProductId, listedProductId),
+          eq(listedProductSkus.channelVariantId, channelVariantId),
+        ),
+      );
+    return rows;
+  }
+
+  /**
+   * 마스터 variant 에 매핑된 SKU 행(BOM)을 로드. variant 단위로 available stock 환산할 때 사용.
+   */
+  private async loadSkusForMasterVariant(
+    masterVariantId: string,
+  ): Promise<Array<{ skuId: string; qty: number; stock: number }>> {
+    const rows = await this.app.db
+      .select({
+        skuId: masterVariantSkus.skuId,
+        qty: masterVariantSkus.qty,
+        stock: skus.stock,
+      })
+      .from(masterVariantSkus)
+      .innerJoin(skus, eq(masterVariantSkus.skuId, skus.id))
+      .where(eq(masterVariantSkus.masterVariantId, masterVariantId));
+    return rows;
+  }
+
+  /**
+   * 여러 마스터 variant 에 부착된 SKU 정보를 한 번에 로드 (N+1 회피).
+   * projection 에 attachedSkus 필드를 포함시킬 때 사용.
+   */
+  private async loadAttachedSkusForVariants(
+    variantIds: string[],
+  ): Promise<
+    Map<
+      string,
+      Array<{ skuId: string; code: string; qty: number; position: number; stock: number }>
+    >
+  > {
+    const map = new Map<
+      string,
+      Array<{ skuId: string; code: string; qty: number; position: number; stock: number }>
+    >();
+    if (variantIds.length === 0) return map;
+
+    const rows = await this.app.db
+      .select({
+        masterVariantId: masterVariantSkus.masterVariantId,
+        skuId: masterVariantSkus.skuId,
+        qty: masterVariantSkus.qty,
+        position: masterVariantSkus.position,
+        code: skus.code,
+        stock: skus.stock,
+      })
+      .from(masterVariantSkus)
+      .innerJoin(skus, eq(masterVariantSkus.skuId, skus.id))
+      .where(inArray(masterVariantSkus.masterVariantId, variantIds))
+      .orderBy(asc(masterVariantSkus.position));
+
+    for (const r of rows) {
+      const arr = map.get(r.masterVariantId) ?? [];
+      arr.push({
+        skuId: r.skuId,
+        code: r.code,
+        qty: r.qty,
+        position: r.position,
+        stock: r.stock,
+      });
+      map.set(r.masterVariantId, arr);
+    }
+    return map;
+  }
+
+  /**
+   * BOM 행들로부터 채널에 push 할 수 있는 변형 단위 재고 = min over rows of floor(stock / qty).
+   * BOM 이 비어 있으면 0 (= 매핑 누락 시 안전하게 품절 처리).
+   */
+  private computeAvailableStock(rows: Array<{ qty: number; stock: number }>): number {
+    if (rows.length === 0) return 0;
+    let minAvail = Number.POSITIVE_INFINITY;
+    for (const r of rows) {
+      const q = Math.max(1, r.qty);
+      const avail = Math.floor(Math.max(0, r.stock) / q);
+      if (avail < minAvail) minAvail = avail;
+    }
+    return Number.isFinite(minAvail) ? minAvail : 0;
   }
 }

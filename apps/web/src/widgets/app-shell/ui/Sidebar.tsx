@@ -3,6 +3,7 @@
 import { Box, Flex, Icon, Stack, Text } from "@chakra-ui/react";
 import {
   BookOpen,
+  Boxes,
   Building2,
   ChevronDown,
   Globe,
@@ -192,14 +193,14 @@ export function Sidebar(): React.JSX.Element {
           {/* 상품 관리 */}
           <Box>
             <Flex
-              {...navItemStyle(isActive(ROUTES.products) || isActive(ROUTES.productNew) || isActive(ROUTES.items) || isActive(ROUTES.masterProducts))}
+              {...navItemStyle(isActive(ROUTES.products) || isActive(ROUTES.productNew) || isActive(ROUTES.items) || isActive(ROUTES.masterProducts) || isActive(ROUTES.skus))}
               cursor="pointer"
               onClick={() => setIsProductOpen((prev) => !prev)}
             >
               <Icon
                 as={Package2}
                 boxSize={4}
-                color={(isActive(ROUTES.products) || isActive(ROUTES.productNew) || isActive(ROUTES.items) || isActive(ROUTES.masterProducts)) ? "gray.900" : "gray.500"}
+                color={(isActive(ROUTES.products) || isActive(ROUTES.productNew) || isActive(ROUTES.items) || isActive(ROUTES.masterProducts) || isActive(ROUTES.skus)) ? "gray.900" : "gray.500"}
               />
               <Text fontSize="sm" flex="1">
                 상품 관리
@@ -234,21 +235,46 @@ export function Sidebar(): React.JSX.Element {
                     </Flex>
                   </Link>
                 </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.skus} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.skus)}
+                    onMouseEnter={() => prefetch(ROUTES.skus)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.skus))}>
+                      <Icon as={Boxes} boxSize={3.5} mr={2} color="gray.400" />
+                      <Text fontSize="sm">SKU 관리</Text>
+                    </Flex>
+                  </Link>
+                </Box>
               </Box>
             )}
           </Box>
 
-          {/* 주문 관리 */}
+          {/* 주문 관리 (5메뉴: 주문/출고관리/배송관리/전체조회/클레임) */}
           <Box>
             <Flex
-              {...navItemStyle(isActive(ROUTES.orders) || isActive(ROUTES.claims))}
+              {...navItemStyle(
+                isExactActive(ROUTES.orders) ||
+                  isActive(ROUTES.dispatch) ||
+                  isActive(ROUTES.shipping) ||
+                  isActive(ROUTES.allOrders) ||
+                  isActive(ROUTES.claims),
+              )}
               cursor="pointer"
               onClick={() => setIsOrderOpen((prev) => !prev)}
             >
               <Icon
                 as={ShoppingCart}
                 boxSize={4}
-                color={(isActive(ROUTES.orders) || isActive(ROUTES.claims)) ? "gray.900" : "gray.500"}
+                color={
+                  isExactActive(ROUTES.orders) ||
+                  isActive(ROUTES.dispatch) ||
+                  isActive(ROUTES.shipping) ||
+                  isActive(ROUTES.allOrders) ||
+                  isActive(ROUTES.claims)
+                    ? "gray.900"
+                    : "gray.500"
+                }
               />
               <Text fontSize="sm" flex="1">
                 주문 관리
@@ -265,19 +291,52 @@ export function Sidebar(): React.JSX.Element {
                   onClick={() => setPendingHref(ROUTES.orders)}
                   onMouseEnter={() => prefetch(ROUTES.orders)}
                 >
-                  <Flex {...subItemStyle(isActive(ROUTES.orders))}>
-                    <Icon as={Truck} boxSize={3} color="gray.400" mr={1} />
-                    <Text fontSize="sm">배송 관리</Text>
+                  <Flex {...subItemStyle(isExactActive(ROUTES.orders))}>
+                    <Icon as={ShoppingCart} boxSize={3} color="gray.400" mr={1} />
+                    <Text fontSize="sm">주문</Text>
                   </Flex>
                 </Link>
+                <Box mt={1}>
+                  <Link href={ROUTES.dispatch} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.dispatch)}
+                    onMouseEnter={() => prefetch(ROUTES.dispatch)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.dispatch))}>
+                      <Icon as={Package2} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">출고관리</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.shipping} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.shipping)}
+                    onMouseEnter={() => prefetch(ROUTES.shipping)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.shipping))}>
+                      <Icon as={Truck} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">배송관리</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.allOrders} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.allOrders)}
+                    onMouseEnter={() => prefetch(ROUTES.allOrders)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.allOrders))}>
+                      <Icon as={BookOpen} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">전체조회</Text>
+                    </Flex>
+                  </Link>
+                </Box>
                 <Box mt={1}>
                   <Link href={ROUTES.claims} style={{ textDecoration: "none" }}
                     onClick={() => setPendingHref(ROUTES.claims)}
                     onMouseEnter={() => prefetch(ROUTES.claims)}
                   >
                     <Flex {...subItemStyle(isActive(ROUTES.claims))}>
-                      <Icon as={Package2} boxSize={3} color="gray.400" mr={1} />
-                      <Text fontSize="sm">클레임 관리</Text>
+                      <Icon as={MessageCircle} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">클레임</Text>
                     </Flex>
                   </Link>
                 </Box>

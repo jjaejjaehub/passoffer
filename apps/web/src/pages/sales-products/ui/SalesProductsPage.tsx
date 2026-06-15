@@ -35,6 +35,7 @@ import {
   DeleteConfirmDialog,
   StatusChangeConfirmDialog,
 } from "@/features/edit-item-status";
+import { SkuMappingModal } from "@/features/sku-mapping";
 import { ProductDetailModal, ShopifyProductDetailModal } from "@/features/view-product-detail";
 import { ROUTES, qoo10ProductsQueryRoot } from "@/shared/config";
 import { ErrorState, EmptyState, PageHeader } from "@/shared/ui";
@@ -159,6 +160,7 @@ function SalesProductRow({
   const router = useRouter();
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [skuMappingModalOpen, setSkuMappingModalOpen] = useState(false);
   const { mutateAsync: unlinkProduct, isPending: isUnlinking } =
     useUnlinkChannelProduct();
   const { mutateAsync: pullSales, isPending: isPulling } =
@@ -327,6 +329,15 @@ function SalesProductRow({
                     마스터 보기
                   </Button>
                 )}
+                {item.listedProductId && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={() => setSkuMappingModalOpen(true)}
+                  >
+                    SKU 매핑
+                  </Button>
+                )}
                 <Button
                   size="xs"
                   variant="outline"
@@ -384,6 +395,16 @@ function SalesProductRow({
             setCreateModalOpen(false);
             onLinkSuccess();
           }}
+        />
+      )}
+
+      {skuMappingModalOpen && item.listedProductId && (
+        <SkuMappingModal
+          listedProductId={item.listedProductId}
+          channelVariants={item.variants}
+          open={skuMappingModalOpen}
+          onOpenChange={setSkuMappingModalOpen}
+          onSuccess={onLinkSuccess}
         />
       )}
     </>
