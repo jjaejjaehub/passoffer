@@ -25,6 +25,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { CHANNEL_CONFIG, LIVE_CHANNELS } from "@/shared/config";
 import type { ChannelId } from "@/shared/config";
@@ -100,6 +101,7 @@ export function ClaimFilterBar({
   onDateChange,
   onSearchChange,
 }: ClaimFilterBarProps): React.JSX.Element {
+  const t = useTranslations("widgets.claimFilterBar");
   const [searchValue, setSearchValue] = useState<string>(search);
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState<Date | null>(null);
@@ -162,11 +164,11 @@ export function ClaimFilterBar({
 
   const renderMonthGrid = (monthDays: Date[]): React.JSX.Element => {
     const month = monthDays[0] ?? currentMonth;
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekdays = t.raw("calendar.weekdays") as string[];
     return (
       <Box flex="1">
         <Text fontSize="sm" fontWeight="medium" textAlign="center" mb={2}>
-          {formatDateFns(month, "yyyy년 M월")}
+          {formatDateFns(month, t("calendar.monthFormat"))}
         </Text>
         <Grid templateColumns="repeat(7, 1fr)" gap={1} mb={1}>
           {weekdays.map((d) => (
@@ -320,7 +322,7 @@ export function ClaimFilterBar({
               flexShrink={0}
             >
               <Flex align="center" gap={1}>
-                <Text fontSize="sm">{tab}</Text>
+                <Text fontSize="sm">{t(`statuses.${tab}`)}</Text>
                 {statusCounts[tab] !== undefined && (
                   <Text
                     fontSize="xs"
@@ -357,7 +359,8 @@ export function ClaimFilterBar({
               : dateRange === range;
             const isFirst = index === 0;
             const isLast = index === DATE_RANGES.length - 1;
-            const buttonLabel = isCustom && rangeLabel ? rangeLabel : range;
+            const buttonLabel =
+              isCustom && rangeLabel ? rangeLabel : t(`dateRanges.${range}`);
 
             if (!isCustom) {
               return (
@@ -428,10 +431,10 @@ export function ClaimFilterBar({
                           setCurrentMonth((prev) => addMonths(prev, -1))
                         }
                       >
-                        {"< 이전"}
+                        {t("popover.prev")}
                       </Button>
                       <Text fontSize="xs" color="gray.500">
-                        기간을 선택하세요
+                        {t("popover.instruction")}
                       </Text>
                       <Button
                         variant="ghost"
@@ -440,7 +443,7 @@ export function ClaimFilterBar({
                           setCurrentMonth((prev) => addMonths(prev, 1))
                         }
                       >
-                        {"다음 >"}
+                        {t("popover.next")}
                       </Button>
                     </Flex>
                     <Flex gap={4}>
@@ -462,14 +465,14 @@ export function ClaimFilterBar({
                           onDateChange("30일");
                         }}
                       >
-                        초기화
+                        {t("popover.reset")}
                       </Button>
                       <Button
                         variant="outline"
                         size="xs"
                         onClick={() => setCustomOpen(false)}
                       >
-                        닫기
+                        {t("popover.close")}
                       </Button>
                     </Flex>
                   </Popover.Content>
@@ -483,7 +486,7 @@ export function ClaimFilterBar({
         <Flex gap={2} flex="1" justify="flex-end">
           <Box position="relative" minW="260px" maxW="360px" w="100%">
             <Input
-              placeholder="주문번호, 상품명, 구매자 검색"
+              placeholder={t("search.placeholder")}
               size="sm"
               pl={8}
               pr={8}

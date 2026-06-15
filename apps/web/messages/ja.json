@@ -57,7 +57,140 @@
     },
     "claims": {
       "title": "クレーム管理",
-      "description": "キャンセル・返品・交換のクレーム状況を照会します。"
+      "description": "キャンセル・返品・交換のクレーム状況を照会します。",
+      "emptyState": {
+        "qoo10NoKeyTitle": "Qoo10 APIキーがありません",
+        "qoo10NoKeyDescription": "チャネル設定でQoo10 APIキーを登録すると、クレームが自動的に収集されます。",
+        "shopifyNoKeyTitle": "Shopify APIキーがありません",
+        "shopifyNoKeyDescription": "チャネル設定でShopify APIキーを登録すると、返品状況が自動的に収集されます。",
+        "claimsEmptyTitle": "表示するクレームがありません",
+        "claimsEmptyDescription": "選択した期間とフィルター条件に該当するクレームがありません。",
+        "returnsEmptyTitle": "表示する返品がありません",
+        "returnsEmptyDescription": "現在のフィルター条件に該当する返品がありません。"
+      },
+      "errors": {
+        "authFailedTitle": "APIキー認証失敗",
+        "authFailedMessage": "APIキー認証に失敗しました。チャネル設定でキーをご確認ください。",
+        "queryFailedTitle": "クレーム照会中にエラーが発生しました",
+        "returnsQueryFailedTitle": "返品照会中にエラーが発生しました"
+      },
+      "actions": {
+        "goToChannelSettings": "チャネル設定へ移動",
+        "selected": "{count}件選択中",
+        "cancelApprove": "キャンセル承認 ({count})",
+        "returnApprove": "返品承認 ({count})",
+        "redeliveryProcess": "再配送処理 ({count})"
+      },
+      "toasts": {
+        "cancelApproveDone": "キャンセル承認完了 ({count}件)",
+        "returnApproveDone": "返品承認完了 ({count}件)",
+        "redeliveryDone": "再配送処理完了 ({count}件)",
+        "processError": "処理中にエラーが発生しました。"
+      },
+      "shopifyStatuses": {
+        "ALL": "全て",
+        "REQUESTED": "申請済み",
+        "OPEN": "進行中",
+        "CLOSED": "完了",
+        "DECLINED": "拒否",
+        "CANCELLED": "キャンセル"
+      },
+      "unsupported": {
+        "title": "{channel} クレーム未対応",
+        "description": "{channel} チャネルのクレーム管理はまだ対応していません。"
+      }
+    }
+  },
+  "widgets": {
+    "claimFilterBar": {
+      "statuses": {
+        "전체": "全て",
+        "취소요청": "キャンセル申請",
+        "취소중": "キャンセル中",
+        "취소완료": "キャンセル完了",
+        "반품요청": "返品申請",
+        "반품중": "返品中",
+        "반품완료": "返品完了",
+        "교환신청": "交換申請",
+        "교환승인": "交換承認",
+        "재배송중": "再配送中",
+        "미수취환불": "未受取返金",
+        "미납취소": "未納キャンセル"
+      },
+      "dateRanges": {
+        "오늘": "今日",
+        "7일": "7日間",
+        "30일": "30日間",
+        "직접입력": "直接入力"
+      },
+      "calendar": {
+        "weekdays": ["日", "月", "火", "水", "木", "金", "土"],
+        "monthFormat": "yyyy年 M月"
+      },
+      "popover": {
+        "prev": "< 前",
+        "next": "次 >",
+        "instruction": "期間を選択してください",
+        "reset": "リセット",
+        "close": "閉じる"
+      },
+      "search": {
+        "placeholder": "注文番号、商品名、購入者検索"
+      }
+    },
+    "claimTable": {
+      "empty": "クレームデータがありません。",
+      "columns": {
+        "status": "クレーム状態",
+        "orderNo": "注文番号",
+        "cartNo": "カート番号",
+        "productName": "商品名",
+        "quantity": "数量",
+        "amount": "決済金額",
+        "requestedAt": "申請日",
+        "completedAt": "完了日",
+        "orderedAt": "注文日",
+        "buyer": "購入者",
+        "recipient": "受取人",
+        "reason": "理由",
+        "shippingCompanyTracking": "配送会社/伝票番号",
+        "returnShippingCompanyTracking": "返品配送会社/伝票番号"
+      }
+    },
+    "shopifyReturnTable": {
+      "statuses": {
+        "OPEN": "返品進行中",
+        "REQUESTED": "返品申請済み",
+        "DECLINED": "返品拒否",
+        "CLOSED": "返品完了",
+        "CANCELLED": "返品キャンセル"
+      },
+      "reasons": {
+        "UNKNOWN": "その他",
+        "SIZE_TOO_SMALL": "サイズが小さい",
+        "SIZE_TOO_LARGE": "サイズが大きい",
+        "WRONG_ITEM": "誤った商品",
+        "NOT_AS_DESCRIBED": "商品説明と相違",
+        "DEFECTIVE": "不良/破損",
+        "STYLE": "スタイル不満",
+        "COLOR": "色不満",
+        "MISSING_ITEM": "商品欠品",
+        "OTHER": "その他"
+      },
+      "empty": "返品データがありません。",
+      "extraItems": "他 {count}商品",
+      "columns": {
+        "status": "返品状態",
+        "returnNo": "返品番号",
+        "orderNo": "注文番号",
+        "productName": "商品名",
+        "quantity": "数量",
+        "refundAmount": "返金額",
+        "reason": "返品理由",
+        "requestedAt": "申請日",
+        "completedAt": "完了日",
+        "buyer": "購入者"
+      }
     }
   }
 }

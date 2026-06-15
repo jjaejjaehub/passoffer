@@ -28,15 +28,15 @@ import { ShopifyReturnDetailModal } from "@/features/view-return-detail";
 // ─── 상수 ─────────────────────────────────────────────────────
 
 const SHOPIFY_RETURN_STATUSES = [
-  { value: "ALL", label: "전체" },
-  { value: "REQUESTED", label: "요청됨" },
-  { value: "OPEN", label: "진행중" },
-  { value: "CLOSED", label: "완료" },
-  { value: "DECLINED", label: "거절됨" },
-  { value: "CANCELLED", label: "취소됨" },
+  "ALL",
+  "REQUESTED",
+  "OPEN",
+  "CLOSED",
+  "DECLINED",
+  "CANCELLED",
 ] as const;
 
-type ShopifyReturnStatus = (typeof SHOPIFY_RETURN_STATUSES)[number]["value"];
+type ShopifyReturnStatus = (typeof SHOPIFY_RETURN_STATUSES)[number];
 
 // ─── 날짜 파싱 (Qoo10) ─────────────────────────────────────────
 
@@ -71,6 +71,7 @@ function Qoo10ClaimsSection({
   dateRange: string;
   search: string;
 }): React.JSX.Element {
+  const t = useTranslations("pages.claims");
   const router = useRouter();
   const { hasKey } = useChannelApiKey("qoo10");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -106,9 +107,9 @@ function Qoo10ClaimsSection({
     return (
       <EmptyState
         icon={<KeyIcon />}
-        title="Qoo10 API 키가 없습니다"
-        description="채널 설정에서 Qoo10 API 키를 등록하면 클레임이 자동으로 수집됩니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        title={t("emptyState.qoo10NoKeyTitle")}
+        description={t("emptyState.qoo10NoKeyDescription")}
+        action={{ label: t("actions.goToChannelSettings"), onClick: () => router.push("/settings/channels") }}
       />
     );
   }
@@ -116,15 +117,15 @@ function Qoo10ClaimsSection({
   if (error?.type === "AUTH_ERROR") {
     return (
       <ErrorBox
-        title="API 키 인증 실패"
-        message="API 키 인증에 실패했습니다. 채널 설정에서 키를 확인해 주세요."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        title={t("errors.authFailedTitle")}
+        message={t("errors.authFailedMessage")}
+        action={{ label: t("actions.goToChannelSettings"), onClick: () => router.push("/settings/channels") }}
       />
     );
   }
 
   if (error) {
-    return <ErrorBox title="클레임 조회 중 오류 발생" message={error.message} />;
+    return <ErrorBox title={t("errors.queryFailedTitle")} message={error.message} />;
   }
 
   if (isLoading) {
@@ -134,8 +135,8 @@ function Qoo10ClaimsSection({
   if (filteredClaims.length === 0) {
     return (
       <EmptyState
-        title="표시할 클레임이 없습니다"
-        description="선택한 기간과 필터 조건에 해당하는 클레임이 없습니다."
+        title={t("emptyState.claimsEmptyTitle")}
+        description={t("emptyState.claimsEmptyDescription")}
       />
     );
   }
@@ -155,7 +156,7 @@ function Qoo10ClaimsSection({
       appToaster.create({ type: 'success', title: successMsg });
       setSelectedIds([]);
     } catch {
-      appToaster.create({ type: 'error', title: '처리 중 오류가 발생했습니다.' });
+      appToaster.create({ type: 'error', title: t("toasts.processError") });
     }
   };
 
@@ -164,7 +165,7 @@ function Qoo10ClaimsSection({
       {selectedIds.length > 0 && (
         <Flex gap={2} align="center" px={1} py={2} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
           <Text fontSize="sm" color="blue.700" fontWeight="medium" mr={2}>
-            {selectedIds.length}건 선택됨
+            {t("actions.selected", { count: selectedIds.length })}
           </Text>
           {cancelable.length > 0 && (
             <Button
@@ -176,11 +177,11 @@ function Qoo10ClaimsSection({
                 handleBulkAction(
                   cancelable.map((c) => c.packNo),
                   cancelProcess.mutateAsync,
-                  `취소 승인 완료 (${cancelable.length}건)`,
+                  t("toasts.cancelApproveDone", { count: cancelable.length }),
                 )
               }
             >
-              취소 승인 ({cancelable.length})
+              {t("actions.cancelApprove", { count: cancelable.length })}
             </Button>
           )}
           {acceptable.length > 0 && (
@@ -193,11 +194,11 @@ function Qoo10ClaimsSection({
                 handleBulkAction(
                   acceptable.map((c) => c.packNo),
                   claimAccept.mutateAsync,
-                  `반품 승인 완료 (${acceptable.length}건)`,
+                  t("toasts.returnApproveDone", { count: acceptable.length }),
                 )
               }
             >
-              반품 승인 ({acceptable.length})
+              {t("actions.returnApprove", { count: acceptable.length })}
             </Button>
           )}
           {redeliverable.length > 0 && (
@@ -210,11 +211,11 @@ function Qoo10ClaimsSection({
                 handleBulkAction(
                   redeliverable.map((c) => c.packNo),
                   claimRedelivery.mutateAsync,
-                  `재배송 처리 완료 (${redeliverable.length}건)`,
+                  t("toasts.redeliveryDone", { count: redeliverable.length }),
                 )
               }
             >
-              재배송 처리 ({redeliverable.length})
+              {t("actions.redeliveryProcess", { count: redeliverable.length })}
             </Button>
           )}
         </Flex>
@@ -233,6 +234,7 @@ function Qoo10ClaimsSection({
 // ─── Shopify 반품 섹션 ────────────────────────────────────────
 
 function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Element {
+  const t = useTranslations("pages.claims");
   const router = useRouter();
   const { hasKey } = useChannelApiKey("shopify");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -268,9 +270,9 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
     return (
       <EmptyState
         icon={<KeyIcon />}
-        title="Shopify API 키가 없습니다"
-        description="채널 설정에서 Shopify API 키를 등록하면 반품 현황이 자동으로 수집됩니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        title={t("emptyState.shopifyNoKeyTitle")}
+        description={t("emptyState.shopifyNoKeyDescription")}
+        action={{ label: t("actions.goToChannelSettings"), onClick: () => router.push("/settings/channels") }}
       />
     );
   }
@@ -291,7 +293,7 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
         top="0"
         zIndex={5}
       >
-        {SHOPIFY_RETURN_STATUSES.map(({ value, label }) => {
+        {SHOPIFY_RETURN_STATUSES.map((value) => {
           const isSelected = statusFilter === value;
           const count = statusCounts[value];
           return (
@@ -310,7 +312,7 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
               flexShrink={0}
             >
               <Flex align="center" gap={1}>
-                <Text fontSize="sm">{label}</Text>
+                <Text fontSize="sm">{t(`shopifyStatuses.${value}`)}</Text>
                 {count !== undefined && (
                   <Text fontSize="xs" color={isSelected ? "gray.700" : "gray.400"}>
                     ({count})
@@ -326,7 +328,7 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
       {error && (
         <Box m={4}>
           <ErrorBox
-            title="반품 조회 중 오류 발생"
+            title={t("errors.returnsQueryFailedTitle")}
             message={error.message}
           />
         </Box>
@@ -342,8 +344,8 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
       {/* 빈 상태 */}
       {!isLoading && !error && filteredData.length === 0 && (
         <EmptyState
-          title="표시할 반품이 없습니다"
-          description="현재 필터 조건에 해당하는 반품이 없습니다."
+          title={t("emptyState.returnsEmptyTitle")}
+          description={t("emptyState.returnsEmptyDescription")}
         />
       )}
 
@@ -412,10 +414,11 @@ function ErrorBox({
 // ─── 미지원 채널 섹션 ─────────────────────────────────────────
 
 function UnsupportedChannelSection({ channelName }: { channelName: string }): React.JSX.Element {
+  const t = useTranslations("pages.claims");
   return (
     <EmptyState
-      title={`${channelName} 클레임 미지원`}
-      description={`${channelName} 채널의 클레임 관리는 아직 지원되지 않습니다.`}
+      title={t("unsupported.title", { channel: channelName })}
+      description={t("unsupported.description", { channel: channelName })}
     />
   );
 }

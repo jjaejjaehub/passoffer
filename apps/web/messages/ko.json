@@ -57,7 +57,140 @@
     },
     "claims": {
       "title": "클레임 관리",
-      "description": "취소·반품·교환 클레임 현황을 조회합니다."
+      "description": "취소·반품·교환 클레임 현황을 조회합니다.",
+      "emptyState": {
+        "qoo10NoKeyTitle": "Qoo10 API 키가 없습니다",
+        "qoo10NoKeyDescription": "채널 설정에서 Qoo10 API 키를 등록하면 클레임이 자동으로 수집됩니다.",
+        "shopifyNoKeyTitle": "Shopify API 키가 없습니다",
+        "shopifyNoKeyDescription": "채널 설정에서 Shopify API 키를 등록하면 반품 현황이 자동으로 수집됩니다.",
+        "claimsEmptyTitle": "표시할 클레임이 없습니다",
+        "claimsEmptyDescription": "선택한 기간과 필터 조건에 해당하는 클레임이 없습니다.",
+        "returnsEmptyTitle": "표시할 반품이 없습니다",
+        "returnsEmptyDescription": "현재 필터 조건에 해당하는 반품이 없습니다."
+      },
+      "errors": {
+        "authFailedTitle": "API 키 인증 실패",
+        "authFailedMessage": "API 키 인증에 실패했습니다. 채널 설정에서 키를 확인해 주세요.",
+        "queryFailedTitle": "클레임 조회 중 오류 발생",
+        "returnsQueryFailedTitle": "반품 조회 중 오류 발생"
+      },
+      "actions": {
+        "goToChannelSettings": "채널 설정으로 이동",
+        "selected": "{count}건 선택됨",
+        "cancelApprove": "취소 승인 ({count})",
+        "returnApprove": "반품 승인 ({count})",
+        "redeliveryProcess": "재배송 처리 ({count})"
+      },
+      "toasts": {
+        "cancelApproveDone": "취소 승인 완료 ({count}건)",
+        "returnApproveDone": "반품 승인 완료 ({count}건)",
+        "redeliveryDone": "재배송 처리 완료 ({count}건)",
+        "processError": "처리 중 오류가 발생했습니다."
+      },
+      "shopifyStatuses": {
+        "ALL": "전체",
+        "REQUESTED": "요청됨",
+        "OPEN": "진행중",
+        "CLOSED": "완료",
+        "DECLINED": "거절됨",
+        "CANCELLED": "취소됨"
+      },
+      "unsupported": {
+        "title": "{channel} 클레임 미지원",
+        "description": "{channel} 채널의 클레임 관리는 아직 지원되지 않습니다."
+      }
+    }
+  },
+  "widgets": {
+    "claimFilterBar": {
+      "statuses": {
+        "전체": "전체",
+        "취소요청": "취소요청",
+        "취소중": "취소중",
+        "취소완료": "취소완료",
+        "반품요청": "반품요청",
+        "반품중": "반품중",
+        "반품완료": "반품완료",
+        "교환신청": "교환신청",
+        "교환승인": "교환승인",
+        "재배송중": "재배송중",
+        "미수취환불": "미수취환불",
+        "미납취소": "미납취소"
+      },
+      "dateRanges": {
+        "오늘": "오늘",
+        "7일": "7일",
+        "30일": "30일",
+        "직접입력": "직접입력"
+      },
+      "calendar": {
+        "weekdays": ["일", "월", "화", "수", "목", "금", "토"],
+        "monthFormat": "yyyy년 M월"
+      },
+      "popover": {
+        "prev": "< 이전",
+        "next": "다음 >",
+        "instruction": "기간을 선택하세요",
+        "reset": "초기화",
+        "close": "닫기"
+      },
+      "search": {
+        "placeholder": "주문번호, 상품명, 구매자 검색"
+      }
+    },
+    "claimTable": {
+      "empty": "클레임 데이터가 없습니다.",
+      "columns": {
+        "status": "클레임 상태",
+        "orderNo": "주문번호",
+        "cartNo": "장바구니번호",
+        "productName": "상품명",
+        "quantity": "수량",
+        "amount": "결제금액",
+        "requestedAt": "요청일",
+        "completedAt": "완료일",
+        "orderedAt": "주문일",
+        "buyer": "구매자",
+        "recipient": "수취인",
+        "reason": "사유",
+        "shippingCompanyTracking": "배송사/운송장",
+        "returnShippingCompanyTracking": "반품배송사/운송장"
+      }
+    },
+    "shopifyReturnTable": {
+      "statuses": {
+        "OPEN": "반품 진행중",
+        "REQUESTED": "반품 요청됨",
+        "DECLINED": "반품 거절됨",
+        "CLOSED": "반품 완료",
+        "CANCELLED": "반품 취소됨"
+      },
+      "reasons": {
+        "UNKNOWN": "기타",
+        "SIZE_TOO_SMALL": "사이즈 작음",
+        "SIZE_TOO_LARGE": "사이즈 큼",
+        "WRONG_ITEM": "잘못된 상품",
+        "NOT_AS_DESCRIBED": "상품 설명 불일치",
+        "DEFECTIVE": "불량/파손",
+        "STYLE": "스타일 불만족",
+        "COLOR": "색상 불만족",
+        "MISSING_ITEM": "상품 누락",
+        "OTHER": "기타"
+      },
+      "empty": "반품 데이터가 없습니다.",
+      "extraItems": "외 {count}개 상품",
+      "columns": {
+        "status": "반품 상태",
+        "returnNo": "반품번호",
+        "orderNo": "주문번호",
+        "productName": "상품명",
+        "quantity": "수량",
+        "refundAmount": "환불금액",
+        "reason": "반품 사유",
+        "requestedAt": "요청일",
+        "completedAt": "완료일",
+        "buyer": "구매자"
+      }
     }
   }
 }
