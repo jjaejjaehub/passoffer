@@ -3,6 +3,7 @@
 import type React from 'react';
 import type { BoxProps } from '@chakra-ui/react';
 import { Box, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import type { ChannelId } from '@/shared/config';
 import { CHANNEL_CONFIG } from '@/shared/config';
 
@@ -19,6 +20,13 @@ export function ChannelBadge({
   ...rest
 }: ChannelBadgeProps): React.JSX.Element {
   const channel = CHANNEL_CONFIG[channelId];
+  const tChannels = useTranslations('config.channels');
+  let channelName: string = channel.name;
+  try {
+    channelName = tChannels(`${channelId}.name`);
+  } catch {
+    channelName = channel.name;
+  }
 
   if (variant === 'icon-only') {
     return (
@@ -76,7 +84,7 @@ export function ChannelBadge({
         {channel.initial}
       </Box>
       <Text fontSize="sm" color="inherit">
-        {channel.name}
+        {channelName}
       </Text>
     </Box>
   );

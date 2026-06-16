@@ -14,7 +14,8 @@
     },
     "orders": {
       "root": "주문 관리",
-      "orders": "주문",
+      "payments": "결제관리",
+      "newOrders": "신규주문",
       "dispatch": "출고관리",
       "shipping": "배송관리",
       "all": "전체조회",
@@ -43,21 +44,86 @@
     "japanese": "일본어"
   },
   "pages": {
+    "errorBoundary": {
+      "description": "잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도",
+      "fallbackTitle": "문제가 발생했습니다.",
+      "titles": {
+        "root": "예기치 못한 오류가 발생했습니다.",
+        "claims": "클레임 목록을 불러오는 중 문제가 발생했습니다.",
+        "dashboard": "대시보드를 불러오는 중 문제가 발생했습니다.",
+        "inquiry": "상품 문의를 불러오는 중 문제가 발생했습니다.",
+        "inventory": "재고 목록을 불러오는 중 문제가 발생했습니다.",
+        "itemEdit": "상품 수정 화면을 불러오는 중 문제가 발생했습니다.",
+        "orders": "주문 정보를 불러오는 중 문제가 발생했습니다.",
+        "products": "상품 목록을 불러오는 중 문제가 발생했습니다.",
+        "productNew": "상품 등록 중 문제가 발생했습니다.",
+        "channels": "채널 설정을 불러오는 중 문제가 발생했습니다."
+      }
+    },
+    "notFound": {
+      "title": "404 — 페이지를 찾을 수 없습니다"
+    },
+    "payments": {
+      "title": "결제관리",
+      "description": "결제 완료된 주문을 조회하고 결제 상태를 관리합니다.",
+      "summary": {
+        "totalAmount": "결제 합계"
+      }
+    },
+    "newOrders": {
+      "title": "신규주문",
+      "description": "새로 들어온 주문을 확인하고 출고 단계로 진행합니다.",
+      "summary": {
+        "slaLabel": "SLA {sla}h / 경고 {warn}h",
+        "overdue": "초과 {count}건",
+        "dueSoon": "임박 {count}건"
+      }
+    },
     "allOrders": {
       "title": "전체조회",
-      "description": "모든 상태의 주문을 단일 뷰에서 조회합니다."
+      "description": "모든 상태의 주문을 단일 뷰에서 조회합니다.",
+      "summary": {
+        "paymentStage": "결제완료 {count}건",
+        "newOrderStage": "신규주문 {count}건",
+        "dispatchStage": "출고 {count}건",
+        "shippingStage": "배송 {count}건",
+        "settledStage": "정산 {count}건",
+        "claimStage": "클레임 {count}건"
+      }
     },
     "shipping": {
       "title": "배송관리",
-      "description": "배송 추적과 완료 처리 단계를 관리합니다."
+      "description": "배송 추적과 완료 처리 단계를 관리합니다.",
+      "summary": {
+        "shipped": "출고완료 {count}건",
+        "inTransit": "배송중 {count}건",
+        "delivered": "배송완료 {count}건",
+        "deliveredRate": "완료율 {rate}%",
+        "byCarrierLabel": "택배사 분포"
+      }
     },
     "dispatch": {
       "title": "출고관리",
-      "description": "송장 발급과 출고 처리 단계를 관리합니다."
+      "description": "송장 발급과 출고 처리 단계를 관리합니다.",
+      "summary": {
+        "ready": "출고대기 {count}건",
+        "labelPrinted": "송장출력 {count}건",
+        "holdOrder": "주문보류 {count}건",
+        "holdDispatch": "출고보류 {count}건",
+        "byCarrierLabel": "택배사 분포"
+      }
     },
     "claims": {
       "title": "클레임 관리",
       "description": "취소·반품·교환 클레임 현황을 조회합니다.",
+      "summary": {
+        "cancelStage": "취소 {count}건",
+        "returnStage": "반품 {count}건",
+        "exchangeStage": "교환 {count}건",
+        "swapStage": "맞교환 {count}건",
+        "totalStage": "전체 {count}건"
+      },
       "emptyState": {
         "qoo10NoKeyTitle": "Qoo10 API 키가 없습니다",
         "qoo10NoKeyDescription": "채널 설정에서 Qoo10 API 키를 등록하면 클레임이 자동으로 수집됩니다.",
@@ -98,6 +164,1200 @@
       "unsupported": {
         "title": "{channel} 클레임 미지원",
         "description": "{channel} 채널의 클레임 관리는 아직 지원되지 않습니다."
+      }
+    },
+    "dashboard": {
+      "title": "대시보드",
+      "description": "채널별 이번달 매출 현황을 확인합니다.",
+      "month": "2026년 5월",
+      "asOfDate": "2026-05-01 기준",
+      "realtime": "● 실시간",
+      "qoo10Header": "{month} Qoo10 현황",
+      "shopifyHeader": "{month} Shopify 현황",
+      "kpi": {
+        "orderCount": "이번달 주문",
+        "salesAmount": "이번달 매출",
+        "avgOrderValue": "평균 객단가",
+        "pendingShip": "배송 대기",
+        "fulfilled": "배송 완료",
+        "totalRefund": "총 환불액",
+        "cancel": "취소",
+        "return": "반품",
+        "exchange": "교환",
+        "monthOverMonth": "전월 대비 {delta}",
+        "vatIncluded": "옵 기준 부가세 포함",
+        "taxExcluded": "세금 제외",
+        "needAction": "즉시 처리 필요",
+        "actionBadge": "처리필요",
+        "ordersUnit": "{count}건"
+      },
+      "section": {
+        "claims": "클레임 현황",
+        "returnsCancels": "반품 · 취소 현황",
+        "topItems": "인기 상품 TOP 5",
+        "recentClaims": "최근 클레임 주문"
+      },
+      "topItems": {
+        "rank": "#",
+        "name": "상품명",
+        "qty": "판매수량",
+        "revenue": "매출",
+        "qtyUnit": "{count}개"
+      },
+      "recentClaims": {
+        "type": "유형",
+        "orderNo": "주문번호",
+        "name": "상품명",
+        "date": "요청일",
+        "reason": "사유"
+      }
+    },
+    "inquiry": {
+      "title": "상품 문의",
+      "description": "Qoo10 상품에 대한 구매자 문의를 확인하고 답변합니다.",
+      "noApiKey": {
+        "title": "Qoo10 API 키가 없습니다",
+        "description": "채널 설정에서 Qoo10 API 키를 등록하면 상품 문의를 관리할 수 있습니다.",
+        "action": "채널 설정으로 이동"
+      },
+      "filter": {
+        "all": "전체",
+        "unanswered": "미답변",
+        "answered": "답변완료"
+      },
+      "status": {
+        "answered": "답변완료",
+        "unanswered": "미답변"
+      },
+      "reply": {
+        "title": "답변 작성",
+        "placeholder": "답변을 입력하세요",
+        "cancel": "취소",
+        "submitNew": "답변 등록",
+        "submitEdit": "답변 수정",
+        "buttonNew": "답변하기",
+        "buttonEdit": "답변 수정",
+        "successToast": "답변이 등록되었습니다.",
+        "errorToast": "답변 등록에 실패했습니다.",
+        "sellerLabel": "판매자 답변 · {date}"
+      },
+      "empty": {
+        "title": "문의가 없습니다",
+        "description": "현재 조건에 해당하는 상품 문의가 없습니다."
+      },
+      "pagination": {
+        "prev": "이전",
+        "next": "다음"
+      }
+    },
+    "inventory": {
+      "title": "재고 관리",
+      "description": "채널별 상품 재고를 조회하고 수정합니다.",
+      "channelTabs": {
+        "qoo10": "Qoo10",
+        "shopify": "Shopify"
+      },
+      "qoo10StatusTabs": {
+        "available": "거래가능 (S2)",
+        "waiting": "거래대기 (S1)"
+      },
+      "shopifyStatusTabs": {
+        "all": "전체",
+        "ACTIVE": "판매",
+        "DRAFT": "판매중지",
+        "ARCHIVED": "보관됨"
+      },
+      "noApiKey": {
+        "qoo10": "Qoo10 API 키가 없습니다. 채널 설정에서 API 키를 등록해 주세요.",
+        "shopify": "Shopify API 키가 없습니다. 채널 설정에서 API 키를 등록해 주세요."
+      },
+      "empty": "상품이 없습니다.",
+      "pagination": {
+        "prev": "이전",
+        "next": "다음",
+        "pageLabel": "{page} 페이지",
+        "retry": "다시 시도"
+      },
+      "searchPlaceholder": "상품명 검색",
+      "stockBadges": {
+        "outOfStock": "재고 부족 {count}개",
+        "lowStock": "임박 {count}개"
+      },
+      "table": {
+        "title": "상품명",
+        "variant": "변형",
+        "sku": "SKU",
+        "price": "가격",
+        "stock": "재고",
+        "tracking": "추적",
+        "tracked": "추적",
+        "untracked": "미추적",
+        "edit": "수정"
+      },
+      "editModal": {
+        "title": "재고 수정",
+        "currentStock": "현재 재고: {qty}",
+        "placeholder": "새 수량 입력",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "toasts": {
+        "invalidQtyTitle": "유효하지 않은 수량",
+        "invalidQtyDescription": "0 이상의 정수를 입력해 주세요.",
+        "updateSuccess": "재고가 업데이트되었습니다",
+        "updateErrorTitle": "재고 업데이트 실패",
+        "updateErrorDescription": "잠시 후 다시 시도해 주세요."
+      }
+    },
+    "adminWarehousesInventory": {
+      "title": "재고 조회",
+      "selectWarehouseTitle": "창고를 선택해주세요",
+      "selectWarehouseDescription": "우측 상단에서 창고를 선택하면 재고 목록이 표시됩니다.",
+      "description": "창고별로 LOT 단위 재고와 SKU 단위 합계를 조회합니다.",
+      "errors": {
+        "capabilitiesTitle": "창고 정보를 불러오지 못했습니다",
+        "capabilitiesDescription": "새로고침 후에도 동일하면 관리자에게 문의해 주세요.",
+        "noCapability": "capability 정보가 없습니다",
+        "inventoryTitle": "재고 데이터를 불러오지 못했습니다",
+        "inventoryDescription": "잠시 후 다시 시도해 주세요."
+      },
+      "freshness": {
+        "empty": "데이터 없음",
+        "lastSync": "마지막 동기화: {time}",
+        "realtime": " · 실시간",
+        "partialDelay": " · 일부 지연"
+      }
+    },
+    "adminWarehousesAdjustments": {
+      "title": "재고 이동/조정",
+      "selectWarehouseTitle": "창고를 선택해주세요",
+      "selectWarehouseDescription": "우측 상단에서 창고를 선택하면 조정 마법사를 시작할 수 있습니다.",
+      "steps": {
+        "step1Label": "출발 선택",
+        "step1Description": "로케이션과 SKU/LOT",
+        "step2Label": "도착 입력",
+        "step2Description": "도착 로케이션과 수량",
+        "step3Label": "검토 및 확정",
+        "step3Description": "Before/After 미리보기"
+      },
+      "errors": {
+        "capabilitiesTitle": "창고 정보를 불러오지 못했습니다",
+        "locationsTitle": "로케이션을 불러오지 못했습니다",
+        "noCapabilityTitle": "창고 능력 정보를 사용할 수 없습니다",
+        "noCapabilityDescription": "창고 데이터를 다시 불러와 주세요."
+      },
+      "buttons": {
+        "prev": "이전",
+        "restart": "처음부터",
+        "next": "다음",
+        "confirm": "확정",
+        "cancel": "취소"
+      },
+      "toast": {
+        "pendingTitle": "외부 WMS 처리 대기",
+        "pendingDescription": "벤더 시스템에서 처리 중입니다. 동기화 후 재고에 반영됩니다.",
+        "successTitle": "재고 이동 완료",
+        "successDescription": "{sku} {quantity}개를 이동했습니다.",
+        "errorTitle": "재고 이동 실패",
+        "errorFallback": "다시 시도해 주세요."
+      },
+      "step1": {
+        "sourceLocationLabel": "1. 출발 로케이션",
+        "skuLotLabel": "2. SKU / LOT 선택",
+        "pickLocationFirst": "먼저 출발 로케이션을 선택해 주세요."
+      },
+      "step2": {
+        "sourceRequiredTitle": "출발 정보가 필요합니다",
+        "sourceRequiredDescription": "이전 단계에서 출발 로케이션과 SKU/LOT을 선택해 주세요.",
+        "destLocationLabel": "도착 로케이션",
+        "excludeReason": "출발 로케이션과 동일할 수 없습니다",
+        "quantityLabel": "이동 수량",
+        "quantityPlaceholder": "이동할 수량을 입력하세요",
+        "availableQty": "가용 수량 {qty}",
+        "tooMuch": "가용 수량을 초과합니다.",
+        "sameLocation": "도착 로케이션이 출발과 같습니다.",
+        "summaryLabel": "선택 요약"
+      },
+      "step3": {
+        "insufficientTitle": "검토할 정보가 부족합니다",
+        "insufficientDescription": "이전 단계로 돌아가 주세요.",
+        "sourceLabel": "출발 (감소)",
+        "destLabel": "도착 (증가)",
+        "reasonLabel": "사유 코드",
+        "reasonPlaceholder": "선택하세요",
+        "noteLabel": "메모 (선택)",
+        "notePlaceholder": "조정 메모를 입력하세요"
+      },
+      "confirmDialog": {
+        "title": "재고 이동 확정",
+        "intro": "아래 내용으로 재고 이동을 확정합니다.",
+        "quantityLine": "수량 {qty}",
+        "reasonLine": "사유 {code}",
+        "warning": "실행 시 출발 로케이션 -{qty}, 도착 로케이션 +{qty} 두 번의 조정 요청이 전송됩니다."
+      }
+    },
+    "masterProducts": {
+      "title": "마스터 상품",
+      "description": "채널에 등록할 마스터 상품을 관리합니다.",
+      "createButton": "마스터 상품 등록",
+      "searchPlaceholder": "상품명 검색",
+      "toasts": {
+        "deleteSuccess": "삭제 완료",
+        "deleteFailed": "삭제 실패"
+      },
+      "bulk": {
+        "selected": "{count}개 선택됨",
+        "clear": "선택 해제",
+        "listToChannels": "채널 일괄 등록"
+      },
+      "table": {
+        "title": "상품명/코드",
+        "brand": "브랜드",
+        "retailPrice": "소비자가",
+        "variantCount": "변형 수",
+        "listedChannelCount": "등록 채널 수",
+        "createdAt": "등록일",
+        "empty": "마스터 상품이 없습니다."
+      },
+      "actions": {
+        "edit": "편집",
+        "confirm": "확인",
+        "cancel": "취소",
+        "delete": "삭제",
+        "prev": "이전",
+        "next": "다음"
+      }
+    },
+    "masterProductForm": {
+      "header": {
+        "editTitle": "마스터 상품 편집",
+        "createTitle": "마스터 상품 등록",
+        "editDescription": "마스터 상품 정보를 수정합니다.",
+        "createDescription": "새 마스터 상품을 등록합니다. 등록 후 각 채널에 개별 등록할 수 있습니다."
+      },
+      "actions": {
+        "cancel": "취소",
+        "listToChannels": "채널 등록",
+        "save": "저장",
+        "create": "등록"
+      },
+      "toasts": {
+        "requiredCodeName": "상품 코드와 상품명은 필수입니다.",
+        "saveSuccess": "저장 완료",
+        "createSuccess": "등록 완료",
+        "createFailed": "등록 실패",
+        "updateFailed": "수정 실패",
+        "optionGroupSaveFailed": "옵션 그룹 저장 실패",
+        "singleVariantSaveFailed": "단일 변형 저장 실패",
+        "skuRequired": "최소 1개 SKU를 연결해야 합니다.",
+        "variantAddSuccess": "변형 추가 완료",
+        "variantAddFailed": "변형 추가 실패",
+        "variantUpdateSuccess": "변형 수정 완료",
+        "variantUpdateFailed": "변형 수정 실패",
+        "variantDeleteSuccess": "변형 삭제 완료",
+        "variantDeleteFailed": "변형 삭제 실패"
+      },
+      "labelMap": {
+        "title": "상품명",
+        "weightGram": "무게(g)",
+        "descriptionHtml": "상품 설명",
+        "brand": "브랜드",
+        "hsCode": "HS 코드",
+        "originCountry": "원산지",
+        "images": "이미지"
+      },
+      "basicInfo": {
+        "section": "기본 정보",
+        "productCode": "상품 코드",
+        "productCodeHelper": "Passoffer 내부 관리 코드",
+        "productCodePlaceholder": "예: PROD-001",
+        "title": "상품명",
+        "titlePlaceholder": "상품명 입력",
+        "brand": "브랜드",
+        "noBrand": "브랜드 없음 (No Brand)",
+        "brandPlaceholder": "브랜드명 입력",
+        "hsCode": "HS 코드",
+        "hsCodePlaceholder": "예: 6109.10",
+        "retailPrice": "소비자가",
+        "retailPricePlaceholder": "예: 29000",
+        "originCountry": "원산지",
+        "originDomestic": "국내 (대한민국)",
+        "originForeign": "해외",
+        "originOther": "기타",
+        "originDomesticPlaceholder": "예: 서울특별시",
+        "originForeignPlaceholder": "예: 중국, China",
+        "originOtherPlaceholder": "자유 입력",
+        "material": "소재",
+        "materialPlaceholder": "예: 면 100%",
+        "weight": "무게 (g)",
+        "weightPlaceholder": "예: 300",
+        "tags": "태그",
+        "tagsHelper": "쉼표로 구분하여 입력하세요",
+        "tagsPlaceholder": "예: 의류, 여성, 반팔"
+      },
+      "description": {
+        "section": "상품 설명"
+      },
+      "images": {
+        "section": "이미지",
+        "delete": "삭제",
+        "add": "이미지 추가",
+        "url": "이미지 URL",
+        "urlPlaceholder": "https://...",
+        "alt": "이미지 설명",
+        "altLabel": "대체 텍스트",
+        "addButton": "추가"
+      },
+      "options": {
+        "section": "옵션 (Variants)",
+        "generateCombinations": "↓ 옵션 조합 생성",
+        "listHeading": "옵션 목록 ({count}개) — SKU와 가격/재고를 입력하세요",
+        "thOption": "옵션",
+        "thSku": "연결 SKU (수량)",
+        "thPrice": "가격 (₩)",
+        "thStock": "재고",
+        "afterSave": "저장 후",
+        "skuNote": "* SKU를 1개 이상 연결한 행만 등록됩니다. 가격과 재고도 함께 입력해 주세요.",
+        "singleHeading": "단일 상품 — SKU와 가격/재고를 입력하세요",
+        "singleNote": "* 위에서 옵션을 추가하면 변형(Variant) 단위로 SKU·가격·재고를 입력할 수 있습니다."
+      },
+      "variants": {
+        "section": "변형 (Variants)",
+        "thSku": "연결 SKU (수량)",
+        "thPrice": "가격",
+        "thStock": "가용재고",
+        "empty": "등록된 변형이 없습니다. 아래에서 추가하세요.",
+        "unlinked": "미연결",
+        "edit": "편집",
+        "delete": "삭제",
+        "save": "저장",
+        "cancel": "취소",
+        "add": "추가",
+        "skuSearchRequired": "SKU 검색 *",
+        "price": "가격",
+        "afterSave": "저장 후"
+      },
+      "platform": {
+        "section": "플랫폼별 추가 정보",
+        "description": "각 채널에 등록할 때 필요한 플랫폼 전용 필드를 입력하세요.",
+        "noLinkedChannels": "연결된 채널이 없습니다",
+        "noLinkedPlatforms": "연결된 플랫폼이 없습니다",
+        "noLinkedHint": "이 상품을 채널에 등록하면 해당 플랫폼 전용 필드가 여기에 표시됩니다.",
+        "noPlatformHint": "설정 > 채널 연결에서 API 키를 등록하면 여기에 표시됩니다.",
+        "ready": "✓ 등록 가능",
+        "missingRequired": "필수값 미입력 ({count}개)",
+        "notFilled": "미입력",
+        "missingInline": "미입력: {missing}",
+        "fixBefore": "채널 등록 전 아래 항목을 입력해 주세요",
+        "categoryHeader": "카테고리",
+        "categoryMain": "대분류",
+        "categoryMid": "중분류",
+        "categorySub": "소분류",
+        "categoryMainPlaceholder": "대분류 선택",
+        "categoryMidPlaceholder": "중분류 선택",
+        "categorySubPlaceholder": "소분류 선택",
+        "categoryCode": "코드: {code}",
+        "brandHeader": "브랜드",
+        "brandSearch": "브랜드 검색",
+        "brandSkip": "입력하지 않음",
+        "brandSearchPlaceholder": "브랜드명을 입력해 주세요 (2글자 이상)",
+        "brandNoResult": "검색 결과가 없습니다.",
+        "brandSelected": "선택됨: {label}",
+        "availableDateTypeLabel": "발송가능일 타입",
+        "availableDateType0": "일반발송 (3영업일)",
+        "availableDateType1": "상품준비일",
+        "availableDateType2": "출시일",
+        "availableDateType3": "당일발송",
+        "availableDateValueLabel": "발송가능일 값",
+        "availableDateValuePlaceholder0": "1~3 (일반발송일)",
+        "availableDateValuePlaceholder1": "4~14 (준비일 수)",
+        "availableDateValuePlaceholder2": "2025/09/26 (출시일)",
+        "availableDateValuePlaceholder3": "14:30 (당일발송 마감시간)",
+        "availableDateValueHelper": "일반발송 선택 시 미입력이면 1(영업일)로 자동 처리됩니다.",
+        "itemQtyLabel": "재고 수량",
+        "itemQtyHelper": "변형(Variants) 재고 합계에서 자동 계산됩니다. (현재: {total}개)",
+        "itemPriceLabel": "판매 가격 (JPY)",
+        "itemPriceHelper": "첫 번째 변형(Variant) 가격에서 자동 계산됩니다.",
+        "itemPriceHelperWithValue": "첫 번째 변형(Variant) 가격에서 자동 계산됩니다. (현재: ¥{price})",
+        "shippingTemplate": "배송 템플릿",
+        "shippingTemplateLoading": "배송 템플릿 불러오는 중...",
+        "shippingTemplateDirectInput": "배송 번호 직접 입력 (예: 12345)",
+        "shippingTemplateSearch": "템플릿 번호 또는 배송사로 검색",
+        "shippingFree": "0 — 무료배송",
+        "shippingNoResult": "검색 결과 없음",
+        "shippingNoPrefix": "No.{no}",
+        "shippingFreeHelper": "무료배송으로 처리됩니다.",
+        "shippingError": "템플릿 조회 실패. Qoo10 API 키를 확인하거나 직접 번호를 입력하세요.",
+        "shippingFreeLabel": "무료",
+        "shippingPaidLabel": "유료",
+        "shippingConditionalLabel": "조건부무료",
+        "shippingPickupLabel": "방문수령",
+        "shippingCodNoPrepayLabel": "착불(선결제불가)",
+        "shippingCodPrepayLabel": "착불(선결제가능)",
+        "shippingFeeLine": "배송비 {fee}円",
+        "shippingConditional": "{threshold}円 이상 무료",
+        "selectPlaceholder": "선택하세요",
+        "conditionalSelectNone": "선택안함"
+      },
+      "listedChannels": {
+        "section": "등록된 채널",
+        "statusSynced": "동기화됨",
+        "statusError": "실패",
+        "statusPending": "대기중"
+      }
+    },
+    "salesProducts": {
+      "pageTitle": "판매 상품 관리",
+      "pageDescription": "채널 상품과 마스터 상품을 연결합니다.",
+      "status": {
+        "all": "전체",
+        "qoo10": {
+          "s0": "검수대기",
+          "s1": "거래대기",
+          "s2": "거래가능",
+          "s3": "거래중지",
+          "s5": "거래제한",
+          "s8": "승인거부"
+        },
+        "shopify": {
+          "active": "판매",
+          "draft": "판매중지",
+          "archived": "보관됨"
+        },
+        "shopee": {
+          "normal": "판매중",
+          "unlist": "판매중지",
+          "reviewing": "검수중",
+          "banned": "차단",
+          "sellerDelete": "삭제"
+        }
+      },
+      "badges": {
+        "linked": "연결됨",
+        "unlinked": "미연결",
+        "syncPending": "동기화 필요",
+        "syncError": "동기화 오류"
+      },
+      "toasts": {
+        "stockSyncSuccess": "재고 동기화 완료",
+        "stockSyncFail": "재고 동기화 실패",
+        "infoSyncSuccess": "상품 정보 동기화 완료",
+        "infoSyncFail": "상품 정보 동기화 실패",
+        "unlinkSuccess": "연결 해제 완료",
+        "unlinkFail": "연결 해제 실패",
+        "salesSyncSuccess": "판매 동기화 완료",
+        "salesSyncFail": "판매 동기화 실패",
+        "processDone": "처리 완료",
+        "bulkProcessDone": "일괄 처리 완료",
+        "processResult": "성공 {fulfilled}건, 실패 {rejected}건"
+      },
+      "count": {
+        "total": "총 {count}개",
+        "filtered": " (필터링: {count}개)"
+      },
+      "buttons": {
+        "delete": "삭제",
+        "sync": "동기화",
+        "viewMaster": "마스터 보기",
+        "skuMapping": "SKU 매핑",
+        "unlink": "연결 해제",
+        "extractMaster": "마스터 추출",
+        "linkMaster": "마스터 연결"
+      },
+      "row": {
+        "sellerCodePrefix": "판매자코드: {code}",
+        "optionCount": "{count}개",
+        "activate": {
+          "default": "판매중",
+          "shopify": "판매(ACTIVE)"
+        },
+        "suspend": {
+          "default": "판매중지",
+          "shopify": "판매중지(DRAFT)"
+        }
+      },
+      "table": {
+        "title": "상품명 / 채널 ID",
+        "options": "옵션 수",
+        "linkStatus": "연결 상태",
+        "actions": "작업"
+      },
+      "search": {
+        "placeholder": "상품명 / 채널 ID / 판매자코드 검색"
+      },
+      "empty": {
+        "noChannels": "연결된 채널이 없습니다",
+        "noChannelsDescription": "설정에서 채널을 추가해주세요.",
+        "goToChannelSettings": "채널 설정으로 이동",
+        "selectChannel": "채널을 선택해 주세요",
+        "selectChannelDescription": "상단 탭에서 채널을 선택하면 상품을 조회할 수 있습니다.",
+        "loadError": "채널 상품을 불러오지 못했습니다",
+        "noItems": "표시할 상품이 없습니다",
+        "noItemsDescription": "선택한 상태 또는 검색 조건에 맞는 상품이 없습니다."
+      },
+      "pagination": {
+        "prev": "이전",
+        "next": "다음"
+      },
+      "statusDialog": {
+        "suspend": {
+          "shopify": "판매중지(DRAFT)로 변경",
+          "default": "판매중지"
+        },
+        "activate": {
+          "shopify": "판매(ACTIVE)로 변경",
+          "default": "판매중으로 변경"
+        }
+      },
+      "bulk": {
+        "selectedStatus": "선택 {label} ({count})",
+        "selectedDelete": "선택 삭제 ({count})"
+      },
+      "linkModal": {
+        "header": {
+          "selectMaster": "마스터 상품 연결",
+          "checkPlatformFields": "마스터 필수 정보 부족",
+          "mapVariants": "옵션 매핑",
+          "confirmSellerCode": "SellerCode 덮어쓰기 확인",
+          "confirmOverwrite": "마스터 정보 덮어쓰기 확인",
+          "resultSuccess": "연결 완료",
+          "resultFail": "연결 실패"
+        },
+        "selectMaster": {
+          "channelProductLabel": "채널 상품:",
+          "channelDetailError": "채널 상품 옵션을 불러올 수 없습니다. Qoo10 API에서 해당 상품을 찾지 못했습니다. (ItemCode: {code})",
+          "noMasterTitle": "마스터 상품이 없나요?",
+          "noMasterDescription": "이 판매상품 정보로 새 마스터 상품을 만들 수 있습니다.",
+          "createMaster": "새 마스터 생성",
+          "searchPlaceholder": "마스터 상품 검색...",
+          "optionCount": "{code} · 옵션 {count}개",
+          "emptyMasterList": "마스터 상품이 없습니다."
+        },
+        "missingFields": {
+          "title": "{channelLabel} 필수 정보가 마스터 상품에 입력되어 있지 않습니다.",
+          "channelFallback": "채널",
+          "description": "아래 항목을 마스터 상품에 입력한 뒤 다시 연결을 진행해주세요. 누락된 상태로 연결하면 채널 동기화 시 오류가 발생할 수 있습니다.",
+          "masterLabel": "마스터 상품:",
+          "typeCommon": "공통",
+          "commonLabels": {
+            "title": "상품명",
+            "descriptionHtml": "상품 설명",
+            "images": "이미지",
+            "brand": "브랜드",
+            "hsCode": "HS 코드",
+            "countryOfOrigin": "원산지",
+            "weightG": "무게(g)",
+            "material": "소재"
+          }
+        },
+        "mapVariants": {
+          "description": "마스터 옵션을 채널 옵션에 매칭하세요. SKU가 같으면 자동으로 매칭됩니다.",
+          "selectPlaceholder": "선택하세요...",
+          "autoBadge": "자동",
+          "mappedCount": "{mapped}/{total} 매핑됨"
+        },
+        "sellerCode": {
+          "description": "다음 채널 옵션에 이미 SellerCode가 설정되어 있습니다. 마스터 SKU로 덮어쓸 항목을 선택하세요.",
+          "info": "ⓘ 비어있는 SellerCode는 자동으로 마스터 SKU로 채워집니다.",
+          "masterSku": "마스터 SKU",
+          "channelSellerCode": "채널 현재 SellerCode",
+          "override": "덮어쓰기",
+          "selectAll": "모두 선택",
+          "deselectAll": "모두 해제"
+        },
+        "overwrite": {
+          "title": "채널 상품 정보가 마스터 상품 정보로 덮어쓰여집니다.",
+          "description": "연결 완료 시 채널(Qoo10 등)에 등록된 다음 항목들이 마스터 상품 기준으로 자동 수정됩니다. 이 작업은 되돌릴 수 없습니다.",
+          "targetsHeader": "덮어쓰기 대상 항목",
+          "targets": {
+            "title": "• 상품명 / 부제목",
+            "images": "• 대표 이미지 및 추가 이미지",
+            "description": "• 상품 설명 (HTML)",
+            "price": "• 판매가 / 정가",
+            "brand": "• 브랜드 / 제조사 / 원산지",
+            "category": "• 카테고리 정보 (지원 시)"
+          },
+          "linkInfoHeader": "연결 정보",
+          "channelProductLabel": "채널 상품:",
+          "masterProductLabel": "마스터 상품:",
+          "mappedOptions": "매핑된 옵션: {mapped} / {total}"
+        },
+        "result": {
+          "linkedTitle": "연결 완료",
+          "linkedDescription": "“{channel}” ↔ “{master}” 연결됨",
+          "linkedVariants": "• 옵션 {count}개 매핑 완료",
+          "sellerCodeUpdates": "• SellerCode 업데이트: {success}건 성공, {fail}건 실패",
+          "stockSync": "• 재고 동기화: {status}",
+          "infoSyncSuccess": "• 상품 정보 동기화: 성공",
+          "infoSyncFail": "• 상품 정보 동기화: 실패",
+          "infoSyncFailWithError": "• 상품 정보 동기화: 실패 ({error})",
+          "retrySync": "다시 동기화",
+          "linkFailed": "연결 실패"
+        },
+        "retryToast": {
+          "success": "상품 정보 동기화 성공",
+          "failFallback": "동기화 실패",
+          "linkFailFallback": "연결에 실패했습니다."
+        },
+        "footer": {
+          "cancel": "취소",
+          "back": "← 이전",
+          "next": "다음 →",
+          "loading": "로딩 중...",
+          "editMaster": "마스터 편집하기 →",
+          "linkAndOverwrite": "연결 + 덮어쓰기",
+          "confirm": "확인"
+        }
+      },
+      "createMasterModal": {
+        "header": {
+          "fillInfo": "판매상품으로 마스터 생성",
+          "resultSuccess": "생성 완료",
+          "resultFail": "생성 실패"
+        },
+        "info": {
+          "banner1": "판매상품 \"{title}\"의 정보를 기반으로 자동 채워졌습니다.",
+          "banner2": "필요한 정보를 확인/수정한 뒤 생성하세요."
+        },
+        "basicInfo": {
+          "title": "기본 정보",
+          "code": "마스터 코드",
+          "codePlaceholder": "고유 코드 (예: MP-001)",
+          "name": "상품명",
+          "namePlaceholder": "상품명",
+          "brand": "브랜드",
+          "noBrand": "브랜드 없음 (No Brand)",
+          "brandInputPlaceholder": "브랜드명 입력",
+          "hsCode": "HS 코드",
+          "hsCodePlaceholder": "예: 6109.10",
+          "retailPrice": "판매가",
+          "retailPricePlaceholder": "예: 29000",
+          "material": "소재",
+          "materialPlaceholder": "예: 면 100%",
+          "weightG": "무게(g)",
+          "weightGPlaceholder": "예: 300",
+          "tags": "태그",
+          "tagsPlaceholder": "예: 의류, 여성, 반팔",
+          "tagsHelper": "쉼표로 구분하여 입력하세요",
+          "descriptionHtml": "상품 설명 (HTML 허용)",
+          "descriptionPlaceholder": "<p>상품 설명을 입력하세요...</p>"
+        },
+        "origin": {
+          "label": "원산지",
+          "domestic": "국내 (대한민국)",
+          "overseas": "해외",
+          "other": "기타",
+          "placeholderDomestic": "예: 서울특별시",
+          "placeholderOverseas": "예: 중국, China",
+          "placeholderOther": "자유 입력"
+        },
+        "images": {
+          "title": "이미지",
+          "add": "이미지 추가",
+          "alt": "대체 텍스트",
+          "addButton": "추가",
+          "urlPlaceholder": "https://..."
+        },
+        "platformAttrs": {
+          "title": "플랫폼별 속성",
+          "description": "연결된 채널의 속성입니다. 추출된 값으로 자동 채워졌으며, 누락된 필수 항목은 직접 입력해 주세요.",
+          "ready": "✓ 등록 가능",
+          "missingCount": "필수값 미입력 ({count}개)",
+          "missingShort": "미입력",
+          "missingList": "미입력: {fields}",
+          "missingHeader": "채널 등록 전 아래 항목을 입력해 주세요"
+        },
+        "qoo10": {
+          "category": "카테고리",
+          "mainCat": "대분류",
+          "subCat": "중분류",
+          "secondSubCat": "소분류",
+          "mainCatPlaceholder": "대분류 선택",
+          "subCatPlaceholder": "중분류 선택",
+          "secondSubCatPlaceholder": "소분류 선택",
+          "codeLine": "코드: {code}",
+          "brand": "브랜드",
+          "brandSearch": "브랜드 검색",
+          "brandNone": "입력하지 않음",
+          "brandSearchPlaceholder": "브랜드명을 입력해 주세요 (2글자 이상)",
+          "brandNoResult": "검색 결과가 없습니다.",
+          "brandSelected": "선택됨: {label}",
+          "deliveryType": "발송가능일 타입",
+          "deliveryNormal": "일반발송 (3영업일)",
+          "deliveryPrep": "상품준비일",
+          "deliveryRelease": "출시일",
+          "deliverySameDay": "당일발송",
+          "deliveryValue": "발송가능일 값",
+          "deliveryHintNormal": "1~3 (일반발송일)",
+          "deliveryHintPrep": "4~14 (준비일 수)",
+          "deliveryHintRelease": "2025/09/26 (출시일)",
+          "deliveryHintSameDay": "14:30 (당일발송 마감시간)",
+          "deliveryNormalHelper": "일반발송 선택 시 미입력이면 1(영업일)로 자동 처리됩니다.",
+          "stock": "재고 수량",
+          "stockAutoHint": "변형(Variants) 재고 합계에서 자동 계산됩니다. (현재: {count}개)",
+          "price": "판매 가격 (JPY)",
+          "priceAutoHint": "첫 번째 변형(Variant) 가격에서 자동 계산됩니다.",
+          "shippingTemplate": "배송 템플릿",
+          "shippingTypeX": "무료",
+          "shippingTypeF": "유료",
+          "shippingTypeM": "조건부무료",
+          "shippingTypeW": "방문수령",
+          "shippingTypeD": "착불(선결제불가)",
+          "shippingTypeR": "착불(선결제가능)",
+          "shippingLoading": "배송 템플릿 불러오는 중...",
+          "shippingManualPlaceholder": "배송 번호 직접 입력 (예: 12345)",
+          "shippingSearchPlaceholder": "템플릿 번호 또는 배송사로 검색",
+          "shippingFreeRow": "0 — 무료배송",
+          "shippingNoResult": "검색 결과 없음",
+          "shippingFeeLine": "배송비 {fee}円",
+          "shippingFreeCondition": "{amount}円 이상 무료",
+          "shippingFreeHelper": "무료배송으로 처리됩니다.",
+          "shippingApiError": "템플릿 조회 실패. Qoo10 API 키를 확인하거나 직접 번호를 입력하세요."
+        },
+        "field": {
+          "selectPlaceholder": "선택하세요",
+          "noneOption": "선택안함"
+        },
+        "optionGroups": {
+          "title": "옵션 그룹",
+          "add": "그룹 추가",
+          "empty": "옵션이 없는 단일 상품으로 생성됩니다.",
+          "namePlaceholder": "옵션 그룹명 (예: 사이즈)"
+        },
+        "variants": {
+          "title": "옵션 (Variants)",
+          "add": "옵션 추가",
+          "optionN": "옵션{n}",
+          "price": "가격",
+          "stock": "재고",
+          "channelMapHint": "채널 옵션 {count}개와 자동 매핑되어 생성 후 즉시 연결됩니다."
+        },
+        "result": {
+          "successTitle": "생성 및 연결 완료",
+          "successDescription": "마스터 상품이 생성되고 \"{title}\"과(와) 연결되었습니다.",
+          "mapped": "옵션 {count}개 매핑됨",
+          "failTitle": "생성 실패"
+        },
+        "footer": {
+          "cancel": "취소",
+          "submit": "생성 및 연결",
+          "confirm": "확인"
+        },
+        "toast": {
+          "missingRequired": "필수 항목을 모두 입력하세요.",
+          "createFailed": "마스터 상품 생성에 실패했습니다."
+        },
+        "variantDefaults": {
+          "groupName": "기본"
+        }
+      }
+    },
+    "listedProductDetail": {
+      "fallbackTitle": "판매상품 상세",
+      "back": "뒤로",
+      "notFound": "판매상품을 찾을 수 없습니다.",
+      "syncSuccess": "동기화 완료",
+      "syncError": "동기화 실패",
+      "sections": {
+        "basicInfo": "기본 정보",
+        "channelData": "채널 등록 데이터"
+      },
+      "labels": {
+        "channelItemCode": "채널 상품 코드",
+        "channelSellerCode": "판매자 코드",
+        "channel": "채널",
+        "status": "상태",
+        "syncStatus": "동기화 상태",
+        "lastSyncedAt": "마지막 동기화",
+        "createdAt": "등록일"
+      },
+      "syncStatus": {
+        "SYNCED": "동기화됨",
+        "PENDING": "동기화 필요",
+        "ERROR": "동기화 오류"
+      },
+      "actions": {
+        "sync": "동기화",
+        "editMaster": "마스터 상품 편집"
+      }
+    },
+    "skus": {
+      "title": "SKU 관리",
+      "description": "재고 단위(SKU)를 관리합니다. 마스터 변형과 판매상품은 SKU를 통해 재고에 연결됩니다.",
+      "createButton": "SKU 등록",
+      "searchPlaceholder": "SKU 코드/이름/바코드 검색",
+      "table": {
+        "codeName": "SKU 코드 / 이름",
+        "barcode": "바코드",
+        "stock": "재고",
+        "masterVariantMapping": "마스터 변형 매핑",
+        "salesMapping": "판매상품 매핑",
+        "updatedAt": "수정일",
+        "empty": "등록된 SKU가 없습니다."
+      },
+      "actions": {
+        "edit": "편집",
+        "delete": "삭제",
+        "confirm": "확인",
+        "cancel": "취소",
+        "prev": "이전",
+        "next": "다음"
+      },
+      "toasts": {
+        "deleteSuccess": "삭제 완료",
+        "deleteFailed": "삭제 실패"
+      },
+      "form": {
+        "titleEdit": "SKU 편집",
+        "titleNew": "SKU 등록",
+        "description": "재고 단위(SKU)의 기본 정보·규격·가격·메타데이터를 관리합니다.",
+        "backToList": "목록으로",
+        "modeLabel": "등록 방식",
+        "modeSingle": "단일 등록",
+        "modeBulk": "대량 등록",
+        "bulkPreviewCount": "{count}개 생성 예정",
+        "deleteBlocked": "연결된 매핑이 있어 삭제할 수 없습니다.",
+        "tabs": {
+          "basic": "기본정보",
+          "spec": "규격/가격정보",
+          "extra": "추가정보",
+          "bulk": "대량 옵션",
+          "mapping": "매핑/재고"
+        },
+        "actions": {
+          "delete": "삭제",
+          "cancel": "취소",
+          "save": "저장",
+          "create": "등록",
+          "bulkCreate": "대량 등록 ({count}개)"
+        },
+        "toasts": {
+          "updateSuccess": "SKU 수정 완료",
+          "createSuccess": "SKU 등록 완료",
+          "saveFailed": "저장 실패",
+          "adjustSuccess": "재고 조정 완료",
+          "adjustFailed": "재고 조정 실패",
+          "deleteSuccess": "삭제 완료",
+          "deleteFailed": "삭제 실패",
+          "bulkCreateSuccess": "{count}개 SKU 등록 완료",
+          "bulkCreateFailed": "일괄 등록 실패",
+          "emptyAdjustQty": "조정 수량을 입력하세요"
+        },
+        "errors": {
+          "codeRequired": "SKU 코드는 필수입니다.",
+          "attrsNotObject": "속성(attributes)은 JSON 객체여야 합니다.",
+          "attrsInvalidJson": "속성(attributes)이 올바른 JSON이 아닙니다.",
+          "axisRequired": "속성 축과 값을 1개 이상 입력하세요."
+        },
+        "basic": {
+          "code": "SKU 코드",
+          "codePlaceholder": "예: APPLE-RED-M",
+          "codeHelperSingle": "테넌트 내에서 유일해야 합니다.",
+          "codeHelperBulk": "대량 등록은 아래 [대량 옵션] 탭에서 코드 prefix와 속성 축을 설정합니다.",
+          "name": "이름",
+          "namePlaceholder": "SKU 표시명",
+          "modelName": "모델명",
+          "inventoryCode": "재고관리코드",
+          "warehouse": "배송처",
+          "vendor": "매입처",
+          "todoNote": "※ 추후 작업 예정 (현재는 텍스트 메모)",
+          "leadTimeDays": "입고 소요일 (일)",
+          "safetyStock": "안전재고",
+          "isPrimaryWarehouse": "대표 배송처로 사용",
+          "isPrimaryWarehouseHint": "대표 배송처로 지정",
+          "image": "이미지 URL",
+          "barcode": "바코드",
+          "barcodePlaceholder": "EAN/UPC 등",
+          "standardCode": "표준코드",
+          "hsCode": "HS 코드",
+          "isbn": "ISBN",
+          "initialStock": "초기 재고",
+          "initialStockHelper": "등록 후 재고 변경은 재고 조정(ledger)으로만 가능합니다.",
+          "attributes": "속성 (JSON)",
+          "attributesHelper": "임의의 키/값 메타데이터. 대량 등록 시 축별 값이 자동 병합됩니다."
+        },
+        "spec": {
+          "headingSpec": "규격",
+          "headingPrice": "가격",
+          "widthCm": "가로 (cm)",
+          "heightCm": "세로 (cm)",
+          "depthCm": "높이 (cm)",
+          "weightKg": "무게 (kg)",
+          "inboundUnit": "입수 수량",
+          "inboundUnitType": "입수 단위",
+          "inboundUnitTypePlaceholder": "EA / BOX 등",
+          "isBundlable": "합포장 가능 여부",
+          "isBundlableHint": "다른 SKU와 합포장 허용",
+          "purchaseCost": "매입가",
+          "purchaseFreight": "매입 운송비",
+          "deliveryFee": "배송비",
+          "adCost": "광고비",
+          "etcCost": "기타 비용",
+          "currency": "통화",
+          "currencyPlaceholder": "KRW",
+          "supplyPrice": "공급가",
+          "salePrice": "판매가"
+        },
+        "extra": {
+          "originCountry": "원산지",
+          "taxType": "세금 유형",
+          "taxTypeGeneral": "일반과세",
+          "taxTypeZero": "영세율",
+          "taxTypeExempt": "면세",
+          "requiresCaution": "취급 주의 상품",
+          "requiresCautionHint": "파손 위험·취급 주의가 필요한 상품",
+          "brand": "브랜드",
+          "manufacturer": "제조사",
+          "manufacturerEn": "제조사 (영문)",
+          "ageGroup": "연령대",
+          "ageGroupPlaceholder": "성인 / 유아 등",
+          "mainImage": "대표 이미지 URL",
+          "descriptionHtml": "상품 설명 (HTML)"
+        },
+        "bulk": {
+          "codePrefix": "코드 prefix",
+          "codePrefixPlaceholder": "예: APPLE",
+          "codePrefixHelper": "최종 코드 = prefix + \"-\" + 축값 조합 (대문자, 공백→_)",
+          "axesTitle": "속성 축",
+          "axesHelper": "값은 Enter 또는 쉼표(,)로 칩이 됩니다.",
+          "axisType": "속성구분",
+          "axisName": "속성명",
+          "axisManage": "관리",
+          "axisNamePlaceholder": "예: 색상",
+          "axisRemoveLabel": "축 삭제",
+          "axisAddLabel": "축 추가",
+          "chipDeleteLabel": "{chip} 삭제",
+          "chipInputPlaceholder": "값 입력 후 Enter 또는 쉼표",
+          "previewTitle": "생성 미리보기 ({count}개)",
+          "previewEmpty": "속성 축과 값을 입력하면 생성될 SKU 목록이 표시됩니다.",
+          "previewCode": "코드",
+          "previewAttrs": "속성",
+          "finalHelper": "기본정보·규격가격·추가정보 탭의 값은 모든 SKU 에 공통 적용됩니다. (코드와 속성만 축에 따라 달라짐)"
+        },
+        "mapping": {
+          "stockTitle": "재고",
+          "currentStock": "현재 재고",
+          "adjustQty": "조정 수량 (±)",
+          "adjustQtyPlaceholder": "예: 10 또는 -5",
+          "memo": "메모",
+          "memoPlaceholder": "조정 사유",
+          "applyAdjust": "조정 적용",
+          "masterTitle": "마스터 변형 매핑 ({count})",
+          "masterEmpty": "연결된 마스터 변형이 없습니다.",
+          "masterHelper": "매핑은 마스터 상품 편집 화면에서 추가/제거합니다.",
+          "masterProduct": "마스터 상품",
+          "variantSku": "변형 SKU",
+          "qty": "수량",
+          "position": "위치",
+          "listedTitle": "판매상품 매핑 ({count})",
+          "listedEmpty": "연결된 판매상품 매핑이 없습니다.",
+          "listedHelper": "매핑은 판매상품 상세 화면에서 편집합니다.",
+          "listedProductId": "판매상품 ID",
+          "channelVariantId": "채널 옵션",
+          "channelSellerCode": "채널 셀러코드"
+        }
+      }
+    },
+    "settingsChannels": {
+      "title": "채널 관리",
+      "description": "판매 채널을 연결하고 API 키를 관리합니다.",
+      "status": {
+        "connectedWithTime": "연결됨 · 마지막 확인: 2분 전",
+        "disconnected": "미연결",
+        "disconnect": "연결 해제",
+        "connect": "연결하기"
+      },
+      "panel": {
+        "notConnectedTitle": "{channelName} 미연결",
+        "rakutenHint": "Rakuten RMS API 키를 등록하면 일본 라쿠텐 주문을 자동으로 수집할 수 있습니다.",
+        "defaultHint": "API 키를 등록하면 주문을 자동으로 수집할 수 있습니다.",
+        "featureAutoCollect": "주문 자동 수집",
+        "featureSyncStock": "상품·재고 동기화",
+        "featureIntegratedSales": "매출 통합 관리",
+        "connectButton": "{channelName} 연결하기",
+        "credentialsTitle": "API 자격 증명",
+        "noApiSetup": "이 채널은 연결된 상태이며, API 설정은 별도로 제공되지 않습니다.",
+        "comingSoonTitle": "추가 예정 채널",
+        "comingSoonBadge": "준비 중"
+      },
+      "qoo10": {
+        "apiKeyLabel": "API 키 *",
+        "apiKeyHint": "Qoo10 판매자 센터 > 환경설정 > API 키 관리에서 발급",
+        "sellerIdLabel": "판매자 ID (선택)",
+        "submit": "연결하기",
+        "validation": {
+          "apiKeyRequired": "API 키를 입력해 주세요"
+        },
+        "toast": {
+          "successTitle": "Qoo10 연결 완료",
+          "successDescription": "API 키가 저장되었습니다.",
+          "errorTitle": "저장 실패",
+          "errorDescription": "연결 정보를 다시 확인해 주세요."
+        }
+      },
+      "rakuten": {
+        "serviceSecretLabel": "Service Secret *",
+        "licenseKeyLabel": "License Key *",
+        "shopUrlLabel": "샵 URL *",
+        "shopUrlPreview": "접속 URL: https://{shopUrl}.shop.rakuten.co.jp",
+        "submit": "연결하기",
+        "validation": {
+          "serviceSecretRequired": "Service Secret은 32자 이상입니다",
+          "licenseKeyRequired": "License Key는 32자 이상입니다",
+          "shopUrlRequired": "샵 URL을 입력해 주세요",
+          "shopUrlPattern": "영소문자, 숫자, 하이픈(-)만 사용 가능합니다"
+        },
+        "toast": {
+          "successTitle": "라쿠텐 연결 완료",
+          "successDescription": "API 키가 저장되었습니다.",
+          "errorTitle": "저장 실패",
+          "errorDescription": "연결 정보를 다시 확인해 주세요."
+        }
+      },
+      "shopee": {
+        "partnerIdLabel": "Partner ID *",
+        "partnerKeyLabel": "Partner Key *",
+        "shopIdLabel": "Shop ID *",
+        "submit": "연결하기",
+        "validation": {
+          "partnerIdRequired": "Partner ID를 입력해 주세요",
+          "partnerKeyRequired": "Partner Key를 입력해 주세요",
+          "shopIdRequired": "Shop ID를 입력해 주세요"
+        },
+        "toast": {
+          "successTitle": "Shopee 연결 완료",
+          "successDescription": "API 키가 저장되었습니다.",
+          "errorTitle": "저장 실패",
+          "errorDescription": "연결 정보를 다시 확인해 주세요."
+        }
+      },
+      "shopify": {
+        "shopDomainLabel": "스토어 도메인 *",
+        "shopDomainHint": "Shopify Dev Dashboard > Apps > Develop apps에서 앱 생성 후 확인",
+        "shopDomainPreview": "Admin URL: https://{shopDomain}/admin",
+        "clientIdLabel": "Client ID *",
+        "clientIdHint": "앱 > API credentials 탭에서 확인",
+        "clientSecretLabel": "Client Secret *",
+        "submit": "Shopify 인증하기",
+        "validation": {
+          "shopDomainRequired": "스토어 도메인을 입력해 주세요",
+          "shopDomainPattern": "your-store.myshopify.com 형식으로 입력해 주세요",
+          "clientIdRequired": "Client ID를 입력해 주세요",
+          "clientSecretRequired": "Client Secret을 입력해 주세요"
+        },
+        "errors": {
+          "oauthUrlFailed": "OAuth URL 생성 실패"
+        }
+      }
+    },
+    "productEditShopify": {
+      "header": {
+        "title": "상품 수정",
+        "description": "Shopify 스토어의 상품 정보를 수정합니다."
+      },
+      "masterLinked": {
+        "notice": "마스터 상품과 연결된 상품입니다",
+        "description": "마스터 상품에서 가져오는 항목은 수정할 수 없습니다. 가격/재고 등 채널 전용 항목만 수정할 수 있습니다."
+      },
+      "errors": {
+        "noApiKey": {
+          "title": "Shopify API 키가 없습니다",
+          "description": "채널 설정에서 Shopify API 키를 등록해 주세요.",
+          "action": "채널 설정으로 이동"
+        },
+        "authFailed": {
+          "title": "API 인증에 실패했습니다",
+          "description": "Shopify API 키 또는 액세스 토큰이 유효하지 않습니다. 채널 설정에서 자격증명을 확인해 주세요.",
+          "action": "채널 설정으로 이동"
+        },
+        "loadFailed": {
+          "title": "상품을 불러올 수 없습니다",
+          "action": "목록으로 돌아가기"
+        }
+      },
+      "sections": {
+        "basicInfo": "상품 기본정보",
+        "description": "상품 설명",
+        "options": "옵션 설정",
+        "priceStock": "가격 / 재고",
+        "images": "이미지"
+      },
+      "fields": {
+        "title": {
+          "label": "상품명 (Title)",
+          "placeholder": "상품명을 입력해 주세요"
+        },
+        "vendor": {
+          "label": "브랜드 (Vendor)",
+          "placeholder": "브랜드명 (선택)"
+        },
+        "productType": {
+          "label": "상품 유형 (Product Type)",
+          "placeholder": "예: Apparel, Electronics (선택)"
+        },
+        "tags": {
+          "label": "태그 (Tags)",
+          "placeholder": "예: summer, sale, cotton (콤마로 구분)",
+          "helper": "태그는 Shopify 검색 및 필터에서 활용됩니다."
+        },
+        "status": {
+          "label": "판매 상태 (Status)",
+          "draft": "초안 (DRAFT) — 비공개",
+          "active": "판매 중 (ACTIVE) — 공개",
+          "archived": "보관됨 (ARCHIVED) — 비공개",
+          "helper": "DRAFT로 저장 후 검토 완료 시 ACTIVE로 변경하는 것을 권장합니다."
+        },
+        "price": {
+          "label": "판매가 (Price)",
+          "placeholder": "예: 29.99"
+        },
+        "compareAtPrice": {
+          "label": "정가 (Compare At Price)",
+          "placeholder": "예: 39.99 (할인 전 가격)"
+        },
+        "sku": {
+          "label": "SKU",
+          "placeholder": "재고 관리 코드 (선택)"
+        },
+        "trackInventory": "재고 추적 사용",
+        "inventoryQuantity": {
+          "label": "재고 수량",
+          "helper": "기본 위치(Location)의 재고로 설정됩니다."
+        }
+      },
+      "options": {
+        "name": {
+          "label": "옵션명",
+          "placeholder": "예: 색상, 사이즈, 소재"
+        },
+        "values": {
+          "label": "옵션 값 (콤마 구분)",
+          "placeholder": "예: 빨강, 파랑, 흰색",
+          "helper": "콤마(,)로 구분. 값 추가/삭제 시 variant 조합이 자동 갱신됩니다."
+        },
+        "deleteAria": "옵션 삭제",
+        "addButton": "옵션 추가",
+        "addButtonCount": "옵션 추가 ({current}/{max})",
+        "maxNotice": "Shopify는 옵션을 최대 3개까지 지원합니다.",
+        "matrixTitle": "옵션 조합별 가격 / 재고 ({count}개 variant)",
+        "matrixColumns": {
+          "combination": "옵션 조합",
+          "price": "판매가",
+          "compareAtPrice": "정가 (할인 전)",
+          "sku": "SKU",
+          "stock": "재고"
+        },
+        "matrixHelper": "옵션 값을 수정하면 조합이 자동 갱신됩니다. 기존에 입력한 값은 유지됩니다."
+      },
+      "images": {
+        "currentLabel": "현재 이미지",
+        "currentHelper": "이미지 수정 및 삭제는 Shopify 관리자 페이지에서 진행해 주세요.",
+        "newUrlsLabel": "새 이미지 URL 추가",
+        "newUrlsHelper": "줄바꿈 또는 콤마(,)로 구분. 공개 접근 가능한 URL이어야 합니다."
+      },
+      "actions": {
+        "cancel": "취소",
+        "save": "저장"
       }
     }
   },
@@ -225,6 +1485,88 @@
         "requestedAt": "요청일",
         "completedAt": "완료일",
         "buyer": "구매자"
+      }
+    }
+  },
+  "config": {
+    "fulfillmentRank": {
+      "10": "결제완료",
+      "20": "신규주문",
+      "25": "주문보류",
+      "30": "발송준비",
+      "35": "발송보류",
+      "40": "송장출력",
+      "50": "발송완료",
+      "60": "배송중",
+      "70": "배송완료",
+      "80": "정산완료",
+      "90": "구매확정"
+    },
+    "semantic": {
+      "paid": "결제완료",
+      "new": "신규주문",
+      "hold_order": "주문보류",
+      "ready": "발송준비",
+      "hold_dispatch": "발송보류",
+      "label_printed": "송장출력",
+      "shipped": "발송완료",
+      "in_transit": "배송중",
+      "delivered": "배송완료",
+      "settled": "정산완료",
+      "completed": "구매확정",
+      "claim_any": "클레임",
+      "all": "전체"
+    },
+    "hold": {
+      "order_hold": "주문보류",
+      "dispatch_hold": "발송보류"
+    },
+    "counterLines": {
+      "intake": "주문 접수",
+      "dispatch": "출고",
+      "delivery": "배송",
+      "settle": "정산/완료"
+    },
+    "orderColumns": {
+      "orderedAt": "주문일",
+      "channelId": "채널",
+      "channelOrderId": "주문번호",
+      "buyerName": "구매자",
+      "productSummary": "상품",
+      "total": "금액",
+      "fulfillmentStatus": "상태",
+      "trackingNo": "송장"
+    },
+    "sortFields": {
+      "orderedAt": "주문일",
+      "paidAt": "결제일",
+      "shippedAt": "발송일",
+      "fulfillmentStatus": "상태 단계",
+      "total": "금액",
+      "channelOrderId": "주문번호",
+      "createdAt": "생성일",
+      "updatedAt": "수정일"
+    },
+    "channels": {
+      "qoo10": {
+        "name": "큐텐",
+        "description": "한국·싱가포르·인도네시아 이커머스"
+      },
+      "rakuten": {
+        "name": "라쿠텐",
+        "description": "일본 최대 이커머스 플랫폼"
+      },
+      "shopee": {
+        "name": "쇼피",
+        "description": "동남아시아 최대 이커머스 플랫폼"
+      },
+      "amazon": {
+        "name": "아마존",
+        "description": "글로벌 이커머스 플랫폼"
+      },
+      "shopify": {
+        "name": "쇼피파이",
+        "description": "글로벌 커머스 플랫폼"
       }
     }
   }

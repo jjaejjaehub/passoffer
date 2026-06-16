@@ -1,4 +1,5 @@
 import { Badge, Box, Button, Flex, Input, Stack, Table, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import { type Dispatch, type KeyboardEvent, type SetStateAction, useState } from "react";
 import { ShopifyFormHelperText as HelperText } from "@/shared/ui/ShopifyFormPrimitives";
 import type { AxisRow } from "../../model/formState";
@@ -30,6 +31,7 @@ function AxisChipInput({
   chips: string[];
   onChange: (next: string[]) => void;
 }) {
+  const t = useTranslations("pages.skus");
   const [draft, setDraft] = useState("");
 
   const commit = (raw: string) => {
@@ -90,7 +92,7 @@ function AxisChipInput({
           <button
             type="button"
             onClick={() => removeChip(idx)}
-            aria-label={`${chip} 삭제`}
+            aria-label={t("form.bulk.chipDeleteLabel", { chip })}
             style={{
               cursor: "pointer",
               fontSize: "12px",
@@ -120,7 +122,7 @@ function AxisChipInput({
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => commit(draft)}
-        placeholder={chips.length === 0 ? "값 입력 후 Enter 또는 쉼표" : ""}
+        placeholder={chips.length === 0 ? t("form.bulk.chipInputPlaceholder") : ""}
       />
     </Flex>
   );
@@ -133,6 +135,7 @@ export function BulkOptionsSection({
   setAxes,
   bulkPreview,
 }: Props) {
+  const t = useTranslations("pages.skus");
   const updateAxis = (idx: number, patch: Partial<AxisRow>) => {
     setAxes((a) => a.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
   };
@@ -148,21 +151,21 @@ export function BulkOptionsSection({
   return (
     <FormBox>
       <Stack gap={4}>
-        <Field label="코드 prefix">
+        <Field label={t("form.bulk.codePrefix")}>
           <Input
             size="sm"
             value={bulkPrefix}
             onChange={(e) => setBulkPrefix(e.target.value)}
-            placeholder="예: APPLE"
+            placeholder={t("form.bulk.codePrefixPlaceholder")}
           />
-          <HelperText>최종 코드 = prefix + "-" + 축값 조합 (대문자, 공백→_)</HelperText>
+          <HelperText>{t("form.bulk.codePrefixHelper")}</HelperText>
         </Field>
 
         <Box>
           <Flex justify="space-between" align="center" mb={2}>
-            <Text fontSize="sm" fontWeight="medium">속성 축</Text>
+            <Text fontSize="sm" fontWeight="medium">{t("form.bulk.axesTitle")}</Text>
             <Text fontSize="xs" color="gray.500">
-              값은 Enter 또는 쉼표(,)로 칩이 됩니다.
+              {t("form.bulk.axesHelper")}
             </Text>
           </Flex>
 
@@ -170,9 +173,9 @@ export function BulkOptionsSection({
             <Table.Root size="sm">
               <Table.Header bg="gray.50">
                 <Table.Row>
-                  <Table.ColumnHeader w="200px">속성구분</Table.ColumnHeader>
-                  <Table.ColumnHeader>속성명</Table.ColumnHeader>
-                  <Table.ColumnHeader w="80px" textAlign="center">관리</Table.ColumnHeader>
+                  <Table.ColumnHeader w="200px">{t("form.bulk.axisType")}</Table.ColumnHeader>
+                  <Table.ColumnHeader>{t("form.bulk.axisName")}</Table.ColumnHeader>
+                  <Table.ColumnHeader w="80px" textAlign="center">{t("form.bulk.axisManage")}</Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -184,7 +187,7 @@ export function BulkOptionsSection({
                       <Table.Cell verticalAlign="top">
                         <Input
                           size="sm"
-                          placeholder="예: 색상"
+                          placeholder={t("form.bulk.axisNamePlaceholder")}
                           value={axis.name}
                           onChange={(e) => updateAxis(idx, { name: e.target.value })}
                         />
@@ -203,7 +206,7 @@ export function BulkOptionsSection({
                             colorPalette="red"
                             onClick={() => removeAxis(idx)}
                             disabled={axes.length === 1}
-                            aria-label="축 삭제"
+                            aria-label={t("form.bulk.axisRemoveLabel")}
                           >
                             －
                           </Button>
@@ -213,7 +216,7 @@ export function BulkOptionsSection({
                               variant="solid"
                               colorPalette="blue"
                               onClick={addAxis}
-                              aria-label="축 추가"
+                              aria-label={t("form.bulk.axisAddLabel")}
                             >
                               ＋
                             </Button>
@@ -230,17 +233,17 @@ export function BulkOptionsSection({
 
         <Box>
           <Text fontSize="sm" fontWeight="medium" mb={2}>
-            생성 미리보기 ({bulkPreview.length}개)
+            {t("form.bulk.previewTitle", { count: bulkPreview.length })}
           </Text>
           {bulkPreview.length === 0 ? (
-            <Text fontSize="sm" color="gray.500">속성 축과 값을 입력하면 생성될 SKU 목록이 표시됩니다.</Text>
+            <Text fontSize="sm" color="gray.500">{t("form.bulk.previewEmpty")}</Text>
           ) : (
             <Box maxH="240px" overflowY="auto" borderWidth="1px" borderColor="gray.200" borderRadius="md">
               <Table.Root size="sm">
                 <Table.Header>
                   <Table.Row>
-                    <Table.ColumnHeader>코드</Table.ColumnHeader>
-                    <Table.ColumnHeader>속성</Table.ColumnHeader>
+                    <Table.ColumnHeader>{t("form.bulk.previewCode")}</Table.ColumnHeader>
+                    <Table.ColumnHeader>{t("form.bulk.previewAttrs")}</Table.ColumnHeader>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -263,7 +266,7 @@ export function BulkOptionsSection({
         </Box>
 
         <HelperText>
-          기본정보·규격가격·추가정보 탭의 값은 모든 SKU 에 공통 적용됩니다. (코드와 속성만 축에 따라 달라짐)
+          {t("form.bulk.finalHelper")}
         </HelperText>
       </Stack>
     </FormBox>

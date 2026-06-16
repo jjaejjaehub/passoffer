@@ -85,6 +85,7 @@ export function useAdjustSkuStock(id: string) {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
+      void queryClient.invalidateQueries({ queryKey: ["master-products"] });
     },
   });
 }
@@ -97,6 +98,7 @@ export function useAttachSkuToVariant(skuId: string) {
       http.post<void>(`/api/skus/${skuId}/master-variants`, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
+      void queryClient.invalidateQueries({ queryKey: ["master-products"] });
     },
   });
 }
@@ -109,6 +111,7 @@ export function useDetachSkuFromVariant(skuId: string) {
       http.delete<void>(`/api/skus/${skuId}/master-variants/${masterVariantId}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
+      void queryClient.invalidateQueries({ queryKey: ["master-products"] });
     },
   });
 }

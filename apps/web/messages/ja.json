@@ -14,7 +14,8 @@
     },
     "orders": {
       "root": "注文管理",
-      "orders": "注文",
+      "payments": "決済管理",
+      "newOrders": "新規注文",
       "dispatch": "出荷管理",
       "shipping": "配送管理",
       "all": "全件照会",
@@ -43,21 +44,86 @@
     "japanese": "日本語"
   },
   "pages": {
+    "errorBoundary": {
+      "description": "しばらくしてからもう一度お試しください。",
+      "retry": "再試行",
+      "fallbackTitle": "問題が発生しました。",
+      "titles": {
+        "root": "予期しないエラーが発生しました。",
+        "claims": "クレーム一覧の読み込み中に問題が発生しました。",
+        "dashboard": "ダッシュボードの読み込み中に問題が発生しました。",
+        "inquiry": "商品問い合わせの読み込み中に問題が発生しました。",
+        "inventory": "在庫一覧の読み込み中に問題が発生しました。",
+        "itemEdit": "商品編集画面の読み込み中に問題が発生しました。",
+        "orders": "注文情報の読み込み中に問題が発生しました。",
+        "products": "商品一覧の読み込み中に問題が発生しました。",
+        "productNew": "商品登録中に問題が発生しました。",
+        "channels": "チャネル設定の読み込み中に問題が発生しました。"
+      }
+    },
+    "notFound": {
+      "title": "404 — ページが見つかりません"
+    },
+    "payments": {
+      "title": "決済管理",
+      "description": "決済完了の注文を照会し、決済ステータスを管理します。",
+      "summary": {
+        "totalAmount": "決済合計"
+      }
+    },
+    "newOrders": {
+      "title": "新規注文",
+      "description": "新しく入った注文を確認し、出荷ステップに進めます。",
+      "summary": {
+        "slaLabel": "SLA {sla}h / 警告 {warn}h",
+        "overdue": "超過 {count}件",
+        "dueSoon": "間近 {count}件"
+      }
+    },
     "allOrders": {
       "title": "全件照会",
-      "description": "すべてのステータスの注文を単一ビューで照会します。"
+      "description": "すべてのステータスの注文を単一ビューで照会します。",
+      "summary": {
+        "paymentStage": "決済完了 {count}件",
+        "newOrderStage": "新規注文 {count}件",
+        "dispatchStage": "出荷 {count}件",
+        "shippingStage": "配送 {count}件",
+        "settledStage": "精算 {count}件",
+        "claimStage": "クレーム {count}件"
+      }
     },
     "shipping": {
       "title": "配送管理",
-      "description": "配送追跡と完了処理ステップを管理します。"
+      "description": "配送追跡と完了処理ステップを管理します。",
+      "summary": {
+        "shipped": "出荷完了 {count}件",
+        "inTransit": "配送中 {count}件",
+        "delivered": "配送完了 {count}件",
+        "deliveredRate": "完了率 {rate}%",
+        "byCarrierLabel": "配送会社内訳"
+      }
     },
     "dispatch": {
       "title": "出荷管理",
-      "description": "送り状発行と出荷処理ステップを管理します。"
+      "description": "送り状発行と出荷処理ステップを管理します。",
+      "summary": {
+        "ready": "出荷待ち {count}件",
+        "labelPrinted": "送り状発行 {count}件",
+        "holdOrder": "注文保留 {count}件",
+        "holdDispatch": "出荷保留 {count}件",
+        "byCarrierLabel": "配送会社内訳"
+      }
     },
     "claims": {
       "title": "クレーム管理",
       "description": "キャンセル・返品・交換のクレーム状況を照会します。",
+      "summary": {
+        "cancelStage": "キャンセル {count}件",
+        "returnStage": "返品 {count}件",
+        "exchangeStage": "交換 {count}件",
+        "swapStage": "差し替え {count}件",
+        "totalStage": "全体 {count}件"
+      },
       "emptyState": {
         "qoo10NoKeyTitle": "Qoo10 APIキーがありません",
         "qoo10NoKeyDescription": "チャネル設定でQoo10 APIキーを登録すると、クレームが自動的に収集されます。",
@@ -98,6 +164,1200 @@
       "unsupported": {
         "title": "{channel} クレーム未対応",
         "description": "{channel} チャネルのクレーム管理はまだ対応していません。"
+      }
+    },
+    "dashboard": {
+      "title": "ダッシュボード",
+      "description": "チャネル別の今月の売上状況を確認します。",
+      "month": "2026年5月",
+      "asOfDate": "2026-05-01 基準",
+      "realtime": "● リアルタイム",
+      "qoo10Header": "{month} Qoo10 状況",
+      "shopifyHeader": "{month} Shopify 状況",
+      "kpi": {
+        "orderCount": "今月の注文",
+        "salesAmount": "今月の売上",
+        "avgOrderValue": "平均客単価",
+        "pendingShip": "配送待ち",
+        "fulfilled": "配送完了",
+        "totalRefund": "返金合計",
+        "cancel": "キャンセル",
+        "return": "返品",
+        "exchange": "交換",
+        "monthOverMonth": "前月比 {delta}",
+        "vatIncluded": "オプション基準 消費税込み",
+        "taxExcluded": "税抜",
+        "needAction": "即時対応必要",
+        "actionBadge": "要対応",
+        "ordersUnit": "{count}件"
+      },
+      "section": {
+        "claims": "クレーム状況",
+        "returnsCancels": "返品・キャンセル状況",
+        "topItems": "人気商品 TOP 5",
+        "recentClaims": "最近のクレーム注文"
+      },
+      "topItems": {
+        "rank": "#",
+        "name": "商品名",
+        "qty": "販売数量",
+        "revenue": "売上",
+        "qtyUnit": "{count}個"
+      },
+      "recentClaims": {
+        "type": "種別",
+        "orderNo": "注文番号",
+        "name": "商品名",
+        "date": "申請日",
+        "reason": "理由"
+      }
+    },
+    "inquiry": {
+      "title": "商品問い合わせ",
+      "description": "Qoo10商品に対する購入者の問い合わせを確認し、回答します。",
+      "noApiKey": {
+        "title": "Qoo10 APIキーがありません",
+        "description": "チャネル設定でQoo10 APIキーを登録すると、商品問い合わせを管理できます。",
+        "action": "チャネル設定へ移動"
+      },
+      "filter": {
+        "all": "すべて",
+        "unanswered": "未回答",
+        "answered": "回答済み"
+      },
+      "status": {
+        "answered": "回答済み",
+        "unanswered": "未回答"
+      },
+      "reply": {
+        "title": "回答の作成",
+        "placeholder": "回答を入力してください",
+        "cancel": "キャンセル",
+        "submitNew": "回答を登録",
+        "submitEdit": "回答を修正",
+        "buttonNew": "回答する",
+        "buttonEdit": "回答を修正",
+        "successToast": "回答が登録されました。",
+        "errorToast": "回答の登録に失敗しました。",
+        "sellerLabel": "販売者の回答 · {date}"
+      },
+      "empty": {
+        "title": "問い合わせがありません",
+        "description": "現在の条件に該当する商品問い合わせはありません。"
+      },
+      "pagination": {
+        "prev": "前へ",
+        "next": "次へ"
+      }
+    },
+    "inventory": {
+      "title": "在庫管理",
+      "description": "チャネル別の商品在庫を確認・編集します。",
+      "channelTabs": {
+        "qoo10": "Qoo10",
+        "shopify": "Shopify"
+      },
+      "qoo10StatusTabs": {
+        "available": "取引可能 (S2)",
+        "waiting": "取引待ち (S1)"
+      },
+      "shopifyStatusTabs": {
+        "all": "全て",
+        "ACTIVE": "販売",
+        "DRAFT": "販売停止",
+        "ARCHIVED": "アーカイブ"
+      },
+      "noApiKey": {
+        "qoo10": "Qoo10 APIキーがありません。チャネル設定からAPIキーを登録してください。",
+        "shopify": "Shopify APIキーがありません。チャネル設定からAPIキーを登録してください。"
+      },
+      "empty": "商品がありません。",
+      "pagination": {
+        "prev": "前へ",
+        "next": "次へ",
+        "pageLabel": "{page} ページ",
+        "retry": "再試行"
+      },
+      "searchPlaceholder": "商品名検索",
+      "stockBadges": {
+        "outOfStock": "在庫不足 {count}件",
+        "lowStock": "残りわずか {count}件"
+      },
+      "table": {
+        "title": "商品名",
+        "variant": "バリエーション",
+        "sku": "SKU",
+        "price": "価格",
+        "stock": "在庫",
+        "tracking": "追跡",
+        "tracked": "追跡",
+        "untracked": "未追跡",
+        "edit": "編集"
+      },
+      "editModal": {
+        "title": "在庫編集",
+        "currentStock": "現在の在庫: {qty}",
+        "placeholder": "新しい数量を入力",
+        "cancel": "キャンセル",
+        "save": "保存"
+      },
+      "toasts": {
+        "invalidQtyTitle": "無効な数量",
+        "invalidQtyDescription": "0以上の整数を入力してください。",
+        "updateSuccess": "在庫が更新されました",
+        "updateErrorTitle": "在庫更新失敗",
+        "updateErrorDescription": "しばらくしてからもう一度お試しください。"
+      }
+    },
+    "adminWarehousesInventory": {
+      "title": "在庫照会",
+      "selectWarehouseTitle": "倉庫を選択してください",
+      "selectWarehouseDescription": "右上で倉庫を選択すると在庫リストが表示されます。",
+      "description": "倉庫ごとにLOT単位の在庫とSKU単位の合計を照会します。",
+      "errors": {
+        "capabilitiesTitle": "倉庫情報を読み込めませんでした",
+        "capabilitiesDescription": "更新後も同じ場合は管理者にお問い合わせください。",
+        "noCapability": "capability情報がありません",
+        "inventoryTitle": "在庫データを読み込めませんでした",
+        "inventoryDescription": "しばらくしてからもう一度お試しください。"
+      },
+      "freshness": {
+        "empty": "データなし",
+        "lastSync": "最終同期: {time}",
+        "realtime": " · リアルタイム",
+        "partialDelay": " · 一部遅延"
+      }
+    },
+    "adminWarehousesAdjustments": {
+      "title": "在庫移動/調整",
+      "selectWarehouseTitle": "倉庫を選択してください",
+      "selectWarehouseDescription": "右上で倉庫を選択すると調整ウィザードを開始できます。",
+      "steps": {
+        "step1Label": "出発選択",
+        "step1Description": "ロケーションとSKU/LOT",
+        "step2Label": "到着入力",
+        "step2Description": "到着ロケーションと数量",
+        "step3Label": "確認および確定",
+        "step3Description": "Before/Afterプレビュー"
+      },
+      "errors": {
+        "capabilitiesTitle": "倉庫情報を読み込めませんでした",
+        "locationsTitle": "ロケーションを読み込めませんでした",
+        "noCapabilityTitle": "倉庫機能情報を利用できません",
+        "noCapabilityDescription": "倉庫データを再度読み込んでください。"
+      },
+      "buttons": {
+        "prev": "戻る",
+        "restart": "最初から",
+        "next": "次へ",
+        "confirm": "確定",
+        "cancel": "キャンセル"
+      },
+      "toast": {
+        "pendingTitle": "外部WMS処理待機",
+        "pendingDescription": "ベンダーシステムで処理中です。同期後に在庫に反映されます。",
+        "successTitle": "在庫移動完了",
+        "successDescription": "{sku}を{quantity}個移動しました。",
+        "errorTitle": "在庫移動失敗",
+        "errorFallback": "もう一度お試しください。"
+      },
+      "step1": {
+        "sourceLocationLabel": "1. 出発ロケーション",
+        "skuLotLabel": "2. SKU / LOT 選択",
+        "pickLocationFirst": "まず出発ロケーションを選択してください。"
+      },
+      "step2": {
+        "sourceRequiredTitle": "出発情報が必要です",
+        "sourceRequiredDescription": "前のステップで出発ロケーションとSKU/LOTを選択してください。",
+        "destLocationLabel": "到着ロケーション",
+        "excludeReason": "出発ロケーションと同じにはできません",
+        "quantityLabel": "移動数量",
+        "quantityPlaceholder": "移動する数量を入力してください",
+        "availableQty": "利用可能数量 {qty}",
+        "tooMuch": "利用可能数量を超えています。",
+        "sameLocation": "到着ロケーションが出発と同じです。",
+        "summaryLabel": "選択サマリー"
+      },
+      "step3": {
+        "insufficientTitle": "確認する情報が不足しています",
+        "insufficientDescription": "前のステップに戻ってください。",
+        "sourceLabel": "出発 (減少)",
+        "destLabel": "到着 (増加)",
+        "reasonLabel": "理由コード",
+        "reasonPlaceholder": "選択してください",
+        "noteLabel": "メモ (任意)",
+        "notePlaceholder": "調整メモを入力してください"
+      },
+      "confirmDialog": {
+        "title": "在庫移動確定",
+        "intro": "以下の内容で在庫移動を確定します。",
+        "quantityLine": "数量 {qty}",
+        "reasonLine": "理由 {code}",
+        "warning": "実行時に出発ロケーション -{qty}、到着ロケーション +{qty} の2回の調整リクエストが送信されます。"
+      }
+    },
+    "masterProducts": {
+      "title": "マスター商品",
+      "description": "チャネルに登録するマスター商品を管理します。",
+      "createButton": "マスター商品登録",
+      "searchPlaceholder": "商品名検索",
+      "toasts": {
+        "deleteSuccess": "削除完了",
+        "deleteFailed": "削除失敗"
+      },
+      "bulk": {
+        "selected": "{count}件選択中",
+        "clear": "選択解除",
+        "listToChannels": "チャネル一括登録"
+      },
+      "table": {
+        "title": "商品名/コード",
+        "brand": "ブランド",
+        "retailPrice": "販売価格",
+        "variantCount": "バリエーション数",
+        "listedChannelCount": "登録チャネル数",
+        "createdAt": "登録日",
+        "empty": "マスター商品がありません。"
+      },
+      "actions": {
+        "edit": "編集",
+        "confirm": "確認",
+        "cancel": "キャンセル",
+        "delete": "削除",
+        "prev": "前へ",
+        "next": "次へ"
+      }
+    },
+    "masterProductForm": {
+      "header": {
+        "editTitle": "マスター商品編集",
+        "createTitle": "マスター商品登録",
+        "editDescription": "マスター商品情報を編集します。",
+        "createDescription": "新しいマスター商品を登録します。登録後、各チャネルに個別登録できます。"
+      },
+      "actions": {
+        "cancel": "キャンセル",
+        "listToChannels": "チャネル登録",
+        "save": "保存",
+        "create": "登録"
+      },
+      "toasts": {
+        "requiredCodeName": "商品コードと商品名は必須です。",
+        "saveSuccess": "保存完了",
+        "createSuccess": "登録完了",
+        "createFailed": "登録失敗",
+        "updateFailed": "更新失敗",
+        "optionGroupSaveFailed": "オプショングループ保存失敗",
+        "singleVariantSaveFailed": "単一バリエーション保存失敗",
+        "skuRequired": "最低1個のSKUを連結する必要があります。",
+        "variantAddSuccess": "バリエーション追加完了",
+        "variantAddFailed": "バリエーション追加失敗",
+        "variantUpdateSuccess": "バリエーション更新完了",
+        "variantUpdateFailed": "バリエーション更新失敗",
+        "variantDeleteSuccess": "バリエーション削除完了",
+        "variantDeleteFailed": "バリエーション削除失敗"
+      },
+      "labelMap": {
+        "title": "商品名",
+        "weightGram": "重量(g)",
+        "descriptionHtml": "商品説明",
+        "brand": "ブランド",
+        "hsCode": "HSコード",
+        "originCountry": "原産地",
+        "images": "画像"
+      },
+      "basicInfo": {
+        "section": "基本情報",
+        "productCode": "商品コード",
+        "productCodeHelper": "Passoffer内部管理コード",
+        "productCodePlaceholder": "例: PROD-001",
+        "title": "商品名",
+        "titlePlaceholder": "商品名入力",
+        "brand": "ブランド",
+        "noBrand": "ブランドなし (No Brand)",
+        "brandPlaceholder": "ブランド名入力",
+        "hsCode": "HSコード",
+        "hsCodePlaceholder": "例: 6109.10",
+        "retailPrice": "販売価格",
+        "retailPricePlaceholder": "例: 29000",
+        "originCountry": "原産地",
+        "originDomestic": "国内 (韓国)",
+        "originForeign": "海外",
+        "originOther": "その他",
+        "originDomesticPlaceholder": "例: ソウル特別市",
+        "originForeignPlaceholder": "例: 中国, China",
+        "originOtherPlaceholder": "自由入力",
+        "material": "素材",
+        "materialPlaceholder": "例: 綿100%",
+        "weight": "重量 (g)",
+        "weightPlaceholder": "例: 300",
+        "tags": "タグ",
+        "tagsHelper": "カンマ区切りで入力してください",
+        "tagsPlaceholder": "例: 衣類, レディース, 半袖"
+      },
+      "description": {
+        "section": "商品説明"
+      },
+      "images": {
+        "section": "画像",
+        "delete": "削除",
+        "add": "画像追加",
+        "url": "画像URL",
+        "urlPlaceholder": "https://...",
+        "alt": "画像説明",
+        "altLabel": "代替テキスト",
+        "addButton": "追加"
+      },
+      "options": {
+        "section": "オプション (Variants)",
+        "generateCombinations": "↓ オプション組合せ生成",
+        "listHeading": "オプション一覧 ({count}個) — SKUと価格/在庫を入力してください",
+        "thOption": "オプション",
+        "thSku": "連結SKU (数量)",
+        "thPrice": "価格 (₩)",
+        "thStock": "在庫",
+        "afterSave": "保存後",
+        "skuNote": "* SKUを1個以上連結した行のみ登録されます。価格と在庫も合わせて入力してください。",
+        "singleHeading": "単一商品 — SKUと価格/在庫を入力してください",
+        "singleNote": "* 上でオプションを追加すると、バリエーション(Variant)単位でSKU・価格・在庫を入力できます。"
+      },
+      "variants": {
+        "section": "バリエーション (Variants)",
+        "thSku": "連結SKU (数量)",
+        "thPrice": "価格",
+        "thStock": "利用可能在庫",
+        "empty": "登録されたバリエーションがありません。下から追加してください。",
+        "unlinked": "未連結",
+        "edit": "編集",
+        "delete": "削除",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "add": "追加",
+        "skuSearchRequired": "SKU検索 *",
+        "price": "価格",
+        "afterSave": "保存後"
+      },
+      "platform": {
+        "section": "プラットフォーム別追加情報",
+        "description": "各チャネルに登録する際に必要なプラットフォーム専用フィールドを入力してください。",
+        "noLinkedChannels": "連結されたチャネルがありません",
+        "noLinkedPlatforms": "連結されたプラットフォームがありません",
+        "noLinkedHint": "この商品をチャネルに登録すると、該当プラットフォーム専用フィールドがここに表示されます。",
+        "noPlatformHint": "設定 > チャネル連結でAPIキーを登録するとここに表示されます。",
+        "ready": "✓ 登録可能",
+        "missingRequired": "必須値未入力 ({count}個)",
+        "notFilled": "未入力",
+        "missingInline": "未入力: {missing}",
+        "fixBefore": "チャネル登録前に下記項目を入力してください",
+        "categoryHeader": "カテゴリ",
+        "categoryMain": "大分類",
+        "categoryMid": "中分類",
+        "categorySub": "小分類",
+        "categoryMainPlaceholder": "大分類選択",
+        "categoryMidPlaceholder": "中分類選択",
+        "categorySubPlaceholder": "小分類選択",
+        "categoryCode": "コード: {code}",
+        "brandHeader": "ブランド",
+        "brandSearch": "ブランド検索",
+        "brandSkip": "入力しない",
+        "brandSearchPlaceholder": "ブランド名を入力してください (2文字以上)",
+        "brandNoResult": "検索結果がありません。",
+        "brandSelected": "選択済み: {label}",
+        "availableDateTypeLabel": "発送可能日タイプ",
+        "availableDateType0": "通常発送 (3営業日)",
+        "availableDateType1": "商品準備日",
+        "availableDateType2": "出荷日",
+        "availableDateType3": "当日発送",
+        "availableDateValueLabel": "発送可能日値",
+        "availableDateValuePlaceholder0": "1~3 (通常発送日)",
+        "availableDateValuePlaceholder1": "4~14 (準備日数)",
+        "availableDateValuePlaceholder2": "2025/09/26 (出荷日)",
+        "availableDateValuePlaceholder3": "14:30 (当日発送締切時間)",
+        "availableDateValueHelper": "通常発送選択時、未入力の場合は1(営業日)で自動処理されます。",
+        "itemQtyLabel": "在庫数量",
+        "itemQtyHelper": "バリエーション(Variants)在庫合計から自動計算されます。(現在: {total}個)",
+        "itemPriceLabel": "販売価格 (JPY)",
+        "itemPriceHelper": "最初のバリエーション(Variant)価格から自動計算されます。",
+        "itemPriceHelperWithValue": "最初のバリエーション(Variant)価格から自動計算されます。(現在: ¥{price})",
+        "shippingTemplate": "配送テンプレート",
+        "shippingTemplateLoading": "配送テンプレート読み込み中...",
+        "shippingTemplateDirectInput": "配送番号直接入力 (例: 12345)",
+        "shippingTemplateSearch": "テンプレート番号または配送会社で検索",
+        "shippingFree": "0 — 送料無料",
+        "shippingNoResult": "検索結果なし",
+        "shippingNoPrefix": "No.{no}",
+        "shippingFreeHelper": "送料無料として処理されます。",
+        "shippingError": "テンプレート取得失敗。Qoo10 APIキーを確認するか、直接番号を入力してください。",
+        "shippingFreeLabel": "無料",
+        "shippingPaidLabel": "有料",
+        "shippingConditionalLabel": "条件付無料",
+        "shippingPickupLabel": "訪問受取",
+        "shippingCodNoPrepayLabel": "着払(前払不可)",
+        "shippingCodPrepayLabel": "着払(前払可)",
+        "shippingFeeLine": "配送費 {fee}円",
+        "shippingConditional": "{threshold}円以上で無料",
+        "selectPlaceholder": "選択してください",
+        "conditionalSelectNone": "選択しない"
+      },
+      "listedChannels": {
+        "section": "登録済みチャネル",
+        "statusSynced": "同期済み",
+        "statusError": "失敗",
+        "statusPending": "待機中"
+      }
+    },
+    "salesProducts": {
+      "pageTitle": "販売商品管理",
+      "pageDescription": "チャネル商品とマスター商品をリンクします。",
+      "status": {
+        "all": "全て",
+        "qoo10": {
+          "s0": "検収待ち",
+          "s1": "取引待ち",
+          "s2": "取引可能",
+          "s3": "取引中止",
+          "s5": "取引制限",
+          "s8": "承認拒否"
+        },
+        "shopify": {
+          "active": "販売中",
+          "draft": "販売中止",
+          "archived": "アーカイブ済み"
+        },
+        "shopee": {
+          "normal": "販売中",
+          "unlist": "販売中止",
+          "reviewing": "審査中",
+          "banned": "ブロック",
+          "sellerDelete": "削除"
+        }
+      },
+      "badges": {
+        "linked": "リンク済み",
+        "unlinked": "未リンク",
+        "syncPending": "同期が必要",
+        "syncError": "同期エラー"
+      },
+      "toasts": {
+        "stockSyncSuccess": "在庫同期完了",
+        "stockSyncFail": "在庫同期失敗",
+        "infoSyncSuccess": "商品情報同期完了",
+        "infoSyncFail": "商品情報同期失敗",
+        "unlinkSuccess": "リンク解除完了",
+        "unlinkFail": "リンク解除失敗",
+        "salesSyncSuccess": "販売同期完了",
+        "salesSyncFail": "販売同期失敗",
+        "processDone": "処理完了",
+        "bulkProcessDone": "一括処理完了",
+        "processResult": "成功 {fulfilled}件, 失敗 {rejected}件"
+      },
+      "count": {
+        "total": "合計 {count}件",
+        "filtered": " (フィルター: {count}件)"
+      },
+      "buttons": {
+        "delete": "削除",
+        "sync": "同期",
+        "viewMaster": "マスターを見る",
+        "skuMapping": "SKUマッピング",
+        "unlink": "リンク解除",
+        "extractMaster": "マスター抽出",
+        "linkMaster": "マスターリンク"
+      },
+      "row": {
+        "sellerCodePrefix": "販売者コード: {code}",
+        "optionCount": "{count}個",
+        "activate": {
+          "default": "販売中",
+          "shopify": "販売(ACTIVE)"
+        },
+        "suspend": {
+          "default": "販売中止",
+          "shopify": "販売中止(DRAFT)"
+        }
+      },
+      "table": {
+        "title": "商品名 / チャネルID",
+        "options": "オプション数",
+        "linkStatus": "リンク状態",
+        "actions": "操作"
+      },
+      "search": {
+        "placeholder": "商品名 / チャネルID / 販売者コード検索"
+      },
+      "empty": {
+        "noChannels": "接続されたチャネルがありません",
+        "noChannelsDescription": "設定からチャネルを追加してください。",
+        "goToChannelSettings": "チャネル設定へ移動",
+        "selectChannel": "チャネルを選択してください",
+        "selectChannelDescription": "上部タブからチャネルを選択すると商品を照会できます。",
+        "loadError": "チャネル商品を読み込めませんでした",
+        "noItems": "表示する商品がありません",
+        "noItemsDescription": "選択した状態または検索条件に合致する商品がありません。"
+      },
+      "pagination": {
+        "prev": "前へ",
+        "next": "次へ"
+      },
+      "statusDialog": {
+        "suspend": {
+          "shopify": "販売中止(DRAFT)に変更",
+          "default": "販売中止"
+        },
+        "activate": {
+          "shopify": "販売(ACTIVE)に変更",
+          "default": "販売中に変更"
+        }
+      },
+      "bulk": {
+        "selectedStatus": "選択 {label} ({count})",
+        "selectedDelete": "選択削除 ({count})"
+      },
+      "linkModal": {
+        "header": {
+          "selectMaster": "マスター商品の連携",
+          "checkPlatformFields": "マスター必須情報の不足",
+          "mapVariants": "オプションのマッピング",
+          "confirmSellerCode": "SellerCode上書きの確認",
+          "confirmOverwrite": "マスター情報の上書き確認",
+          "resultSuccess": "連携完了",
+          "resultFail": "連携失敗"
+        },
+        "selectMaster": {
+          "channelProductLabel": "チャネル商品:",
+          "channelDetailError": "チャネル商品オプションを取得できません。Qoo10 APIで該当商品が見つかりませんでした。(ItemCode: {code})",
+          "noMasterTitle": "マスター商品がありませんか?",
+          "noMasterDescription": "この販売商品の情報で新しいマスター商品を作成できます。",
+          "createMaster": "マスター新規作成",
+          "searchPlaceholder": "マスター商品検索...",
+          "optionCount": "{code} · オプション{count}個",
+          "emptyMasterList": "マスター商品がありません。"
+        },
+        "missingFields": {
+          "title": "{channelLabel}必須情報がマスター商品に入力されていません。",
+          "channelFallback": "チャネル",
+          "description": "下記項目をマスター商品に入力してから連携を進めてください。不足したまま連携するとチャネル同期でエラーが発生する可能性があります。",
+          "masterLabel": "マスター商品:",
+          "typeCommon": "共通",
+          "commonLabels": {
+            "title": "商品名",
+            "descriptionHtml": "商品説明",
+            "images": "画像",
+            "brand": "ブランド",
+            "hsCode": "HSコード",
+            "countryOfOrigin": "原産地",
+            "weightG": "重量(g)",
+            "material": "素材"
+          }
+        },
+        "mapVariants": {
+          "description": "マスターオプションをチャネルオプションにマッチさせてください。SKUが同じであれば自動でマッチされます。",
+          "selectPlaceholder": "選択してください...",
+          "autoBadge": "自動",
+          "mappedCount": "{mapped}/{total} マッピング済み"
+        },
+        "sellerCode": {
+          "description": "次のチャネルオプションにはSellerCodeが既に設定されています。マスターSKUで上書きする項目を選択してください。",
+          "info": "ⓘ 空のSellerCodeは自動でマスターSKUが入ります。",
+          "masterSku": "マスターSKU",
+          "channelSellerCode": "チャネル現在SellerCode",
+          "override": "上書き",
+          "selectAll": "すべて選択",
+          "deselectAll": "すべて解除"
+        },
+        "overwrite": {
+          "title": "チャネル商品情報がマスター商品情報で上書きされます。",
+          "description": "連携完了時にチャネル(Qoo10など)に登録された下記項目がマスター商品基準で自動的に修正されます。この操作は取り消せません。",
+          "targetsHeader": "上書き対象項目",
+          "targets": {
+            "title": "• 商品名 / サブタイトル",
+            "images": "• 代表画像および追加画像",
+            "description": "• 商品説明 (HTML)",
+            "price": "• 販売価格 / 定価",
+            "brand": "• ブランド / メーカー / 原産地",
+            "category": "• カテゴリ情報 (対応時)"
+          },
+          "linkInfoHeader": "連携情報",
+          "channelProductLabel": "チャネル商品:",
+          "masterProductLabel": "マスター商品:",
+          "mappedOptions": "マッピング済みオプション: {mapped} / {total}"
+        },
+        "result": {
+          "linkedTitle": "連携完了",
+          "linkedDescription": "「{channel}」 ↔ 「{master}」 連携済み",
+          "linkedVariants": "• オプション{count}個マッピング完了",
+          "sellerCodeUpdates": "• SellerCode更新: 成功{success}件 / 失敗{fail}件",
+          "stockSync": "• 在庫同期: {status}",
+          "infoSyncSuccess": "• 商品情報同期: 成功",
+          "infoSyncFail": "• 商品情報同期: 失敗",
+          "infoSyncFailWithError": "• 商品情報同期: 失敗 ({error})",
+          "retrySync": "再同期",
+          "linkFailed": "連携失敗"
+        },
+        "retryToast": {
+          "success": "商品情報同期 成功",
+          "failFallback": "同期失敗",
+          "linkFailFallback": "連携に失敗しました。"
+        },
+        "footer": {
+          "cancel": "キャンセル",
+          "back": "← 戻る",
+          "next": "次へ →",
+          "loading": "読込中...",
+          "editMaster": "マスター編集 →",
+          "linkAndOverwrite": "連携 + 上書き",
+          "confirm": "確認"
+        }
+      },
+      "createMasterModal": {
+        "header": {
+          "fillInfo": "販売商品からマスター作成",
+          "resultSuccess": "作成完了",
+          "resultFail": "作成失敗"
+        },
+        "info": {
+          "banner1": "販売商品「{title}」の情報を基に自動入力されました。",
+          "banner2": "必要な情報を確認・修正してから作成してください。"
+        },
+        "basicInfo": {
+          "title": "基本情報",
+          "code": "マスターコード",
+          "codePlaceholder": "固有コード (例: MP-001)",
+          "name": "商品名",
+          "namePlaceholder": "商品名",
+          "brand": "ブランド",
+          "noBrand": "ブランドなし (No Brand)",
+          "brandInputPlaceholder": "ブランド名を入力",
+          "hsCode": "HSコード",
+          "hsCodePlaceholder": "例: 6109.10",
+          "retailPrice": "販売価格",
+          "retailPricePlaceholder": "例: 29000",
+          "material": "素材",
+          "materialPlaceholder": "例: 綿100%",
+          "weightG": "重量(g)",
+          "weightGPlaceholder": "例: 300",
+          "tags": "タグ",
+          "tagsPlaceholder": "例: 衣類, 女性, 半袖",
+          "tagsHelper": "カンマ区切りで入力してください",
+          "descriptionHtml": "商品説明 (HTML可)",
+          "descriptionPlaceholder": "<p>商品説明を入力してください...</p>"
+        },
+        "origin": {
+          "label": "原産地",
+          "domestic": "国内 (大韓民国)",
+          "overseas": "海外",
+          "other": "その他",
+          "placeholderDomestic": "例: ソウル特別市",
+          "placeholderOverseas": "例: 中国, China",
+          "placeholderOther": "自由入力"
+        },
+        "images": {
+          "title": "画像",
+          "add": "画像追加",
+          "alt": "代替テキスト",
+          "addButton": "追加",
+          "urlPlaceholder": "https://..."
+        },
+        "platformAttrs": {
+          "title": "プラットフォーム別属性",
+          "description": "連携チャネルの属性です。抽出された値で自動入力されました。不足の必須項目は直接入力してください。",
+          "ready": "✓ 登録可能",
+          "missingCount": "必須項目未入力 ({count}件)",
+          "missingShort": "未入力",
+          "missingList": "未入力: {fields}",
+          "missingHeader": "チャネル登録前に下記項目を入力してください"
+        },
+        "qoo10": {
+          "category": "カテゴリ",
+          "mainCat": "大分類",
+          "subCat": "中分類",
+          "secondSubCat": "小分類",
+          "mainCatPlaceholder": "大分類選択",
+          "subCatPlaceholder": "中分類選択",
+          "secondSubCatPlaceholder": "小分類選択",
+          "codeLine": "コード: {code}",
+          "brand": "ブランド",
+          "brandSearch": "ブランド検索",
+          "brandNone": "入力しない",
+          "brandSearchPlaceholder": "ブランド名を入力してください (2文字以上)",
+          "brandNoResult": "検索結果がありません。",
+          "brandSelected": "選択中: {label}",
+          "deliveryType": "発送可能日タイプ",
+          "deliveryNormal": "通常発送 (3営業日)",
+          "deliveryPrep": "商品準備日",
+          "deliveryRelease": "発売日",
+          "deliverySameDay": "当日発送",
+          "deliveryValue": "発送可能日 値",
+          "deliveryHintNormal": "1~3 (通常発送日)",
+          "deliveryHintPrep": "4~14 (準備日数)",
+          "deliveryHintRelease": "2025/09/26 (発売日)",
+          "deliveryHintSameDay": "14:30 (当日発送締切時刻)",
+          "deliveryNormalHelper": "通常発送選択時、未入力の場合は1(営業日)に自動処理されます。",
+          "stock": "在庫数",
+          "stockAutoHint": "バリアントの在庫合計から自動計算されます。 (現在: {count}件)",
+          "price": "販売価格 (JPY)",
+          "priceAutoHint": "最初のバリアント価格から自動計算されます。",
+          "shippingTemplate": "配送テンプレート",
+          "shippingTypeX": "無料",
+          "shippingTypeF": "有料",
+          "shippingTypeM": "条件付き無料",
+          "shippingTypeW": "店頭受取",
+          "shippingTypeD": "着払い(前払不可)",
+          "shippingTypeR": "着払い(前払可)",
+          "shippingLoading": "配送テンプレート読込中...",
+          "shippingManualPlaceholder": "配送番号を直接入力 (例: 12345)",
+          "shippingSearchPlaceholder": "テンプレート番号または配送会社で検索",
+          "shippingFreeRow": "0 — 送料無料",
+          "shippingNoResult": "検索結果なし",
+          "shippingFeeLine": "配送料 {fee}円",
+          "shippingFreeCondition": "{amount}円以上無料",
+          "shippingFreeHelper": "送料無料として処理されます。",
+          "shippingApiError": "テンプレート取得失敗。Qoo10 APIキーを確認するか直接番号を入力してください。"
+        },
+        "field": {
+          "selectPlaceholder": "選択してください",
+          "noneOption": "選択しない"
+        },
+        "optionGroups": {
+          "title": "オプショングループ",
+          "add": "グループ追加",
+          "empty": "オプションのない単一商品として作成されます。",
+          "namePlaceholder": "オプショングループ名 (例: サイズ)"
+        },
+        "variants": {
+          "title": "オプション (Variants)",
+          "add": "オプション追加",
+          "optionN": "オプション{n}",
+          "price": "価格",
+          "stock": "在庫",
+          "channelMapHint": "チャネルオプション{count}件と自動マッピングされ、作成後に即連携されます。"
+        },
+        "result": {
+          "successTitle": "作成および連携完了",
+          "successDescription": "マスター商品が作成され、「{title}」と連携されました。",
+          "mapped": "オプション{count}件マッピング済み",
+          "failTitle": "作成失敗"
+        },
+        "footer": {
+          "cancel": "キャンセル",
+          "submit": "作成および連携",
+          "confirm": "確認"
+        },
+        "toast": {
+          "missingRequired": "必須項目をすべて入力してください。",
+          "createFailed": "マスター商品の作成に失敗しました。"
+        },
+        "variantDefaults": {
+          "groupName": "デフォルト"
+        }
+      }
+    },
+    "listedProductDetail": {
+      "fallbackTitle": "販売商品詳細",
+      "back": "戻る",
+      "notFound": "販売商品が見つかりませんでした。",
+      "syncSuccess": "同期完了",
+      "syncError": "同期失敗",
+      "sections": {
+        "basicInfo": "基本情報",
+        "channelData": "チャネル登録データ"
+      },
+      "labels": {
+        "channelItemCode": "チャネル商品コード",
+        "channelSellerCode": "販売者コード",
+        "channel": "チャネル",
+        "status": "ステータス",
+        "syncStatus": "同期ステータス",
+        "lastSyncedAt": "最終同期",
+        "createdAt": "登録日"
+      },
+      "syncStatus": {
+        "SYNCED": "同期済み",
+        "PENDING": "同期待ち",
+        "ERROR": "同期エラー"
+      },
+      "actions": {
+        "sync": "同期",
+        "editMaster": "マスター商品編集"
+      }
+    },
+    "skus": {
+      "title": "SKU管理",
+      "description": "在庫単位(SKU)を管理します。マスター変形と販売商品はSKUを介して在庫に連結されます。",
+      "createButton": "SKU登録",
+      "searchPlaceholder": "SKUコード/名前/バーコード検索",
+      "table": {
+        "codeName": "SKUコード / 名前",
+        "barcode": "バーコード",
+        "stock": "在庫",
+        "masterVariantMapping": "マスター変形マッピング",
+        "salesMapping": "販売商品マッピング",
+        "updatedAt": "更新日",
+        "empty": "登録されたSKUがありません。"
+      },
+      "actions": {
+        "edit": "編集",
+        "delete": "削除",
+        "confirm": "確認",
+        "cancel": "キャンセル",
+        "prev": "前へ",
+        "next": "次へ"
+      },
+      "toasts": {
+        "deleteSuccess": "削除完了",
+        "deleteFailed": "削除失敗"
+      },
+      "form": {
+        "titleEdit": "SKU編集",
+        "titleNew": "SKU登録",
+        "description": "在庫単位(SKU)の基本情報・規格・価格・メタデータを管理します。",
+        "backToList": "一覧へ",
+        "modeLabel": "登録方式",
+        "modeSingle": "単一登録",
+        "modeBulk": "一括登録",
+        "bulkPreviewCount": "{count}件作成予定",
+        "deleteBlocked": "連結されたマッピングがあり削除できません。",
+        "tabs": {
+          "basic": "基本情報",
+          "spec": "規格/価格情報",
+          "extra": "追加情報",
+          "bulk": "一括オプション",
+          "mapping": "マッピング/在庫"
+        },
+        "actions": {
+          "delete": "削除",
+          "cancel": "キャンセル",
+          "save": "保存",
+          "create": "登録",
+          "bulkCreate": "一括登録 ({count}件)"
+        },
+        "toasts": {
+          "updateSuccess": "SKU編集完了",
+          "createSuccess": "SKU登録完了",
+          "saveFailed": "保存失敗",
+          "adjustSuccess": "在庫調整完了",
+          "adjustFailed": "在庫調整失敗",
+          "deleteSuccess": "削除完了",
+          "deleteFailed": "削除失敗",
+          "bulkCreateSuccess": "{count}件のSKU登録完了",
+          "bulkCreateFailed": "一括登録失敗",
+          "emptyAdjustQty": "調整数量を入力してください"
+        },
+        "errors": {
+          "codeRequired": "SKUコードは必須です。",
+          "attrsNotObject": "属性(attributes)はJSONオブジェクトである必要があります。",
+          "attrsInvalidJson": "属性(attributes)が正しいJSONではありません。",
+          "axisRequired": "属性軸と値を1つ以上入力してください。"
+        },
+        "basic": {
+          "code": "SKUコード",
+          "codePlaceholder": "例: APPLE-RED-M",
+          "codeHelperSingle": "テナント内で一意である必要があります。",
+          "codeHelperBulk": "一括登録は下の[一括オプション]タブでコードprefixと属性軸を設定します。",
+          "name": "名前",
+          "namePlaceholder": "SKU表示名",
+          "modelName": "モデル名",
+          "inventoryCode": "在庫管理コード",
+          "warehouse": "配送先",
+          "vendor": "仕入先",
+          "todoNote": "※ 今後作業予定 (現在はテキストメモ)",
+          "leadTimeDays": "入庫所要日 (日)",
+          "safetyStock": "安全在庫",
+          "isPrimaryWarehouse": "代表配送先として使用",
+          "isPrimaryWarehouseHint": "代表配送先に指定",
+          "image": "画像URL",
+          "barcode": "バーコード",
+          "barcodePlaceholder": "EAN/UPCなど",
+          "standardCode": "標準コード",
+          "hsCode": "HSコード",
+          "isbn": "ISBN",
+          "initialStock": "初期在庫",
+          "initialStockHelper": "登録後の在庫変更は在庫調整(ledger)のみ可能です。",
+          "attributes": "属性 (JSON)",
+          "attributesHelper": "任意のキー/値メタデータ。一括登録時に軸別の値が自動マージされます。"
+        },
+        "spec": {
+          "headingSpec": "規格",
+          "headingPrice": "価格",
+          "widthCm": "幅 (cm)",
+          "heightCm": "縦 (cm)",
+          "depthCm": "高さ (cm)",
+          "weightKg": "重量 (kg)",
+          "inboundUnit": "入数",
+          "inboundUnitType": "入数単位",
+          "inboundUnitTypePlaceholder": "EA / BOXなど",
+          "isBundlable": "同梱可否",
+          "isBundlableHint": "他のSKUとの同梱を許可",
+          "purchaseCost": "仕入価格",
+          "purchaseFreight": "仕入運送費",
+          "deliveryFee": "配送費",
+          "adCost": "広告費",
+          "etcCost": "その他費用",
+          "currency": "通貨",
+          "currencyPlaceholder": "KRW",
+          "supplyPrice": "供給価格",
+          "salePrice": "販売価格"
+        },
+        "extra": {
+          "originCountry": "原産国",
+          "taxType": "税区分",
+          "taxTypeGeneral": "課税",
+          "taxTypeZero": "ゼロ税率",
+          "taxTypeExempt": "非課税",
+          "requiresCaution": "取扱注意商品",
+          "requiresCautionHint": "破損リスク・取扱注意が必要な商品",
+          "brand": "ブランド",
+          "manufacturer": "メーカー",
+          "manufacturerEn": "メーカー (英文)",
+          "ageGroup": "年齢層",
+          "ageGroupPlaceholder": "大人 / 幼児など",
+          "mainImage": "代表画像URL",
+          "descriptionHtml": "商品説明 (HTML)"
+        },
+        "bulk": {
+          "codePrefix": "コード prefix",
+          "codePrefixPlaceholder": "例: APPLE",
+          "codePrefixHelper": "最終コード = prefix + \"-\" + 軸値の組み合わせ (大文字, 空白→_)",
+          "axesTitle": "属性軸",
+          "axesHelper": "値はEnterまたはカンマ(,)でチップになります。",
+          "axisType": "属性区分",
+          "axisName": "属性名",
+          "axisManage": "管理",
+          "axisNamePlaceholder": "例: 色",
+          "axisRemoveLabel": "軸を削除",
+          "axisAddLabel": "軸を追加",
+          "chipDeleteLabel": "{chip} 削除",
+          "chipInputPlaceholder": "値を入力してEnterまたはカンマ",
+          "previewTitle": "作成プレビュー ({count}件)",
+          "previewEmpty": "属性軸と値を入力すると作成されるSKU一覧が表示されます。",
+          "previewCode": "コード",
+          "previewAttrs": "属性",
+          "finalHelper": "基本情報・規格価格・追加情報タブの値はすべてのSKUに共通適用されます。(コードと属性のみ軸により異なる)"
+        },
+        "mapping": {
+          "stockTitle": "在庫",
+          "currentStock": "現在在庫",
+          "adjustQty": "調整数量 (±)",
+          "adjustQtyPlaceholder": "例: 10 または -5",
+          "memo": "メモ",
+          "memoPlaceholder": "調整理由",
+          "applyAdjust": "調整適用",
+          "masterTitle": "マスター変形マッピング ({count})",
+          "masterEmpty": "連結されたマスター変形がありません。",
+          "masterHelper": "マッピングはマスター商品編集画面で追加/削除します。",
+          "masterProduct": "マスター商品",
+          "variantSku": "変形SKU",
+          "qty": "数量",
+          "position": "位置",
+          "listedTitle": "販売商品マッピング ({count})",
+          "listedEmpty": "連結された販売商品マッピングがありません。",
+          "listedHelper": "マッピングは販売商品詳細画面で編集します。",
+          "listedProductId": "販売商品ID",
+          "channelVariantId": "チャネルオプション",
+          "channelSellerCode": "チャネルセラーコード"
+        }
+      }
+    },
+    "settingsChannels": {
+      "title": "チャネル管理",
+      "description": "販売チャネルを接続し、APIキーを管理します。",
+      "status": {
+        "connectedWithTime": "接続済 · 最終確認: 2分前",
+        "disconnected": "未接続",
+        "disconnect": "接続解除",
+        "connect": "接続する"
+      },
+      "panel": {
+        "notConnectedTitle": "{channelName} 未接続",
+        "rakutenHint": "Rakuten RMS APIキーを登録すると、日本の楽天注文を自動で取得できます。",
+        "defaultHint": "APIキーを登録すると、注文を自動で取得できます。",
+        "featureAutoCollect": "注文の自動取得",
+        "featureSyncStock": "商品・在庫の同期",
+        "featureIntegratedSales": "売上の統合管理",
+        "connectButton": "{channelName} を接続する",
+        "credentialsTitle": "API認証情報",
+        "noApiSetup": "このチャネルは接続済みであり、API設定は別途提供されません。",
+        "comingSoonTitle": "追加予定チャネル",
+        "comingSoonBadge": "準備中"
+      },
+      "qoo10": {
+        "apiKeyLabel": "APIキー *",
+        "apiKeyHint": "Qoo10販売者センター > 環境設定 > APIキー管理から発行",
+        "sellerIdLabel": "販売者ID (任意)",
+        "submit": "接続する",
+        "validation": {
+          "apiKeyRequired": "APIキーを入力してください"
+        },
+        "toast": {
+          "successTitle": "Qoo10接続完了",
+          "successDescription": "APIキーを保存しました。",
+          "errorTitle": "保存失敗",
+          "errorDescription": "接続情報をもう一度ご確認ください。"
+        }
+      },
+      "rakuten": {
+        "serviceSecretLabel": "Service Secret *",
+        "licenseKeyLabel": "License Key *",
+        "shopUrlLabel": "ショップURL *",
+        "shopUrlPreview": "接続URL: https://{shopUrl}.shop.rakuten.co.jp",
+        "submit": "接続する",
+        "validation": {
+          "serviceSecretRequired": "Service Secretは32文字以上です",
+          "licenseKeyRequired": "License Keyは32文字以上です",
+          "shopUrlRequired": "ショップURLを入力してください",
+          "shopUrlPattern": "英小文字、数字、ハイフン(-)のみ使用可能です"
+        },
+        "toast": {
+          "successTitle": "楽天接続完了",
+          "successDescription": "APIキーを保存しました。",
+          "errorTitle": "保存失敗",
+          "errorDescription": "接続情報をもう一度ご確認ください。"
+        }
+      },
+      "shopee": {
+        "partnerIdLabel": "Partner ID *",
+        "partnerKeyLabel": "Partner Key *",
+        "shopIdLabel": "Shop ID *",
+        "submit": "接続する",
+        "validation": {
+          "partnerIdRequired": "Partner IDを入力してください",
+          "partnerKeyRequired": "Partner Keyを入力してください",
+          "shopIdRequired": "Shop IDを入力してください"
+        },
+        "toast": {
+          "successTitle": "Shopee接続完了",
+          "successDescription": "APIキーを保存しました。",
+          "errorTitle": "保存失敗",
+          "errorDescription": "接続情報をもう一度ご確認ください。"
+        }
+      },
+      "shopify": {
+        "shopDomainLabel": "ストアドメイン *",
+        "shopDomainHint": "Shopify Dev Dashboard > Apps > Develop appsでアプリ作成後に確認",
+        "shopDomainPreview": "Admin URL: https://{shopDomain}/admin",
+        "clientIdLabel": "Client ID *",
+        "clientIdHint": "アプリ > API credentialsタブで確認",
+        "clientSecretLabel": "Client Secret *",
+        "submit": "Shopify認証する",
+        "validation": {
+          "shopDomainRequired": "ストアドメインを入力してください",
+          "shopDomainPattern": "your-store.myshopify.com 形式で入力してください",
+          "clientIdRequired": "Client IDを入力してください",
+          "clientSecretRequired": "Client Secretを入力してください"
+        },
+        "errors": {
+          "oauthUrlFailed": "OAuth URL生成失敗"
+        }
+      }
+    },
+    "productEditShopify": {
+      "header": {
+        "title": "商品編集",
+        "description": "Shopifyストアの商品情報を編集します。"
+      },
+      "masterLinked": {
+        "notice": "マスター商品と連携している商品です",
+        "description": "マスター商品から取得する項目は編集できません。価格・在庫などチャネル専用項目のみ編集可能です。"
+      },
+      "errors": {
+        "noApiKey": {
+          "title": "Shopify APIキーがありません",
+          "description": "チャネル設定でShopify APIキーを登録してください。",
+          "action": "チャネル設定へ移動"
+        },
+        "authFailed": {
+          "title": "API認証に失敗しました",
+          "description": "ShopifyのAPIキーまたはアクセストークンが無効です。チャネル設定で認証情報を確認してください。",
+          "action": "チャネル設定へ移動"
+        },
+        "loadFailed": {
+          "title": "商品を読み込めませんでした",
+          "action": "一覧へ戻る"
+        }
+      },
+      "sections": {
+        "basicInfo": "商品基本情報",
+        "description": "商品説明",
+        "options": "オプション設定",
+        "priceStock": "価格 / 在庫",
+        "images": "画像"
+      },
+      "fields": {
+        "title": {
+          "label": "商品名 (Title)",
+          "placeholder": "商品名を入力してください"
+        },
+        "vendor": {
+          "label": "ブランド (Vendor)",
+          "placeholder": "ブランド名 (任意)"
+        },
+        "productType": {
+          "label": "商品タイプ (Product Type)",
+          "placeholder": "例: Apparel, Electronics (任意)"
+        },
+        "tags": {
+          "label": "タグ (Tags)",
+          "placeholder": "例: summer, sale, cotton (カンマ区切り)",
+          "helper": "タグはShopifyの検索・フィルターで利用されます。"
+        },
+        "status": {
+          "label": "販売ステータス (Status)",
+          "draft": "下書き (DRAFT) — 非公開",
+          "active": "販売中 (ACTIVE) — 公開",
+          "archived": "アーカイブ (ARCHIVED) — 非公開",
+          "helper": "DRAFTで保存後、確認完了時にACTIVEへ変更することを推奨します。"
+        },
+        "price": {
+          "label": "販売価格 (Price)",
+          "placeholder": "例: 29.99"
+        },
+        "compareAtPrice": {
+          "label": "定価 (Compare At Price)",
+          "placeholder": "例: 39.99 (割引前価格)"
+        },
+        "sku": {
+          "label": "SKU",
+          "placeholder": "在庫管理コード (任意)"
+        },
+        "trackInventory": "在庫追跡を有効化",
+        "inventoryQuantity": {
+          "label": "在庫数",
+          "helper": "デフォルトロケーション(Location)の在庫として設定されます。"
+        }
+      },
+      "options": {
+        "name": {
+          "label": "オプション名",
+          "placeholder": "例: 色、サイズ、素材"
+        },
+        "values": {
+          "label": "オプション値 (カンマ区切り)",
+          "placeholder": "例: 赤、青、白",
+          "helper": "カンマ(,)で区切ります。値の追加/削除でvariant組み合わせが自動更新されます。"
+        },
+        "deleteAria": "オプション削除",
+        "addButton": "オプション追加",
+        "addButtonCount": "オプション追加 ({current}/{max})",
+        "maxNotice": "Shopifyはオプションを最大3つまでサポートします。",
+        "matrixTitle": "オプション組み合わせ別 価格 / 在庫 ({count}件 variant)",
+        "matrixColumns": {
+          "combination": "オプション組み合わせ",
+          "price": "販売価格",
+          "compareAtPrice": "定価 (割引前)",
+          "sku": "SKU",
+          "stock": "在庫"
+        },
+        "matrixHelper": "オプション値を編集すると組み合わせが自動更新されます。入力済みの値は保持されます。"
+      },
+      "images": {
+        "currentLabel": "現在の画像",
+        "currentHelper": "画像の編集・削除はShopify管理ページで行ってください。",
+        "newUrlsLabel": "新規画像URL追加",
+        "newUrlsHelper": "改行またはカンマ(,)で区切ります。公開アクセス可能なURLである必要があります。"
+      },
+      "actions": {
+        "cancel": "キャンセル",
+        "save": "保存"
       }
     }
   },
@@ -225,6 +1485,88 @@
         "requestedAt": "申請日",
         "completedAt": "完了日",
         "buyer": "購入者"
+      }
+    }
+  },
+  "config": {
+    "fulfillmentRank": {
+      "10": "決済完了",
+      "20": "新規注文",
+      "25": "注文保留",
+      "30": "発送準備",
+      "35": "発送保留",
+      "40": "ラベル出力",
+      "50": "発送完了",
+      "60": "配送中",
+      "70": "配送完了",
+      "80": "精算完了",
+      "90": "購入確定"
+    },
+    "semantic": {
+      "paid": "決済完了",
+      "new": "新規注文",
+      "hold_order": "注文保留",
+      "ready": "発送準備",
+      "hold_dispatch": "発送保留",
+      "label_printed": "ラベル出力",
+      "shipped": "発送完了",
+      "in_transit": "配送中",
+      "delivered": "配送完了",
+      "settled": "精算完了",
+      "completed": "購入確定",
+      "claim_any": "クレーム",
+      "all": "全体"
+    },
+    "hold": {
+      "order_hold": "注文保留",
+      "dispatch_hold": "発送保留"
+    },
+    "counterLines": {
+      "intake": "注文受付",
+      "dispatch": "出荷",
+      "delivery": "配送",
+      "settle": "精算/完了"
+    },
+    "orderColumns": {
+      "orderedAt": "注文日",
+      "channelId": "チャネル",
+      "channelOrderId": "注文番号",
+      "buyerName": "購入者",
+      "productSummary": "商品",
+      "total": "金額",
+      "fulfillmentStatus": "ステータス",
+      "trackingNo": "送り状"
+    },
+    "sortFields": {
+      "orderedAt": "注文日",
+      "paidAt": "決済日",
+      "shippedAt": "発送日",
+      "fulfillmentStatus": "ステータス段階",
+      "total": "金額",
+      "channelOrderId": "注文番号",
+      "createdAt": "作成日",
+      "updatedAt": "更新日"
+    },
+    "channels": {
+      "qoo10": {
+        "name": "Qoo10",
+        "description": "韓国・シンガポール・インドネシアのEC"
+      },
+      "rakuten": {
+        "name": "楽天",
+        "description": "日本最大のECプラットフォーム"
+      },
+      "shopee": {
+        "name": "Shopee",
+        "description": "東南アジア最大のECプラットフォーム"
+      },
+      "amazon": {
+        "name": "Amazon",
+        "description": "グローバルECプラットフォーム"
+      },
+      "shopify": {
+        "name": "Shopify",
+        "description": "グローバルコマースプラットフォーム"
       }
     }
   }

@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link as LinkIcon, RefreshCw, Search, Sparkles, Unlink, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
@@ -44,80 +45,78 @@ import { CreateMasterFromChannelModal } from "./CreateMasterFromChannelModal";
 import { LinkMasterProductModal } from "./LinkMasterProductModal";
 
 type StatusTab = { id: string; label: string };
+type StatusTranslator = (key: string, values?: Record<string, string | number>) => string;
 
-const QOO10_STATUS_TABS: StatusTab[] = [
-  { id: "all", label: "전체" },
-  { id: "S2", label: "거래가능" },
-  { id: "S1", label: "거래대기" },
-  { id: "S0", label: "검수대기" },
-  { id: "S3", label: "거래중지" },
-  { id: "S5", label: "거래제한" },
-  { id: "S8", label: "승인거부" },
-];
+const QOO10_STATUS_IDS = ["all", "S2", "S1", "S0", "S3", "S5", "S8"] as const;
+const SHOPIFY_STATUS_IDS = ["all", "ACTIVE", "DRAFT", "ARCHIVED"] as const;
+const SHOPEE_STATUS_IDS = ["all", "NORMAL", "UNLIST", "REVIEWING", "BANNED", "SELLER_DELETE"] as const;
+const RAKUTEN_STATUS_IDS = ["all"] as const;
 
-const SHOPIFY_STATUS_TABS: StatusTab[] = [
-  { id: "all", label: "전체" },
-  { id: "ACTIVE", label: "판매" },
-  { id: "DRAFT", label: "판매중지" },
-  { id: "ARCHIVED", label: "보관됨" },
-];
-
-const SHOPEE_STATUS_TABS: StatusTab[] = [
-  { id: "all", label: "전체" },
-  { id: "NORMAL", label: "판매중" },
-  { id: "UNLIST", label: "판매중지" },
-  { id: "REVIEWING", label: "검수중" },
-  { id: "BANNED", label: "차단" },
-  { id: "SELLER_DELETE", label: "삭제" },
-];
-
-const RAKUTEN_STATUS_TABS: StatusTab[] = [{ id: "all", label: "전체" }];
-
-function getStatusTabsForChannel(
-  channelType: ChannelRecord["channelType"],
-): StatusTab[] {
+function statusLabelKey(channelType: ChannelRecord["channelType"], id: string): string {
+  if (id === "all") return "status.all";
   switch (channelType) {
     case "QOO10_JP":
-      return QOO10_STATUS_TABS;
+      return `status.qoo10.${id.toLowerCase()}`;
     case "SHOPIFY":
-      return SHOPIFY_STATUS_TABS;
-    case "SHOPEE":
-      return SHOPEE_STATUS_TABS;
-    case "RAKUTEN":
-      return RAKUTEN_STATUS_TABS;
+      return `status.shopify.${id.toLowerCase()}`;
+    case "SHOPEE": {
+      const mapped = id === "SELLER_DELETE" ? "sellerDelete" : id.toLowerCase();
+      return `status.shopee.${mapped}`;
+    }
     default:
-      return [{ id: "all", label: "전체" }];
+      return "status.all";
   }
 }
 
-function getLinkStatusBadge(item: ChannelProductItem) {
+function getStatusTabsForChannel(
+  channelType: ChannelRecord["channelType"],
+  t: StatusTranslator,
+): StatusTab[] {
+  const ids = (() => {
+    switch (channelType) {
+      case "QOO10_JP":
+        return QOO10_STATUS_IDS;
+      case "SHOPIFY":
+        return SHOPIFY_STATUS_IDS;
+      case "SHOPEE":
+        return SHOPEE_STATUS_IDS;
+      case "RAKUTEN":
+        return RAKUTEN_STATUS_IDS;
+      default:
+        return ["all"] as const;
+    }
+  })();
+  return ids.map((id) => ({ id, label: t(statusLabelKey(channelType, id)) }));
+}
+
+function getLinkStatusBadge(item: ChannelProductItem, t: StatusTranslator) {
   if (item.linkStatus === "linked") {
     return (
       <Badge colorScheme="green" px={2} py={0.5} borderRadius="md" fontSize="xs">
-        연결됨
+        {t("badges.linked")}
       </Badge>
     );
   }
   return (
     <Badge colorScheme="yellow" px={2} py={0.5} borderRadius="md" fontSize="xs">
-      미연결
+      {t("badges.unlinked")}
     </Badge>
   );
 }
 
-function getSyncStatusBadge(item: ChannelProductItem) {
+function getSyncStatusBadge(item: ChannelProductItem, t: StatusTranslator) {
   if (item.linkStatus !== "linked" || !item.syncStatus) return null;
   if (item.syncStatus === "PENDING") {
     return (
       <Badge colorPalette="orange" px={2} py={0.5} borderRadius="md" fontSize="xs">
-        동기화 필요
+        {t("badges.syncPending")}
       </Badge>
     );
   }
   if (item.syncStatus === "ERROR") {
     return (
       <Badge colorPalette="red" px={2} py={0.5} borderRadius="md" fontSize="xs">
-        동기화 오류
+        {t("badges.syncError")}
       </Badge>
     );
   }
@@ -157,6 +156,7 @@ function SalesProductRow({
   onRowDeleteRequest: (channelItemId: string, listedProductId?: string) => void;
   isStatusActionPending: boolean;
 }) {
+  const t = useTranslations("pages.salesProducts");
   const router = useRouter();
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -174,9 +174,9 @@ function SalesProductRow({
     if (!item.listedProductId) return;
     try {
       await pushStock(item.listedProductId);
-      appToaster.success({ title: "재고 동기화 완료" });
+      appToaster.success({ title: t("toasts.stockSyncSuccess") });
     } catch {
-      appToaster.error({ title: "재고 동기화 실패" });
+      appToaster.error({ title: t("toasts.stockSyncError") });
     }
   }
 
@@ -184,9 +184,9 @@ function SalesProductRow({
     if (!item.listedProductId) return;
     try {
       await syncInfo(item.listedProductId);
-      appToaster.success({ title: "상품 정보 동기화 완료" });
+      appToaster.success({ title: t("toasts.infoSyncSuccess") });
     } catch {
-      appToaster.error({ title: "상품 정보 동기화 실패" });
+      appToaster.error({ title: t("toasts.infoSyncError") });
     }
   }
 
@@ -194,10 +194,10 @@ function SalesProductRow({
     if (!item.listedProductId) return;
     try {
       await unlinkProduct(item.listedProductId);
-      appToaster.success({ title: "연결 해제 완료" });
+      appToaster.success({ title: t("toasts.unlinkSuccess") });
       onLinkSuccess();
     } catch {
-      appToaster.error({ title: "연결 해제 실패" });
+      appToaster.error({ title: t("toasts.unlinkError") });
     }
   }
 
@@ -205,9 +205,9 @@ function SalesProductRow({
     if (!item.listedProductId) return;
     try {
       await pullSales(item.listedProductId);
-      appToaster.success({ title: "판매 동기화 완료" });
+      appToaster.success({ title: t("toasts.pullSalesSuccess") });
     } catch {
-      appToaster.error({ title: "판매 동기화 실패" });
+      appToaster.error({ title: t("toasts.pullSalesError") });
     }
   }
 
@@ -255,18 +255,18 @@ function SalesProductRow({
             </Text>
             {item.sellerCode && (
               <Text fontSize="xs" color="gray.400">
-                판매자코드: {item.sellerCode}
+                {t("row.sellerCode", { code: item.sellerCode })}
               </Text>
             )}
           </Stack>
         </Table.Cell>
         <Table.Cell>
-          <Text fontSize="sm">{item.variants.length}개</Text>
+          <Text fontSize="sm">{t("row.variantCount", { count: item.variants.length })}</Text>
         </Table.Cell>
         <Table.Cell>
           <Flex gap={1} wrap="wrap">
-            {getLinkStatusBadge(item)}
-            {getSyncStatusBadge(item)}
+            {getLinkStatusBadge(item, t)}
+            {getSyncStatusBadge(item, t)}
           </Flex>
         </Table.Cell>
         <Table.Cell>
@@ -298,7 +298,7 @@ function SalesProductRow({
                   colorScheme="red"
                   onClick={() => onRowDeleteRequest(item.channelItemId, item.listedProductId)}
                 >
-                  삭제
+                  {t("buttons.delete")}
                 </Button>
               </>
             )}
@@ -315,7 +315,7 @@ function SalesProductRow({
                     loading={isSyncingInfo || isPushingStock}
                   >
                     <RefreshCw size={12} />
-                    동기화
+                    {t("buttons.sync")}
                   </Button>
                 )}
                 {item.masterProductId && (
@@ -326,7 +326,7 @@ function SalesProductRow({
                       router.push(ROUTES.masterProductEdit(item.masterProductId!))
                     }
                   >
-                    마스터 보기
+                    {t("buttons.viewMaster")}
                   </Button>
                 )}
                 {item.listedProductId && (
@@ -335,7 +335,7 @@ function SalesProductRow({
                     variant="outline"
                     onClick={() => setSkuMappingModalOpen(true)}
                   >
-                    SKU 매핑
+                    {t("buttons.skuMapping")}
                   </Button>
                 )}
                 <Button
@@ -346,7 +346,7 @@ function SalesProductRow({
                   loading={isUnlinking}
                 >
                   <Unlink size={12} />
-                  연결 해제
+                  {t("buttons.unlink")}
                 </Button>
               </>
             ) : (
@@ -358,7 +358,7 @@ function SalesProductRow({
                   onClick={() => setCreateModalOpen(true)}
                 >
                   <Sparkles size={12} />
-                  마스터 추출
+                  {t("buttons.extractMaster")}
                 </Button>
                 <Button
                   size="xs"
@@ -366,7 +366,7 @@ function SalesProductRow({
                   onClick={() => setLinkModalOpen(true)}
                 >
                   <LinkIcon size={12} />
-                  마스터 연결
+                  {t("buttons.linkMaster")}
                 </Button>
               </>
             )}
@@ -412,6 +412,7 @@ function SalesProductRow({
 }
 
 function SalesProductsPageContent(): React.JSX.Element {
+  const t = useTranslations("pages.salesProducts");
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -436,8 +437,8 @@ function SalesProductsPageContent(): React.JSX.Element {
   const isQoo10 = activeChannel?.channelType === "QOO10_JP";
   const isShopify = activeChannel?.channelType === "SHOPIFY";
   const canManage = isQoo10 || isShopify;
-  const activateLabel = isShopify ? "판매(ACTIVE)" : "판매중";
-  const suspendLabel = isShopify ? "판매중지(DRAFT)" : "판매중지";
+  const activateLabel = t(isShopify ? "row.activate.shopify" : "row.activate.default");
+  const suspendLabel = t(isShopify ? "row.suspend.shopify" : "row.suspend.default");
 
   const isItemActive = (item: ChannelProductItem): boolean => {
     if (isQoo10) return item.status === "S2";
@@ -620,8 +621,8 @@ function SalesProductsPageContent(): React.JSX.Element {
     const fulfilled = results.filter((r) => r.status === "fulfilled").length;
     const rejected = results.length - fulfilled;
     appToaster.create({
-      title: "처리 완료",
-      description: `성공 ${fulfilled}건, 실패 ${rejected}건`,
+      title: t("toasts.processDone"),
+      description: t("toasts.processResult", { fulfilled, rejected }),
       type: rejected > 0 ? "warning" : "success",
     });
 
@@ -672,8 +673,8 @@ function SalesProductsPageContent(): React.JSX.Element {
         const fulfilled = results.filter((r) => r.status === "fulfilled").length;
         const rejected = results.length - fulfilled;
         appToaster.create({
-          title: "일괄 처리 완료",
-          description: `성공 ${fulfilled}건, 실패 ${rejected}건`,
+          title: t("toasts.bulkProcessDone"),
+          description: t("toasts.processResult", { fulfilled, rejected }),
           type: rejected > 0 ? "warning" : "success",
         });
         void queryClient.invalidateQueries({
@@ -703,8 +704,8 @@ function SalesProductsPageContent(): React.JSX.Element {
       const fulfilled = results.filter((r) => r.status === "fulfilled").length;
       const rejected = results.length - fulfilled;
       appToaster.create({
-        title: "일괄 처리 완료",
-        description: `성공 ${fulfilled}건, 실패 ${rejected}건`,
+        title: t("toasts.bulkProcessDone"),
+        description: t("toasts.processResult", { fulfilled, rejected }),
         type: rejected > 0 ? "warning" : "success",
       });
       void queryClient.invalidateQueries({ queryKey: qoo10ProductsQueryRoot });
@@ -718,8 +719,8 @@ function SalesProductsPageContent(): React.JSX.Element {
   };
 
   const statusTabs = activeChannel
-    ? getStatusTabsForChannel(activeChannel.channelType)
-    : [{ id: "all", label: "전체" }];
+    ? getStatusTabsForChannel(activeChannel.channelType, t)
+    : [{ id: "all", label: t("status.all") }];
 
   const allSelected =
     filteredItems.length > 0 &&
@@ -737,10 +738,10 @@ function SalesProductsPageContent(): React.JSX.Element {
     if (channelList.length === 0) {
       return (
         <EmptyState
-          title="연결된 채널이 없습니다"
-          description="설정에서 채널을 추가해주세요."
+          title={t("empty.noChannels")}
+          description={t("empty.noChannelsDescription")}
           action={{
-            label: "채널 설정으로 이동",
+            label: t("empty.goToChannelSettings"),
             onClick: () => router.push("/settings/channels"),
           }}
         />
@@ -750,8 +751,8 @@ function SalesProductsPageContent(): React.JSX.Element {
     if (!activeChannelId) {
       return (
         <EmptyState
-          title="채널을 선택해 주세요"
-          description="상단 탭에서 채널을 선택하면 상품을 조회할 수 있습니다."
+          title={t("empty.selectChannel")}
+          description={t("empty.selectChannelDescription")}
         />
       );
     }
@@ -767,7 +768,7 @@ function SalesProductsPageContent(): React.JSX.Element {
     if (isError) {
       return (
         <ErrorState
-          title="채널 상품을 불러오지 못했습니다"
+          title={t("empty.loadError")}
           description={error instanceof Error ? error.message : String(error)}
           onRetry={() => refetch()}
         />
@@ -777,8 +778,8 @@ function SalesProductsPageContent(): React.JSX.Element {
     if (filteredItems.length === 0) {
       return (
         <EmptyState
-          title="표시할 상품이 없습니다"
-          description="선택한 상태 또는 검색 조건에 맞는 상품이 없습니다."
+          title={t("empty.noItems")}
+          description={t("empty.noItemsDescription")}
         />
       );
     }
@@ -794,8 +795,8 @@ function SalesProductsPageContent(): React.JSX.Element {
       >
         <Flex justify="space-between" align="center" flexShrink={0}>
           <Text fontSize="sm" color="gray.500">
-            총 {totalItems.toLocaleString()}개
-            {debouncedSearch && ` (필터링: ${filteredItems.length}개)`}
+            {t("count.total", { count: totalItems })}
+            {debouncedSearch && t("count.filtered", { count: filteredItems.length })}
           </Text>
           {canManage &&
             selectedItemCodes.size > 0 &&
@@ -822,7 +823,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                         statusActionPending
                       }
                     >
-                      선택 {activateLabel} ({selectedItemCodes.size})
+                      {t("bulk.selectedStatus", { label: activateLabel, count: selectedItemCodes.size })}
                     </Button>
                   )}
                   {hasActive && (
@@ -838,7 +839,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                         statusActionPending
                       }
                     >
-                      선택 {suspendLabel} ({selectedItemCodes.size})
+                      {t("bulk.selectedStatus", { label: suspendLabel, count: selectedItemCodes.size })}
                     </Button>
                   )}
                   <Button
@@ -856,7 +857,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                       setDeleteDialogOpen(true);
                     }}
                   >
-                    선택 삭제 ({selectedItemCodes.size})
+                    {t("bulk.selectedDelete", { count: selectedItemCodes.size })}
                   </Button>
                 </Flex>
               );
@@ -895,7 +896,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                 zIndex={1}
                 bg="white"
               >
-                상품명 / 채널 ID
+                {t("table.title")}
               </Table.ColumnHeader>
               <Table.ColumnHeader
                 w="80px"
@@ -904,7 +905,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                 zIndex={1}
                 bg="white"
               >
-                옵션 수
+                {t("table.options")}
               </Table.ColumnHeader>
               <Table.ColumnHeader
                 w="100px"
@@ -913,7 +914,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                 zIndex={1}
                 bg="white"
               >
-                연결 상태
+                {t("table.linkStatus")}
               </Table.ColumnHeader>
               <Table.ColumnHeader
                 w="320px"
@@ -923,7 +924,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                 zIndex={1}
                 bg="white"
               >
-                작업
+                {t("table.actions")}
               </Table.ColumnHeader>
             </Table.Row>
           </Table.Header>
@@ -969,8 +970,8 @@ function SalesProductsPageContent(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%" minH={0}>
       <PageHeader
-        title="판매 상품 관리"
-        description="채널 상품과 마스터 상품을 연결합니다."
+        title={t("pageTitle")}
+        description={t("pageDescription")}
         mb={2}
       />
 
@@ -1079,7 +1080,7 @@ function SalesProductsPageContent(): React.JSX.Element {
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="상품명 / 채널 ID / 판매자코드 검색"
+                placeholder={t("search.placeholder")}
                 pl={8}
                 pr={8}
                 size="sm"
@@ -1143,11 +1144,11 @@ function SalesProductsPageContent(): React.JSX.Element {
           actionLabel={
             statusTargetValue === "1"
               ? isShopify
-                ? "판매중지(DRAFT)로 변경"
-                : "판매중지"
+                ? t("statusDialog.suspend.shopify")
+                : t("statusDialog.suspend.default")
               : isShopify
-                ? "판매(ACTIVE)로 변경"
-                : "판매중으로 변경"
+                ? t("statusDialog.activate.shopify")
+                : t("statusDialog.activate.default")
           }
           onConfirm={handleStatusConfirm}
         />
@@ -1183,7 +1184,7 @@ function SalesProductsPageContent(): React.JSX.Element {
             onClick={() => movePage(page - 1)}
             disabled={page <= 1}
           >
-            이전
+            {t("pagination.prev")}
           </Button>
           {visiblePageNumbers.map((number) => {
             const isCurrent = page === number;
@@ -1209,7 +1210,7 @@ function SalesProductsPageContent(): React.JSX.Element {
             onClick={() => movePage(page + 1)}
             disabled={totalPages <= 0 || page >= totalPages}
           >
-            다음
+            {t("pagination.next")}
           </Button>
         </Flex>
       )}

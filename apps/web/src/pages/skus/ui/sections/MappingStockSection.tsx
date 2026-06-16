@@ -1,4 +1,5 @@
 import { Box, Button, Flex, Input, Stack, Table, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import type { Dispatch, SetStateAction } from "react";
 import type { SkuDetail } from "@/entities/sku";
 import {
@@ -26,32 +27,33 @@ export function MappingStockSection({
   handleAdjust,
   isAdjusting,
 }: Props) {
+  const t = useTranslations("pages.skus");
   return (
     <Stack gap={5}>
-      <FormBox title="재고">
+      <FormBox title={t("form.mapping.stockTitle")}>
         <Stack gap={3}>
           <Flex align="center" gap={4}>
-            <Text fontSize="sm" color="gray.600">현재 재고</Text>
+            <Text fontSize="sm" color="gray.600">{t("form.mapping.currentStock")}</Text>
             <Text fontSize="xl" fontWeight="bold">{detail.stock}</Text>
           </Flex>
           <Flex gap={2} align="flex-end" flexWrap="wrap">
             <Box>
-              <Label>조정 수량 (±)</Label>
+              <Label>{t("form.mapping.adjustQty")}</Label>
               <Input
                 type="number"
                 value={adjustQty}
                 onChange={(e) => setAdjustQty(e.target.value)}
-                placeholder="예: 10 또는 -5"
+                placeholder={t("form.mapping.adjustQtyPlaceholder")}
                 size="sm"
                 w="160px"
               />
             </Box>
             <Box flex="1" minW="200px">
-              <Label>메모</Label>
+              <Label>{t("form.mapping.memo")}</Label>
               <Input
                 value={adjustNote}
                 onChange={(e) => setAdjustNote(e.target.value)}
-                placeholder="조정 사유"
+                placeholder={t("form.mapping.memoPlaceholder")}
                 size="sm"
               />
             </Box>
@@ -63,23 +65,23 @@ export function MappingStockSection({
               onClick={() => void handleAdjust()}
               loading={isAdjusting}
             >
-              조정 적용
+              {t("form.mapping.applyAdjust")}
             </Button>
           </Flex>
         </Stack>
       </FormBox>
 
-      <FormBox title={`마스터 변형 매핑 (${detail.masterVariants.length})`}>
+      <FormBox title={t("form.mapping.masterTitle", { count: detail.masterVariants.length })}>
         {detail.masterVariants.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">연결된 마스터 변형이 없습니다.</Text>
+          <Text fontSize="sm" color="gray.500">{t("form.mapping.masterEmpty")}</Text>
         ) : (
           <Table.Root size="sm">
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>마스터 상품</Table.ColumnHeader>
-                <Table.ColumnHeader>변형 SKU</Table.ColumnHeader>
-                <Table.ColumnHeader>수량</Table.ColumnHeader>
-                <Table.ColumnHeader>위치</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.masterProduct")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.variantSku")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.qty")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.position")}</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -105,20 +107,20 @@ export function MappingStockSection({
             </Table.Body>
           </Table.Root>
         )}
-        <HelperText>매핑은 마스터 상품 편집 화면에서 추가/제거합니다.</HelperText>
+        <HelperText>{t("form.mapping.masterHelper")}</HelperText>
       </FormBox>
 
-      <FormBox title={`판매상품 매핑 (${detail.listedSkus.length})`}>
+      <FormBox title={t("form.mapping.listedTitle", { count: detail.listedSkus.length })}>
         {detail.listedSkus.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">연결된 판매상품 매핑이 없습니다.</Text>
+          <Text fontSize="sm" color="gray.500">{t("form.mapping.listedEmpty")}</Text>
         ) : (
           <Table.Root size="sm">
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>판매상품 ID</Table.ColumnHeader>
-                <Table.ColumnHeader>채널 옵션</Table.ColumnHeader>
-                <Table.ColumnHeader>채널 셀러코드</Table.ColumnHeader>
-                <Table.ColumnHeader>수량</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.listedProductId")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.channelVariantId")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.channelSellerCode")}</Table.ColumnHeader>
+                <Table.ColumnHeader>{t("form.mapping.qty")}</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -141,7 +143,7 @@ export function MappingStockSection({
             </Table.Body>
           </Table.Root>
         )}
-        <HelperText>매핑은 판매상품 상세 화면에서 편집합니다.</HelperText>
+        <HelperText>{t("form.mapping.listedHelper")}</HelperText>
       </FormBox>
     </Stack>
   );

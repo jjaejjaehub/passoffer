@@ -1,4 +1,5 @@
 import { Flex, Input, Stack, Text, Textarea } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import type { FormState } from "../../model/formState";
 import { Field, FormBox, TwoCol } from "./primitives";
 
@@ -8,14 +9,15 @@ interface Props {
 }
 
 export function ExtraInfoSection({ state, update }: Props) {
+  const t = useTranslations("pages.skus");
   return (
     <FormBox>
       <Stack gap={4}>
         <TwoCol>
-          <Field label="원산지">
+          <Field label={t("form.extra.originCountry")}>
             <Input size="sm" value={state.originCountry} onChange={(e) => update("originCountry", e.target.value)} />
           </Field>
-          <Field label="세금 유형">
+          <Field label={t("form.extra.taxType")}>
             <select
               value={state.taxType}
               onChange={(e) => update("taxType", e.target.value as FormState["taxType"])}
@@ -28,45 +30,45 @@ export function ExtraInfoSection({ state, update }: Props) {
                 fontSize: "14px",
               }}
             >
-              <option value="GENERAL">일반과세</option>
-              <option value="ZERO">영세율</option>
-              <option value="EXEMPT">면세</option>
+              <option value="GENERAL">{t("form.extra.taxTypeGeneral")}</option>
+              <option value="ZERO">{t("form.extra.taxTypeZero")}</option>
+              <option value="EXEMPT">{t("form.extra.taxTypeExempt")}</option>
             </select>
           </Field>
         </TwoCol>
 
-        <Field label="취급 주의 상품">
+        <Field label={t("form.extra.requiresCaution")}>
           <Flex align="center" gap={2}>
             <input
               type="checkbox"
               checked={state.requiresCaution}
               onChange={(e) => update("requiresCaution", e.target.checked)}
             />
-            <Text fontSize="sm" color="gray.600">파손 위험·취급 주의가 필요한 상품</Text>
+            <Text fontSize="sm" color="gray.600">{t("form.extra.requiresCautionHint")}</Text>
           </Flex>
         </Field>
 
         <TwoCol>
-          <Field label="브랜드">
+          <Field label={t("form.extra.brand")}>
             <Input size="sm" value={state.brand} onChange={(e) => update("brand", e.target.value)} />
           </Field>
-          <Field label="제조사">
+          <Field label={t("form.extra.manufacturer")}>
             <Input size="sm" value={state.manufacturer} onChange={(e) => update("manufacturer", e.target.value)} />
           </Field>
         </TwoCol>
         <TwoCol>
-          <Field label="제조사 (영문)">
+          <Field label={t("form.extra.manufacturerEn")}>
             <Input size="sm" value={state.manufacturerEn} onChange={(e) => update("manufacturerEn", e.target.value)} maxLength={40} />
           </Field>
-          <Field label="연령대">
-            <Input size="sm" value={state.ageGroup} onChange={(e) => update("ageGroup", e.target.value)} placeholder="성인 / 유아 등" />
+          <Field label={t("form.extra.ageGroup")}>
+            <Input size="sm" value={state.ageGroup} onChange={(e) => update("ageGroup", e.target.value)} placeholder={t("form.extra.ageGroupPlaceholder")} />
           </Field>
         </TwoCol>
 
-        <Field label="대표 이미지 URL">
+        <Field label={t("form.extra.mainImage")}>
           <Input size="sm" value={state.mainImage} onChange={(e) => update("mainImage", e.target.value)} placeholder="https://..." />
         </Field>
-        <Field label="상품 설명 (HTML)">
+        <Field label={t("form.extra.descriptionHtml")}>
           <Textarea
             value={state.descriptionHtml}
             onChange={(e) => update("descriptionHtml", e.target.value)}

@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Plus, Trash2, XCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -74,7 +75,12 @@ interface Props {
   onSuccess: () => void;
 }
 
-function parseOptionGroups(variants: ChannelProductVariant[]): {
+type TFn = (key: string, values?: Record<string, string | number>) => string;
+
+function parseOptionGroups(
+  variants: ChannelProductVariant[],
+  t: TFn,
+): {
   groups: OptionGroupDraft[];
   variantOptionValues: Array<Array<{ groupName: string; value: string }>>;
 } {
@@ -106,11 +112,14 @@ function parseOptionGroups(variants: ChannelProductVariant[]): {
         values.push(v);
       }
     });
-    groups.push({ name: `옵션${i + 1}`, values });
+    groups.push({ name: t("variants.optionN", { n: i + 1 }), values });
   }
 
   const variantOptionValues = splitValues.map((parts) =>
-    parts.map((value, i) => ({ groupName: groups[i]?.name ?? `옵션${i + 1}`, value })),
+    parts.map((value, i) => ({
+      groupName: groups[i]?.name ?? t("variants.optionN", { n: i + 1 }),
+      value,
+    })),
   );
 
   return { groups, variantOptionValues };
@@ -120,6 +129,7 @@ function checkPlatformReadiness(
   def: PlatformDef,
   commonValues: Record<string, string>,
   platformValues: Record<string, string>,
+  t: TFn,
 ): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
   const platformDescriptionKey =
@@ -128,7 +138,7 @@ function checkPlatformReadiness(
   for (const commonKey of def.requiredCommonFields) {
     const val = commonValues[commonKey] ?? "";
     if (commonKey === "images") {
-      if (!val) missing.push("이미지");
+      if (!val) missing.push(t("images.title"));
     } else if (!val.trim()) {
       if (
         commonKey === "descriptionHtml" &&
@@ -138,12 +148,12 @@ function checkPlatformReadiness(
         continue;
       }
       const labelMap: Record<string, string> = {
-        title: "상품명",
-        weightG: "무게(g)",
-        descriptionHtml: "상품 설명",
-        brand: "브랜드",
-        hsCode: "HS 코드",
-        countryOfOrigin: "원산지",
+        title: t("basicInfo.name"),
+        weightG: t("basicInfo.weightG"),
+        descriptionHtml: t("basicInfo.descriptionHtml"),
+        brand: t("basicInfo.brand"),
+        hsCode: t("basicInfo.hsCode"),
+        countryOfOrigin: t("origin.label"),
       };
       missing.push(labelMap[commonKey] ?? commonKey);
     }
@@ -168,6 +178,7 @@ export function CreateMasterFromChannelModal({
   onClose,
   onSuccess,
 }: Props): React.JSX.Element {
+  const t = useTranslations("pages.salesProducts.createMasterModal");
   const [step, setStep] = useState<Step>("fill-info");
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -179,7 +190,10 @@ export function CreateMasterFromChannelModal({
     [channelDetail?.variants, channelProduct.variants],
   );
 
-  const initialParse = useMemo(() => parseOptionGroups(channelVariants), [channelVariants]);
+  const initialParse = useMemo(
+    () => parseOptionGroups(channelVariants, t as TFn),
+    [channelVariants, t],
+  );
 
   const [code, setCode] = useState<string>(
     channelProduct.sellerCode || `MP-${Date.now()}`,
@@ -385,7 +399,7 @@ export function CreateMasterFromChannelModal({
       return [
         {
           sku: channelProduct.sellerCode || `${code}-1`,
-          optionLabel: "기본",
+          optionLabel: t("variantDefaults.groupName"),
           optionValues: [],
           price: channelProduct.price ?? "",
           stock: 0,
@@ -447,10 +461,10 @@ export function CreateMasterFromChannelModal({
   const readiness = useMemo(() => {
     const map: Record<string, { ready: boolean; missing: string[] }> = {};
     for (const def of connectedPlatforms) {
-      map[def.key] = checkPlatformReadiness(def, commonValues, platformValues);
+      map[def.key] = checkPlatformReadiness(def, commonValues, platformValues, t as TFn);
     }
     return map;
-  }, [connectedPlatforms, commonValues, platformValues]);
+  }, [connectedPlatforms, commonValues, platformValues, t]);
 
   const { mutateAsync: createMaster } = useCreateMasterProduct();
   const { mutateAsync: linkProduct } = useLinkChannelProduct(
@@ -464,7 +478,7 @@ export function CreateMasterFromChannelModal({
   const handleAddOptionGroup = (): void => {
     setOptionGroups((prev) => [
       ...prev,
-      { name: `옵션${prev.length + 1}`, values: [] },
+      { name: t("variants.optionN", { n: prev.length + 1 }), values: [] },
     ]);
   };
 
@@ -567,7 +581,7 @@ export function CreateMasterFromChannelModal({
 
   const handleSubmit = async (): Promise<void> => {
     if (!canSubmit) {
-      appToaster.create({ title: "필수 항목을 모두 입력하세요.", type: "error" });
+      appToaster.create({ title: t("toast.missingRequired"), type: "error" });
       return;
     }
 
@@ -575,7 +589,7 @@ export function CreateMasterFromChannelModal({
     try {
       const tags = tagsInput
         .split(",")
-        .map((t) => t.trim())
+        .map((s) => s.trim())
         .filter(Boolean);
 
       const attributes = buildAttributes();
@@ -636,7 +650,7 @@ export function CreateMasterFromChannelModal({
       });
       setStep("result");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "마스터 상품 생성에 실패했습니다.";
+      const msg = err instanceof Error ? err.message : t("toast.createFailed");
       appToaster.create({ title: msg, type: "error" });
     } finally {
       setSubmitting(false);
@@ -674,8 +688,8 @@ export function CreateMasterFromChannelModal({
           borderColor="gray.100"
         >
           <Text fontWeight="semibold" fontSize="md">
-            {step === "fill-info" && "판매상품으로 마스터 생성"}
-            {step === "result" && (resultData ? "생성 완료" : "생성 실패")}
+            {step === "fill-info" && t("header.fillInfo")}
+            {step === "result" && (resultData ? t("header.resultSuccess") : t("header.resultFail"))}
           </Text>
           <Button size="xs" variant="ghost" onClick={onClose}>
             ✕
@@ -687,41 +701,42 @@ export function CreateMasterFromChannelModal({
             <Stack gap={5}>
               <Box px={3} py={2} bg="blue.50" borderRadius="md">
                 <Text fontSize="xs" color="blue.700">
-                  판매상품 &quot;{channelProduct.title}&quot;의 정보를 기반으로 자동 채워졌습니다.
-                  필요한 정보를 확인/수정한 뒤 생성하세요.
+                  {t("info.banner1", { title: channelProduct.title })}
+                  {" "}
+                  {t("info.banner2")}
                 </Text>
               </Box>
 
               <Stack gap={3}>
                 <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                  기본 정보
+                  {t("basicInfo.title")}
                 </Text>
                 <Flex gap={3}>
                   <Box flex="1">
                     <Text fontSize="xs" color="gray.600" mb={1}>
-                      마스터 코드 <Text as="span" color="red.500">*</Text>
+                      {t("basicInfo.code")} <Text as="span" color="red.500">*</Text>
                     </Text>
                     <Input
                       size="sm"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
-                      placeholder="고유 코드 (예: MP-001)"
+                      placeholder={t("basicInfo.codePlaceholder")}
                     />
                   </Box>
                   <Box flex="2">
                     <Text fontSize="xs" color="gray.600" mb={1}>
-                      상품명 <Text as="span" color="red.500">*</Text>
+                      {t("basicInfo.name")} <Text as="span" color="red.500">*</Text>
                     </Text>
                     <Input
                       size="sm"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="상품명"
+                      placeholder={t("basicInfo.namePlaceholder")}
                     />
                   </Box>
                 </Flex>
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>브랜드</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.brand")}</Text>
                   <Flex align="center" gap={2} mb={2}>
                     <Checkbox.Root
                       checked={noBrand}
@@ -731,7 +746,7 @@ export function CreateMasterFromChannelModal({
                       <Checkbox.HiddenInput />
                       <Checkbox.Control />
                       <Checkbox.Label fontSize="xs" color="gray.600">
-                        브랜드 없음 (No Brand)
+                        {t("basicInfo.noBrand")}
                       </Checkbox.Label>
                     </Checkbox.Root>
                   </Flex>
@@ -743,22 +758,22 @@ export function CreateMasterFromChannelModal({
                         setBrand(e.target.value);
                         setPlatformValue("shopify.vendor", e.target.value);
                       }}
-                      placeholder="브랜드명 입력"
+                      placeholder={t("basicInfo.brandInputPlaceholder")}
                     />
                   )}
                 </Box>
                 <Flex gap={3}>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>HS 코드</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.hsCode")}</Text>
                     <Input
                       size="sm"
                       value={hsCode}
                       onChange={(e) => setHsCode(e.target.value)}
-                      placeholder="예: 6109.10"
+                      placeholder={t("basicInfo.hsCodePlaceholder")}
                     />
                   </Box>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>판매가</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.retailPrice")}</Text>
                     <Input
                       size="sm"
                       type="number"
@@ -767,13 +782,13 @@ export function CreateMasterFromChannelModal({
                         setRetailPrice(e.target.value);
                         setPlatformValue("qoo10.ItemPrice", e.target.value);
                       }}
-                      placeholder="예: 29000"
+                      placeholder={t("basicInfo.retailPricePlaceholder")}
                     />
                   </Box>
                 </Flex>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>원산지</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>{t("origin.label")}</Text>
                   <Flex gap={2}>
                     <Box flexShrink={0} minW="130px">
                       <select
@@ -799,9 +814,9 @@ export function CreateMasterFromChannelModal({
                           background: "white",
                         }}
                       >
-                        <option value="domestic">국내 (대한민국)</option>
-                        <option value="overseas">해외</option>
-                        <option value="other">기타</option>
+                        <option value="domestic">{t("origin.domestic")}</option>
+                        <option value="overseas">{t("origin.overseas")}</option>
+                        <option value="other">{t("origin.other")}</option>
                       </select>
                     </Box>
                     <Box flex="1">
@@ -811,10 +826,10 @@ export function CreateMasterFromChannelModal({
                         onChange={(e) => setCountryOfOrigin(e.target.value)}
                         placeholder={
                           originType === "domestic"
-                            ? "예: 서울특별시"
+                            ? t("origin.placeholderDomestic")
                             : originType === "overseas"
-                              ? "예: 중국, China"
-                              : "자유 입력"
+                              ? t("origin.placeholderOverseas")
+                              : t("origin.placeholderOther")
                         }
                       />
                     </Box>
@@ -823,47 +838,47 @@ export function CreateMasterFromChannelModal({
 
                 <Flex gap={3}>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>소재</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.material")}</Text>
                     <Input
                       size="sm"
                       value={material}
                       onChange={(e) => setMaterial(e.target.value)}
-                      placeholder="예: 면 100%"
+                      placeholder={t("basicInfo.materialPlaceholder")}
                     />
                   </Box>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>무게(g)</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.weightG")}</Text>
                     <Input
                       size="sm"
                       type="number"
                       value={weightG}
                       onChange={(e) => setWeightG(e.target.value)}
-                      placeholder="예: 300"
+                      placeholder={t("basicInfo.weightGPlaceholder")}
                     />
                   </Box>
                 </Flex>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>태그</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.tags")}</Text>
                   <Input
                     size="sm"
                     value={tagsInput}
                     onChange={(e) => setTagsInput(e.target.value)}
-                    placeholder="예: 의류, 여성, 반팔"
+                    placeholder={t("basicInfo.tagsPlaceholder")}
                   />
                   <Text fontSize="xs" color="gray.400" mt={1}>
-                    쉼표로 구분하여 입력하세요
+                    {t("basicInfo.tagsHelper")}
                   </Text>
                 </Box>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>상품 설명 (HTML 허용)</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.descriptionHtml")}</Text>
                   <Textarea
                     size="sm"
                     rows={6}
                     value={descriptionHtml}
                     onChange={(e) => setDescriptionHtml(e.target.value)}
-                    placeholder="<p>상품 설명을 입력하세요...</p>"
+                    placeholder={t("basicInfo.descriptionPlaceholder")}
                     fontFamily="mono"
                     fontSize="xs"
                   />
@@ -872,7 +887,7 @@ export function CreateMasterFromChannelModal({
 
               <Stack gap={3}>
                 <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                  이미지
+                  {t("images.title")}
                 </Text>
                 {images.length > 0 && (
                   <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
@@ -931,7 +946,7 @@ export function CreateMasterFromChannelModal({
                   </Box>
                 )}
                 <Box p={3} borderWidth="1px" borderColor="gray.200" borderRadius="md" bg="gray.50">
-                  <Text fontSize="xs" fontWeight="medium" mb={2}>이미지 추가</Text>
+                  <Text fontSize="xs" fontWeight="medium" mb={2}>{t("images.add")}</Text>
                   <Flex gap={2}>
                     <Box flex="2">
                       <Input
@@ -939,7 +954,7 @@ export function CreateMasterFromChannelModal({
                         bg="white"
                         value={newImageUrl}
                         onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="https://..."
+                        placeholder={t("images.urlPlaceholder")}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
@@ -954,7 +969,7 @@ export function CreateMasterFromChannelModal({
                         bg="white"
                         value={newImageAlt}
                         onChange={(e) => setNewImageAlt(e.target.value)}
-                        placeholder="대체 텍스트"
+                        placeholder={t("images.alt")}
                       />
                     </Box>
                     <Button
@@ -963,7 +978,7 @@ export function CreateMasterFromChannelModal({
                       onClick={handleAddImage}
                       disabled={!newImageUrl.trim()}
                     >
-                      추가
+                      {t("images.addButton")}
                     </Button>
                   </Flex>
                 </Box>
@@ -972,12 +987,11 @@ export function CreateMasterFromChannelModal({
               {connectedPlatforms.length > 0 && (
                 <Stack gap={3}>
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                    플랫폼별 속성
+                    {t("platformAttrs.title")}
                   </Text>
                   <Box px={3} py={2} bg="amber.50" borderRadius="md">
                     <Text fontSize="xs" color="amber.800">
-                      연결된 채널의 속성입니다. 추출된 값으로 자동 채워졌으며, 누락된 필수
-                      항목은 직접 입력해 주세요.
+                      {t("platformAttrs.description")}
                     </Text>
                   </Box>
                   <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" bg="white" overflow="hidden">
@@ -989,16 +1003,16 @@ export function CreateMasterFromChannelModal({
                         const statusBadge = hasAnyInput || ready ? (
                           ready ? (
                             <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="green.50" color="green.700" border="1px solid" borderColor="green.200">
-                              ✓ 등록 가능
+                              {t("platformAttrs.ready")}
                             </Box>
                           ) : (
                             <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="orange.50" color="orange.700" border="1px solid" borderColor="orange.200">
-                              필수값 미입력 ({missing.length}개)
+                              {t("platformAttrs.missingCount", { count: missing.length })}
                             </Box>
                           )
                         ) : (
                           <Box px={2} py={0.5} borderRadius="full" fontSize="xs" color="gray.400" border="1px solid" borderColor="gray.200">
-                            미입력
+                            {t("platformAttrs.missingShort")}
                           </Box>
                         );
 
@@ -1026,7 +1040,7 @@ export function CreateMasterFromChannelModal({
                                 {statusBadge}
                                 {!ready && hasAnyInput && missing.length > 0 && (
                                   <Text fontSize="xs" color="gray.400" truncate>
-                                    미입력: {missing.join(" · ")}
+                                    {t("platformAttrs.missingList", { fields: missing.join(" · ") })}
                                   </Text>
                                 )}
                               </Flex>
@@ -1038,7 +1052,7 @@ export function CreateMasterFromChannelModal({
                                 {hasAnyInput && !ready && missing.length > 0 && (
                                   <Box mb={4} px={4} py={3} bg="orange.50" borderWidth="1px" borderColor="orange.200" borderRadius="md">
                                     <Text fontSize="sm" color="orange.700" fontWeight="medium">
-                                      채널 등록 전 아래 항목을 입력해 주세요
+                                      {t("platformAttrs.missingHeader")}
                                     </Text>
                                     <Text fontSize="xs" color="orange.600" mt={1}>
                                       {missing.join(", ")}
@@ -1051,7 +1065,7 @@ export function CreateMasterFromChannelModal({
                                     <Box>
                                       <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
                                         <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
-                                          카테고리
+                                          {t("qoo10.category")}
                                         </Text>
                                       </Box>
                                       {categoryQuery.isLoading ? (
@@ -1063,7 +1077,7 @@ export function CreateMasterFromChannelModal({
                                       ) : (
                                         <Stack gap={3}>
                                           <Box>
-                                            <Label required>대분류</Label>
+                                            <Label required>{t("qoo10.mainCat")}</Label>
                                             <Select
                                               value={mainCatCd}
                                               onChange={(e) => {
@@ -1072,14 +1086,14 @@ export function CreateMasterFromChannelModal({
                                                 setPlatformValue("qoo10.SecondSubCat", "");
                                               }}
                                             >
-                                              <option value="">대분류 선택</option>
+                                              <option value="">{t("qoo10.mainCatPlaceholder")}</option>
                                               {mainCatOptions.map((opt) => (
                                                 <option key={opt.code} value={opt.code}>{opt.name}</option>
                                               ))}
                                             </Select>
                                           </Box>
                                           <Box>
-                                            <Label required>중분류</Label>
+                                            <Label required>{t("qoo10.subCat")}</Label>
                                             <Select
                                               value={midCatCd}
                                               onChange={(e) => {
@@ -1088,26 +1102,26 @@ export function CreateMasterFromChannelModal({
                                               }}
                                               disabled={!mainCatCd}
                                             >
-                                              <option value="">중분류 선택</option>
+                                              <option value="">{t("qoo10.subCatPlaceholder")}</option>
                                               {midCatOptions.map((opt) => (
                                                 <option key={opt.code} value={opt.code}>{opt.name}</option>
                                               ))}
                                             </Select>
                                           </Box>
                                           <Box>
-                                            <Label required>소분류</Label>
+                                            <Label required>{t("qoo10.secondSubCat")}</Label>
                                             <Select
                                               value={platformValues["qoo10.SecondSubCat"] ?? ""}
                                               onChange={(e) => setPlatformValue("qoo10.SecondSubCat", e.target.value)}
                                               disabled={!midCatCd}
                                             >
-                                              <option value="">소분류 선택</option>
+                                              <option value="">{t("qoo10.secondSubCatPlaceholder")}</option>
                                               {secondSubCatOptions.map((opt) => (
                                                 <option key={opt.code} value={opt.code}>{opt.name}</option>
                                               ))}
                                             </Select>
                                             {platformValues["qoo10.SecondSubCat"] && (
-                                              <HelperText>코드: {platformValues["qoo10.SecondSubCat"]}</HelperText>
+                                              <HelperText>{t("qoo10.codeLine", { code: platformValues["qoo10.SecondSubCat"] })}</HelperText>
                                             )}
                                           </Box>
                                         </Stack>
@@ -1119,10 +1133,10 @@ export function CreateMasterFromChannelModal({
                                     <Box>
                                       <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
                                         <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
-                                          브랜드
+                                          {t("qoo10.brand")}
                                         </Text>
                                       </Box>
-                                      <Label>브랜드 검색</Label>
+                                      <Label>{t("qoo10.brandSearch")}</Label>
                                       <Flex align="center" gap={2} mb={2}>
                                         <Checkbox.Root
                                           checked={platformValues["qoo10.NoBrand"] === "true"}
@@ -1141,7 +1155,7 @@ export function CreateMasterFromChannelModal({
                                         >
                                           <Checkbox.HiddenInput />
                                           <Checkbox.Control />
-                                          <Checkbox.Label fontSize="sm" color="gray.600">입력하지 않음</Checkbox.Label>
+                                          <Checkbox.Label fontSize="sm" color="gray.600">{t("qoo10.brandNone")}</Checkbox.Label>
                                         </Checkbox.Root>
                                       </Flex>
                                       {platformValues["qoo10.NoBrand"] !== "true" && (
@@ -1156,7 +1170,7 @@ export function CreateMasterFromChannelModal({
                                               setSelectedBrandLabel("");
                                             }}
                                             onFocus={() => setIsBrandDropdownOpen(true)}
-                                            placeholder="브랜드명을 입력해 주세요 (2글자 이상)"
+                                            placeholder={t("qoo10.brandSearchPlaceholder")}
                                             autoComplete="off"
                                           />
                                           {isBrandDropdownOpen && debouncedBrandKeyword.length >= 2 && (
@@ -1182,7 +1196,7 @@ export function CreateMasterFromChannelModal({
                                                   <Skeleton height="28px" />
                                                 </Stack>
                                               ) : brandResults.length === 0 ? (
-                                                <Text fontSize="sm" color="gray.500" py={2} textAlign="center">검색 결과가 없습니다.</Text>
+                                                <Text fontSize="sm" color="gray.500" py={2} textAlign="center">{t("qoo10.brandNoResult")}</Text>
                                               ) : (
                                                 <Stack gap={1}>
                                                   {brandResults.map((b) => {
@@ -1213,7 +1227,7 @@ export function CreateMasterFromChannelModal({
                                             </Box>
                                           )}
                                           {platformValues["qoo10.BrandNo"] && selectedBrandLabel && (
-                                            <HelperText>선택됨: {selectedBrandLabel}</HelperText>
+                                            <HelperText>{t("qoo10.brandSelected", { label: selectedBrandLabel })}</HelperText>
                                           )}
                                         </Box>
                                       )}
@@ -1243,15 +1257,15 @@ export function CreateMasterFromChannelModal({
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>발송가능일 타입</Label>
+                                            <Label required>{t("qoo10.deliveryType")}</Label>
                                             <Select
                                               value={platformValues["qoo10.AvailableDateType"] ?? "0"}
                                               onChange={(e) => setPlatformValue("qoo10.AvailableDateType", e.target.value)}
                                             >
-                                              <option value="0">일반발송 (3영업일)</option>
-                                              <option value="1">상품준비일</option>
-                                              <option value="2">출시일</option>
-                                              <option value="3">당일발송</option>
+                                              <option value="0">{t("qoo10.deliveryNormal")}</option>
+                                              <option value="1">{t("qoo10.deliveryPrep")}</option>
+                                              <option value="2">{t("qoo10.deliveryRelease")}</option>
+                                              <option value="3">{t("qoo10.deliverySameDay")}</option>
                                             </Select>
                                           </Box>
                                         );
@@ -1260,14 +1274,14 @@ export function CreateMasterFromChannelModal({
                                       if (field.key === "qoo10.AvailableDateValue") {
                                         const dateType = platformValues["qoo10.AvailableDateType"] ?? "0";
                                         const placeholder =
-                                          dateType === "0" ? "1~3 (일반발송일)" :
-                                          dateType === "1" ? "4~14 (준비일 수)" :
-                                          dateType === "2" ? "2025/09/26 (출시일)" :
-                                          "14:30 (당일발송 마감시간)";
+                                          dateType === "0" ? t("qoo10.deliveryHintNormal") :
+                                          dateType === "1" ? t("qoo10.deliveryHintPrep") :
+                                          dateType === "2" ? t("qoo10.deliveryHintRelease") :
+                                          t("qoo10.deliveryHintSameDay");
                                         const isRequired = dateType !== "0";
                                         return (
                                           <Box key={field.key}>
-                                            <Label required={isRequired}>발송가능일 값</Label>
+                                            <Label required={isRequired}>{t("qoo10.deliveryValue")}</Label>
                                             <Input
                                               size="sm"
                                               value={platformValues["qoo10.AvailableDateValue"] ?? ""}
@@ -1275,7 +1289,7 @@ export function CreateMasterFromChannelModal({
                                               placeholder={placeholder}
                                             />
                                             {dateType === "0" && (
-                                              <HelperText>일반발송 선택 시 미입력이면 1(영업일)로 자동 처리됩니다.</HelperText>
+                                              <HelperText>{t("qoo10.deliveryNormalHelper")}</HelperText>
                                             )}
                                           </Box>
                                         );
@@ -1291,7 +1305,7 @@ export function CreateMasterFromChannelModal({
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>재고 수량</Label>
+                                            <Label required>{t("qoo10.stock")}</Label>
                                             <Input
                                               size="sm"
                                               type="number"
@@ -1302,7 +1316,7 @@ export function CreateMasterFromChannelModal({
                                               cursor="default"
                                             />
                                             <HelperText>
-                                              변형(Variants) 재고 합계에서 자동 계산됩니다. (현재: {totalVariantStock}개)
+                                              {t("qoo10.stockAutoHint", { count: totalVariantStock })}
                                             </HelperText>
                                           </Box>
                                         );
@@ -1318,7 +1332,7 @@ export function CreateMasterFromChannelModal({
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>판매 가격 (JPY)</Label>
+                                            <Label required>{t("qoo10.price")}</Label>
                                             <Input
                                               size="sm"
                                               type="number"
@@ -1329,7 +1343,7 @@ export function CreateMasterFromChannelModal({
                                               cursor="default"
                                             />
                                             <HelperText>
-                                              첫 번째 변형(Variant) 가격에서 자동 계산됩니다.{firstVariantPrice !== "" && ` (현재: ¥${firstVariantPrice})`}
+                                              {t("qoo10.priceAutoHint")}{firstVariantPrice !== "" && ` (¥${firstVariantPrice})`}
                                             </HelperText>
                                           </Box>
                                         );
@@ -1338,22 +1352,22 @@ export function CreateMasterFromChannelModal({
                                       if (field.key === "qoo10.ShippingNo") {
                                         const selectedNo = platformValues["qoo10.ShippingNo"] ?? "";
                                         const shippingTypeLabel: Record<string, string> = {
-                                          X: "무료",
-                                          F: "유료",
-                                          M: "조건부무료",
-                                          W: "방문수령",
-                                          D: "착불(선결제불가)",
-                                          R: "착불(선결제가능)",
+                                          X: t("qoo10.shippingTypeX"),
+                                          F: t("qoo10.shippingTypeF"),
+                                          M: t("qoo10.shippingTypeM"),
+                                          W: t("qoo10.shippingTypeW"),
+                                          D: t("qoo10.shippingTypeD"),
+                                          R: t("qoo10.shippingTypeR"),
                                         };
                                         const selectedTemplate = shippingTemplates.find(
-                                          (t) => String(t.ShippingNo) === selectedNo,
+                                          (tpl) => String(tpl.ShippingNo) === selectedNo,
                                         );
                                         const filteredTemplates = shippingKeyword.trim()
                                           ? shippingTemplates.filter(
-                                              (t) =>
-                                                String(t.ShippingNo).includes(shippingKeyword) ||
-                                                (t.transcName ?? "").includes(shippingKeyword) ||
-                                                (shippingTypeLabel[t.ShippingType] ?? "").includes(shippingKeyword),
+                                              (tpl) =>
+                                                String(tpl.ShippingNo).includes(shippingKeyword) ||
+                                                (tpl.transcName ?? "").includes(shippingKeyword) ||
+                                                (shippingTypeLabel[tpl.ShippingType] ?? "").includes(shippingKeyword),
                                             )
                                           : shippingTemplates;
                                         return (
@@ -1365,18 +1379,18 @@ export function CreateMasterFromChannelModal({
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>배송 템플릿</Label>
+                                            <Label required>{t("qoo10.shippingTemplate")}</Label>
                                             <Box position="relative">
                                               <Input
                                                 size="sm"
                                                 placeholder={
                                                   shippingTemplateQuery.isLoading
-                                                    ? "배송 템플릿 불러오는 중..."
+                                                    ? t("qoo10.shippingLoading")
                                                     : shippingTemplateQuery.isError
-                                                      ? "배송 번호 직접 입력 (예: 12345)"
+                                                      ? t("qoo10.shippingManualPlaceholder")
                                                       : shippingTemplates.length === 0
-                                                        ? "배송 번호 직접 입력 (예: 12345)"
-                                                        : "템플릿 번호 또는 배송사로 검색"
+                                                        ? t("qoo10.shippingManualPlaceholder")
+                                                        : t("qoo10.shippingSearchPlaceholder")
                                                 }
                                                 value={
                                                   shippingTemplates.length === 0
@@ -1386,7 +1400,7 @@ export function CreateMasterFromChannelModal({
                                                       : selectedTemplate
                                                         ? `No.${selectedTemplate.ShippingNo} · ${shippingTypeLabel[selectedTemplate.ShippingType] ?? selectedTemplate.ShippingType} · ${selectedTemplate.transcName}`
                                                         : selectedNo === "0"
-                                                          ? "0 — 무료배송"
+                                                          ? t("qoo10.shippingFreeRow")
                                                           : selectedNo
                                                             ? `No. ${selectedNo}`
                                                             : ""
@@ -1446,24 +1460,24 @@ export function CreateMasterFromChannelModal({
                                                       setIsShippingDropdownOpen(false);
                                                     }}
                                                   >
-                                                    <Text fontWeight="medium">0 — 무료배송</Text>
+                                                    <Text fontWeight="medium">{t("qoo10.shippingFreeRow")}</Text>
                                                   </Box>
                                                   {filteredTemplates.length === 0 && (
                                                     <Box px={3} py={2} fontSize="sm" color="gray.400">
-                                                      검색 결과 없음
+                                                      {t("qoo10.shippingNoResult")}
                                                     </Box>
                                                   )}
-                                                  {filteredTemplates.map((t) => (
+                                                  {filteredTemplates.map((tpl) => (
                                                     <Box
-                                                      key={t.ShippingNo}
+                                                      key={tpl.ShippingNo}
                                                       px={3}
                                                       py={2}
                                                       cursor="pointer"
                                                       fontSize="sm"
                                                       _hover={{ bg: "gray.50" }}
-                                                      bg={selectedNo === String(t.ShippingNo) ? "orange.50" : "white"}
+                                                      bg={selectedNo === String(tpl.ShippingNo) ? "orange.50" : "white"}
                                                       onMouseDown={() => {
-                                                        setPlatformValue("qoo10.ShippingNo", String(t.ShippingNo));
+                                                        setPlatformValue("qoo10.ShippingNo", String(tpl.ShippingNo));
                                                         if (!platformValues["qoo10.AvailableDateType"]) {
                                                           setPlatformValue("qoo10.AvailableDateType", "0");
                                                         }
@@ -1471,10 +1485,10 @@ export function CreateMasterFromChannelModal({
                                                       }}
                                                     >
                                                       <Text fontWeight="medium">
-                                                        No.{t.ShippingNo} · {shippingTypeLabel[t.ShippingType] ?? t.ShippingType} · {t.transcName}
+                                                        No.{tpl.ShippingNo} · {shippingTypeLabel[tpl.ShippingType] ?? tpl.ShippingType} · {tpl.transcName}
                                                       </Text>
                                                       <Text fontSize="xs" color="gray.500">
-                                                        배송비 {t.ShippingFee}円 · {t.ShippingType === 'M' ? `${t.FreeCondition}円 이상 무료` : ''}
+                                                        {t("qoo10.shippingFeeLine", { fee: tpl.ShippingFee })}{tpl.ShippingType === 'M' ? ` · ${t("qoo10.shippingFreeCondition", { amount: tpl.FreeCondition })}` : ''}
                                                       </Text>
                                                     </Box>
                                                   ))}
@@ -1482,10 +1496,10 @@ export function CreateMasterFromChannelModal({
                                               )}
                                             </Box>
                                             {selectedNo === "0" && (
-                                              <HelperText>무료배송으로 처리됩니다.</HelperText>
+                                              <HelperText>{t("qoo10.shippingFreeHelper")}</HelperText>
                                             )}
                                             {shippingTemplateQuery.isError && (
-                                              <HelperText>템플릿 조회 실패. Qoo10 API 키를 확인하거나 직접 번호를 입력하세요.</HelperText>
+                                              <HelperText>{t("qoo10.shippingApiError")}</HelperText>
                                             )}
                                           </Box>
                                         );
@@ -1510,7 +1524,7 @@ export function CreateMasterFromChannelModal({
                                               value={platformValues[field.key] ?? ""}
                                               onChange={(e) => setPlatformValue(field.key, e.target.value)}
                                             >
-                                              <option value="">선택하세요</option>
+                                              <option value="">{t("field.selectPlaceholder")}</option>
                                               {field.options.map((opt) => (
                                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                                               ))}
@@ -1523,7 +1537,7 @@ export function CreateMasterFromChannelModal({
                                               value={platformValues[field.key] ?? ""}
                                               onChange={(e) => setPlatformValue(field.key, e.target.value)}
                                             >
-                                              <option value="">선택안함</option>
+                                              <option value="">{t("field.noneOption")}</option>
                                               {field.conditionalOptions.options.map((opt) => (
                                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                                               ))}
@@ -1581,15 +1595,15 @@ export function CreateMasterFromChannelModal({
               <Stack gap={3}>
                 <Flex align="center" justify="space-between">
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                    옵션 그룹
+                    {t("optionGroups.title")}
                   </Text>
                   <Button size="xs" variant="outline" onClick={handleAddOptionGroup}>
-                    <Plus size={12} /> 그룹 추가
+                    <Plus size={12} /> {t("optionGroups.add")}
                   </Button>
                 </Flex>
                 {optionGroups.length === 0 ? (
                   <Text fontSize="xs" color="gray.400">
-                    옵션이 없는 단일 상품으로 생성됩니다.
+                    {t("optionGroups.empty")}
                   </Text>
                 ) : (
                   <Stack gap={2}>
@@ -1600,7 +1614,7 @@ export function CreateMasterFromChannelModal({
                           flex="1"
                           value={g.name}
                           onChange={(e) => handleUpdateGroupName(i, e.target.value)}
-                          placeholder="옵션 그룹명 (예: 사이즈)"
+                          placeholder={t("optionGroups.namePlaceholder")}
                         />
                         <Button
                           size="xs"
@@ -1619,10 +1633,10 @@ export function CreateMasterFromChannelModal({
               <Stack gap={3}>
                 <Flex align="center" justify="space-between">
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                    옵션 (Variants)
+                    {t("variants.title")}
                   </Text>
                   <Button size="xs" variant="outline" onClick={handleAddVariant}>
-                    <Plus size={12} /> 옵션 추가
+                    <Plus size={12} /> {t("variants.add")}
                   </Button>
                 </Flex>
                 <Table.Root size="sm">
@@ -1630,10 +1644,10 @@ export function CreateMasterFromChannelModal({
                     <Table.Row>
                       <Table.ColumnHeader>SKU *</Table.ColumnHeader>
                       {optionGroups.map((g, i) => (
-                        <Table.ColumnHeader key={i}>{g.name || `옵션${i + 1}`}</Table.ColumnHeader>
+                        <Table.ColumnHeader key={i}>{g.name || t("variants.optionN", { n: i + 1 })}</Table.ColumnHeader>
                       ))}
-                      <Table.ColumnHeader>가격</Table.ColumnHeader>
-                      <Table.ColumnHeader>재고</Table.ColumnHeader>
+                      <Table.ColumnHeader>{t("variants.price")}</Table.ColumnHeader>
+                      <Table.ColumnHeader>{t("variants.stock")}</Table.ColumnHeader>
                       <Table.ColumnHeader w="40px" />
                     </Table.Row>
                   </Table.Header>
@@ -1695,7 +1709,7 @@ export function CreateMasterFromChannelModal({
                 </Table.Root>
                 {channelVariants.length > 0 && (
                   <Text fontSize="xs" color="gray.500">
-                    채널 옵션 {channelVariants.length}개와 자동 매핑되어 생성 후 즉시 연결됩니다.
+                    {t("variants.channelMapHint", { count: channelVariants.length })}
                   </Text>
                 )}
               </Stack>
@@ -1705,18 +1719,18 @@ export function CreateMasterFromChannelModal({
           {step === "result" && resultData && (
             <Stack gap={3} align="center" py={6}>
               <CheckCircle size={48} color="var(--chakra-colors-green-500)" />
-              <Text fontWeight="semibold" fontSize="lg">생성 및 연결 완료</Text>
+              <Text fontWeight="semibold" fontSize="lg">{t("result.successTitle")}</Text>
               <Text fontSize="sm" color="gray.600" textAlign="center">
-                마스터 상품이 생성되고 &quot;{channelProduct.title}&quot;과(와) 연결되었습니다.
+                {t("result.successDescription", { title: channelProduct.title })}
               </Text>
-              <Text fontSize="sm">옵션 {resultData.linkedVariantCount}개 매핑됨</Text>
+              <Text fontSize="sm">{t("result.mapped", { count: resultData.linkedVariantCount })}</Text>
             </Stack>
           )}
 
           {step === "result" && !resultData && (
             <Stack gap={3} align="center" py={6}>
               <XCircle size={48} color="var(--chakra-colors-red-500)" />
-              <Text fontWeight="semibold">생성 실패</Text>
+              <Text fontWeight="semibold">{t("result.failTitle")}</Text>
             </Stack>
           )}
         </Box>
@@ -1732,7 +1746,7 @@ export function CreateMasterFromChannelModal({
           {step === "fill-info" && (
             <>
               <Button size="sm" variant="outline" onClick={onClose} disabled={submitting}>
-                취소
+                {t("footer.cancel")}
               </Button>
               <Button
                 size="sm"
@@ -1743,7 +1757,7 @@ export function CreateMasterFromChannelModal({
                 loading={submitting}
                 onClick={() => void handleSubmit()}
               >
-                생성 및 연결
+                {t("footer.submit")}
               </Button>
             </>
           )}
@@ -1758,7 +1772,7 @@ export function CreateMasterFromChannelModal({
                 onClose();
               }}
             >
-              확인
+              {t("footer.confirm")}
             </Button>
           )}
         </Flex>

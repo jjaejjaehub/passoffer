@@ -12,6 +12,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useDeleteSku, useSkus } from "@/entities/sku";
@@ -28,6 +29,7 @@ function SkusTab({
   page: number;
   onPageChange: (next: number) => void;
 }): React.JSX.Element {
+  const t = useTranslations("pages.skus");
   const router = useRouter();
   const pathname = usePathname();
   const { data, isLoading } = useSkus({ search, page, pageSize: 20 });
@@ -52,10 +54,10 @@ function SkusTab({
     if (!confirmDeleteId) return;
     try {
       await deleteSku(confirmDeleteId);
-      appToaster.create({ title: "삭제 완료", type: "success" });
+      appToaster.create({ title: t("toasts.deleteSuccess"), type: "success" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "삭제 실패";
-      appToaster.create({ title: "삭제 실패", description: message, type: "error" });
+      const message = err instanceof Error ? err.message : t("toasts.deleteFailed");
+      appToaster.create({ title: t("toasts.deleteFailed"), description: message, type: "error" });
     } finally {
       setConfirmDeleteId(null);
     }
@@ -90,12 +92,12 @@ function SkusTab({
         <Table.Root size="sm" stickyHeader>
           <Table.Header>
             <Table.Row>
-              <Table.ColumnHeader>SKU 코드 / 이름</Table.ColumnHeader>
-              <Table.ColumnHeader>바코드</Table.ColumnHeader>
-              <Table.ColumnHeader>재고</Table.ColumnHeader>
-              <Table.ColumnHeader>마스터 변형 매핑</Table.ColumnHeader>
-              <Table.ColumnHeader>판매상품 매핑</Table.ColumnHeader>
-              <Table.ColumnHeader>수정일</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.codeName")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.barcode")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.stock")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.masterVariantMapping")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.salesMapping")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.updatedAt")}</Table.ColumnHeader>
               <Table.ColumnHeader />
             </Table.Row>
           </Table.Header>
@@ -104,7 +106,7 @@ function SkusTab({
               <Table.Row>
                 <Table.Cell colSpan={7}>
                   <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
-                    등록된 SKU가 없습니다.
+                    {t("table.empty")}
                   </Text>
                 </Table.Cell>
               </Table.Row>
@@ -146,7 +148,7 @@ function SkusTab({
                         variant="outline"
                         onClick={() => navigateTo(ROUTES.skuEdit(item.id))}
                       >
-                        편집
+                        {t("actions.edit")}
                       </Button>
                       {confirmDeleteId === item.id ? (
                         <Flex gap={1}>
@@ -157,7 +159,7 @@ function SkusTab({
                             _hover={{ bg: "red.700" }}
                             onClick={() => void handleDeleteConfirm()}
                           >
-                            확인
+                            {t("actions.confirm")}
                           </Button>
                           <Button
                             size="xs"
@@ -165,7 +167,7 @@ function SkusTab({
                             borderColor="gray.300"
                             onClick={() => setConfirmDeleteId(null)}
                           >
-                            취소
+                            {t("actions.cancel")}
                           </Button>
                         </Flex>
                       ) : (
@@ -176,7 +178,7 @@ function SkusTab({
                           onClick={() => setConfirmDeleteId(item.id)}
                           disabled={item.masterVariantCount > 0 || item.listedSkuCount > 0}
                         >
-                          삭제
+                          {t("actions.delete")}
                         </Button>
                       )}
                     </Flex>
@@ -196,7 +198,7 @@ function SkusTab({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
         >
-          이전
+          {t("actions.prev")}
         </Button>
         <Text fontSize="sm" color="gray.600">
           {page} / {totalPages || 1}
@@ -208,7 +210,7 @@ function SkusTab({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= (totalPages || 1)}
         >
-          다음
+          {t("actions.next")}
         </Button>
       </Flex>
     </Box>
@@ -216,6 +218,7 @@ function SkusTab({
 }
 
 function SkusPageContent(): React.JSX.Element {
+  const t = useTranslations("pages.skus");
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = searchParams ?? new URLSearchParams();
@@ -243,8 +246,8 @@ function SkusPageContent(): React.JSX.Element {
     <Box display="flex" flexDirection="column" height="100%" minH={0}>
       <Flex align="flex-start" justify="space-between" mb={4} flexShrink={0}>
         <PageHeader
-          title="SKU 관리"
-          description="재고 단위(SKU)를 관리합니다. 마스터 변형과 판매상품은 SKU를 통해 재고에 연결됩니다."
+          title={t("title")}
+          description={t("description")}
         />
         <Button
           bg="gray.900"
@@ -255,7 +258,7 @@ function SkusPageContent(): React.JSX.Element {
           flexShrink={0}
           mt={1}
         >
-          SKU 등록
+          {t("createButton")}
         </Button>
       </Flex>
 
@@ -264,7 +267,7 @@ function SkusPageContent(): React.JSX.Element {
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="SKU 코드/이름/바코드 검색"
+            placeholder={t("searchPlaceholder")}
             pl={8}
             pr={8}
             size="sm"

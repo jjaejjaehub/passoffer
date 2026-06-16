@@ -11,6 +11,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import {
   type CreateSkuInput,
@@ -44,6 +45,7 @@ interface Props {
 
 export function SkuFormPage({ id }: Props): React.JSX.Element {
   const router = useRouter();
+  const t = useTranslations("pages.skus");
   const isEdit = !!id;
 
   const { data: detail, isLoading } = useSku(id ?? null);
@@ -127,10 +129,10 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
       if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
         return parsed as Record<string, unknown>;
       }
-      setFormError("속성(attributes)은 JSON 객체여야 합니다.");
+      setFormError(t("form.errors.attrsNotObject"));
       return null;
     } catch {
-      setFormError("속성(attributes)이 올바른 JSON이 아닙니다.");
+      setFormError(t("form.errors.attrsInvalidJson"));
       return null;
     }
   }
@@ -161,7 +163,7 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
   async function handleSubmit(): Promise<void> {
     setFormError("");
     if (!state.code.trim()) {
-      setFormError("SKU 코드는 필수입니다.");
+      setFormError(t("form.errors.codeRequired"));
       return;
     }
     const attributes = parseAttributes();
@@ -172,27 +174,27 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
       if (isEdit) {
         const { ...rest } = payload;
         await updateSku(rest);
-        appToaster.create({ title: "SKU 수정 완료", type: "success" });
+        appToaster.create({ title: t("form.toasts.updateSuccess"), type: "success" });
       } else {
         const stockNum = Number(state.initialStock);
         const created = await createSku({
           ...payload,
           stock: Number.isFinite(stockNum) && stockNum >= 0 ? stockNum : 0,
         });
-        appToaster.create({ title: "SKU 등록 완료", type: "success" });
+        appToaster.create({ title: t("form.toasts.createSuccess"), type: "success" });
         router.push(ROUTES.skuEdit(created.id));
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "저장 실패";
+      const message = err instanceof Error ? err.message : t("form.toasts.saveFailed");
       setFormError(message);
-      appToaster.create({ title: "저장 실패", description: message, type: "error" });
+      appToaster.create({ title: t("form.toasts.saveFailed"), description: message, type: "error" });
     }
   }
 
   async function handleBulkSubmit(): Promise<void> {
     setFormError("");
     if (bulkPreview.length === 0) {
-      setFormError("속성 축과 값을 1개 이상 입력하세요.");
+      setFormError(t("form.errors.axisRequired"));
       return;
     }
     const baseAttrs = parseAttributes();
@@ -211,31 +213,31 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
     try {
       const res = await bulkCreateSkus({ items });
       appToaster.create({
-        title: `${res.items.length}개 SKU 등록 완료`,
+        title: t("form.toasts.bulkCreateSuccess", { count: res.items.length }),
         type: "success",
       });
       router.push(ROUTES.skus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "일괄 등록 실패";
+      const message = err instanceof Error ? err.message : t("form.toasts.bulkCreateFailed");
       setFormError(message);
-      appToaster.create({ title: "일괄 등록 실패", description: message, type: "error" });
+      appToaster.create({ title: t("form.toasts.bulkCreateFailed"), description: message, type: "error" });
     }
   }
 
   async function handleAdjust(): Promise<void> {
     const delta = Number(adjustQty);
     if (!Number.isFinite(delta) || delta === 0) {
-      appToaster.create({ title: "조정 수량을 입력하세요", type: "warning" });
+      appToaster.create({ title: t("form.toasts.emptyAdjustQty"), type: "warning" });
       return;
     }
     try {
       await adjustStock({ qtyDelta: delta, note: adjustNote.trim() || undefined });
       setAdjustQty("");
       setAdjustNote("");
-      appToaster.create({ title: "재고 조정 완료", type: "success" });
+      appToaster.create({ title: t("form.toasts.adjustSuccess"), type: "success" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "재고 조정 실패";
-      appToaster.create({ title: "재고 조정 실패", description: message, type: "error" });
+      const message = err instanceof Error ? err.message : t("form.toasts.adjustFailed");
+      appToaster.create({ title: t("form.toasts.adjustFailed"), description: message, type: "error" });
     }
   }
 
@@ -243,11 +245,11 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
     if (!id) return;
     try {
       await deleteSku(id);
-      appToaster.create({ title: "삭제 완료", type: "success" });
+      appToaster.create({ title: t("form.toasts.deleteSuccess"), type: "success" });
       router.push(ROUTES.skus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "삭제 실패";
-      appToaster.create({ title: "삭제 실패", description: message, type: "error" });
+      const message = err instanceof Error ? err.message : t("form.toasts.deleteFailed");
+      appToaster.create({ title: t("form.toasts.deleteFailed"), description: message, type: "error" });
     }
   }
 
@@ -271,17 +273,17 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
     <Box maxW="1100px" mx="auto" pb={10}>
       <Flex align="flex-start" justify="space-between" mb={4}>
         <PageHeader
-          title={isEdit ? "SKU 편집" : "SKU 등록"}
-          description="재고 단위(SKU)의 기본 정보·규격·가격·메타데이터를 관리합니다."
+          title={isEdit ? t("form.titleEdit") : t("form.titleNew")}
+          description={t("form.description")}
         />
         <Button variant="outline" size="sm" onClick={() => router.push(ROUTES.skus)}>
-          목록으로
+          {t("form.backToList")}
         </Button>
       </Flex>
 
       {!isEdit && (
         <Flex gap={2} mb={4} align="center">
-          <Text fontSize="sm" color="gray.600" mr={2}>등록 방식</Text>
+          <Text fontSize="sm" color="gray.600" mr={2}>{t("form.modeLabel")}</Text>
           <Button
             size="sm"
             variant={mode === "single" ? "solid" : "outline"}
@@ -290,7 +292,7 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
             _hover={mode === "single" ? { bg: "gray.800" } : undefined}
             onClick={() => setMode("single")}
           >
-            단일 등록
+            {t("form.modeSingle")}
           </Button>
           <Button
             size="sm"
@@ -300,11 +302,11 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
             _hover={mode === "bulk" ? { bg: "gray.800" } : undefined}
             onClick={() => setMode("bulk")}
           >
-            대량 등록
+            {t("form.modeBulk")}
           </Button>
           {mode === "bulk" && (
             <Badge colorPalette="blue" ml={2}>
-              {bulkPreview.length}개 생성 예정
+              {t("form.bulkPreviewCount", { count: bulkPreview.length })}
             </Badge>
           )}
         </Flex>
@@ -312,13 +314,13 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
 
       <Tabs.Root defaultValue="basic" variant="line">
         <Tabs.List>
-          <Tabs.Trigger value="basic">기본정보</Tabs.Trigger>
-          <Tabs.Trigger value="spec">규격/가격정보</Tabs.Trigger>
-          <Tabs.Trigger value="extra">추가정보</Tabs.Trigger>
+          <Tabs.Trigger value="basic">{t("form.tabs.basic")}</Tabs.Trigger>
+          <Tabs.Trigger value="spec">{t("form.tabs.spec")}</Tabs.Trigger>
+          <Tabs.Trigger value="extra">{t("form.tabs.extra")}</Tabs.Trigger>
           {!isEdit && mode === "bulk" && (
-            <Tabs.Trigger value="bulk">대량 옵션</Tabs.Trigger>
+            <Tabs.Trigger value="bulk">{t("form.tabs.bulk")}</Tabs.Trigger>
           )}
-          {isEdit && <Tabs.Trigger value="mapping">매핑/재고</Tabs.Trigger>}
+          {isEdit && <Tabs.Trigger value="mapping">{t("form.tabs.mapping")}</Tabs.Trigger>}
         </Tabs.List>
 
         {/* ─── 기본정보 ─── */}
@@ -378,18 +380,18 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
               loading={isDeleting}
               disabled={!canDelete}
             >
-              삭제
+              {t("form.actions.delete")}
             </Button>
           )}
           {isEdit && !canDelete && (
             <Text fontSize="xs" color="gray.500" mt={1}>
-              연결된 매핑이 있어 삭제할 수 없습니다.
+              {t("form.deleteBlocked")}
             </Text>
           )}
         </Box>
         <Flex gap={2}>
           <Button size="sm" variant="outline" onClick={() => router.push(ROUTES.skus)}>
-            취소
+            {t("form.actions.cancel")}
           </Button>
           <Button
             size="sm"
@@ -399,7 +401,11 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
             onClick={() => (mode === "bulk" ? void handleBulkSubmit() : void handleSubmit())}
             loading={isBusy}
           >
-            {isEdit ? "저장" : mode === "bulk" ? `대량 등록 (${bulkPreview.length}개)` : "등록"}
+            {isEdit
+              ? t("form.actions.save")
+              : mode === "bulk"
+                ? t("form.actions.bulkCreate", { count: bulkPreview.length })
+                : t("form.actions.create")}
           </Button>
         </Flex>
       </Flex>

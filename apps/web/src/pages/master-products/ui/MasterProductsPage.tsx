@@ -13,6 +13,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { useDeleteMasterProduct, useMasterProducts, type MasterProduct } from "@/entities/master-product";
@@ -30,6 +31,7 @@ function MasterProductsTab({
   page: number;
   onPageChange: (next: number) => void;
 }): React.JSX.Element {
+  const t = useTranslations("pages.masterProducts");
   const router = useRouter();
   const pathname = usePathname();
   const { data, isLoading, refetch } = useMasterProducts({ search, page, pageSize: 20 });
@@ -60,9 +62,9 @@ function MasterProductsTab({
     if (!confirmDeleteId) return;
     try {
       await deleteMasterProduct(confirmDeleteId);
-      appToaster.create({ title: "삭제 완료", type: "success" });
+      appToaster.create({ title: t("toasts.deleteSuccess"), type: "success" });
     } catch {
-      appToaster.create({ title: "삭제 실패", type: "error" });
+      appToaster.create({ title: t("toasts.deleteFailed"), type: "error" });
     } finally {
       setConfirmDeleteId(null);
     }
@@ -128,7 +130,7 @@ function MasterProductsTab({
           color="white"
           flexShrink={0}
         >
-          <Text fontSize="sm" fontWeight="medium">{selectedIds.size}개 선택됨</Text>
+          <Text fontSize="sm" fontWeight="medium">{t("bulk.selected", { count: selectedIds.size })}</Text>
           <Flex gap={2}>
             <Button
               size="xs"
@@ -138,7 +140,7 @@ function MasterProductsTab({
               _hover={{ bg: "whiteAlpha.200" }}
               onClick={() => setSelectedIds(new Set())}
             >
-              선택 해제
+              {t("bulk.clear")}
             </Button>
             <Button
               size="xs"
@@ -147,7 +149,7 @@ function MasterProductsTab({
               _hover={{ bg: "gray.100" }}
               onClick={() => setBulkModalOpen(true)}
             >
-              채널 일괄 등록
+              {t("bulk.listToChannels")}
             </Button>
           </Flex>
         </Flex>
@@ -167,12 +169,12 @@ function MasterProductsTab({
                   <Checkbox.Control />
                 </Checkbox.Root>
               </Table.ColumnHeader>
-              <Table.ColumnHeader>상품명/코드</Table.ColumnHeader>
-              <Table.ColumnHeader>브랜드</Table.ColumnHeader>
-              <Table.ColumnHeader>소비자가</Table.ColumnHeader>
-              <Table.ColumnHeader>변형 수</Table.ColumnHeader>
-              <Table.ColumnHeader>등록 채널 수</Table.ColumnHeader>
-              <Table.ColumnHeader>등록일</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.title")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.brand")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.retailPrice")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.variantCount")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.listedChannelCount")}</Table.ColumnHeader>
+              <Table.ColumnHeader>{t("table.createdAt")}</Table.ColumnHeader>
               <Table.ColumnHeader />
             </Table.Row>
           </Table.Header>
@@ -181,7 +183,7 @@ function MasterProductsTab({
               <Table.Row>
                 <Table.Cell colSpan={8}>
                   <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
-                    마스터 상품이 없습니다.
+                    {t("table.empty")}
                   </Text>
                 </Table.Cell>
               </Table.Row>
@@ -250,7 +252,7 @@ function MasterProductsTab({
                         variant="outline"
                         onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
                       >
-                        편집
+                        {t("actions.edit")}
                       </Button>
                       {confirmDeleteId === item.id ? (
                         <Flex gap={1}>
@@ -261,7 +263,7 @@ function MasterProductsTab({
                             _hover={{ bg: "red.700" }}
                             onClick={() => void handleDeleteConfirm()}
                           >
-                            확인
+                            {t("actions.confirm")}
                           </Button>
                           <Button
                             size="xs"
@@ -269,7 +271,7 @@ function MasterProductsTab({
                             borderColor="gray.300"
                             onClick={() => setConfirmDeleteId(null)}
                           >
-                            취소
+                            {t("actions.cancel")}
                           </Button>
                         </Flex>
                       ) : (
@@ -279,7 +281,7 @@ function MasterProductsTab({
                           colorPalette="red"
                           onClick={() => setConfirmDeleteId(item.id)}
                         >
-                          삭제
+                          {t("actions.delete")}
                         </Button>
                       )}
                     </Flex>
@@ -309,7 +311,7 @@ function MasterProductsTab({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
         >
-          이전
+          {t("actions.prev")}
         </Button>
         <Text fontSize="sm" color="gray.600">
           {page} / {totalPages || 1}
@@ -321,7 +323,7 @@ function MasterProductsTab({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= (totalPages || 1)}
         >
-          다음
+          {t("actions.next")}
         </Button>
       </Flex>
     </Box>
@@ -329,6 +331,7 @@ function MasterProductsTab({
 }
 
 function MasterProductsPageContent(): React.JSX.Element {
+  const t = useTranslations("pages.masterProducts");
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = searchParams ?? new URLSearchParams();
@@ -356,8 +359,8 @@ function MasterProductsPageContent(): React.JSX.Element {
     <Box display="flex" flexDirection="column" height="100%" minH={0}>
       <Flex align="flex-start" justify="space-between" mb={4} flexShrink={0}>
         <PageHeader
-          title="마스터 상품"
-          description="채널에 등록할 마스터 상품을 관리합니다."
+          title={t("title")}
+          description={t("description")}
         />
         <Button
           bg="gray.900"
@@ -368,7 +371,7 @@ function MasterProductsPageContent(): React.JSX.Element {
           flexShrink={0}
           mt={1}
         >
-          마스터 상품 등록
+          {t("createButton")}
         </Button>
       </Flex>
 
@@ -377,7 +380,7 @@ function MasterProductsPageContent(): React.JSX.Element {
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="상품명 검색"
+            placeholder={t("searchPlaceholder")}
             pl={8}
             pr={8}
             size="sm"
