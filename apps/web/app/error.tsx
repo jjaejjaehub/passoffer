@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ErrorPage } from '@/shared/ui';
 import { reportError } from '@/shared/lib';
 
@@ -10,15 +11,10 @@ interface RootErrorProps {
 }
 
 export default function RootError({ error, reset }: RootErrorProps): React.JSX.Element {
+  const t = useTranslations('pages.errorBoundary.titles');
   useEffect(() => {
     reportError(error);
   }, [error]);
 
-  return (
-    <ErrorPage
-      title="예기치 못한 오류가 발생했습니다."
-      description="잠시 후 다시 시도해 주세요."
-      reset={reset}
-    />
-  );
+  return <ErrorPage title={t('root')} reset={reset} />;
 }
