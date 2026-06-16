@@ -24,18 +24,14 @@ import { useTranslations } from "next-intl";
 
 const ROW_HEIGHT = 36;
 import {
-  CHANNEL_CONFIG,
   type ChannelId,
-  DEFAULT_COLUMN_LABELS,
   DEFAULT_COLUMN_ORDER,
   type DefaultColumnKey,
-  FULFILLMENT_RANK_LABEL,
   type FulfillmentRank,
   LS_KEYS,
   PAGE_SIZE_OPTIONS,
   type PageSize,
   SORTABLE_FIELDS,
-  SORT_FIELD_LABEL,
   type SortableField,
 } from "@/shared/config";
 import { useLocalStoragePref } from "@/shared/lib";
@@ -150,6 +146,10 @@ export function OrderTableV2({
   onRowClick,
 }: OrderTableV2Props): React.JSX.Element {
   const t = useTranslations("widgets.orderTableV2");
+  const tCols = useTranslations("config.orderColumns");
+  const tFulfillment = useTranslations("config.fulfillmentRank");
+  const tSortFields = useTranslations("config.sortFields");
+  const tChannels = useTranslations("config.channels");
   const [pageSize, setPageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     (params.pageSize as PageSize) ?? 100,
@@ -191,7 +191,7 @@ export function OrderTableV2({
     const defs: Record<DefaultColumnKey, ColumnDef<OrderListItem>> = {
       orderedAt: {
         id: "orderedAt",
-        header: DEFAULT_COLUMN_LABELS.orderedAt,
+        header: tCols("orderedAt"),
         cell: ({ row }) => (
           <Text fontSize="xs" color="gray.700">
             {formatDate(row.original.orderedAt)}
@@ -200,10 +200,15 @@ export function OrderTableV2({
       },
       channelId: {
         id: "channelId",
-        header: DEFAULT_COLUMN_LABELS.channelId,
+        header: tCols("channelId"),
         cell: ({ row }) => {
           const id = row.original.channelId as ChannelId;
-          const name = CHANNEL_CONFIG[id]?.name ?? id;
+          let name: string = id;
+          try {
+            name = tChannels(`${id}.name`);
+          } catch {
+            name = id;
+          }
           return (
             <Text fontSize="xs" color="gray.700">
               {name}
@@ -213,7 +218,7 @@ export function OrderTableV2({
       },
       channelOrderId: {
         id: "channelOrderId",
-        header: DEFAULT_COLUMN_LABELS.channelOrderId,
+        header: tCols("channelOrderId"),
         cell: ({ row }) => (
           <Text fontSize="xs" fontWeight="medium" color="gray.800">
             {row.original.channelOrderId}
@@ -222,7 +227,7 @@ export function OrderTableV2({
       },
       buyerName: {
         id: "buyerName",
-        header: DEFAULT_COLUMN_LABELS.buyerName,
+        header: tCols("buyerName"),
         cell: ({ row }) => (
           <Text fontSize="xs" color="gray.700">
             {row.original.buyerName ?? "—"}
@@ -231,7 +236,7 @@ export function OrderTableV2({
       },
       productSummary: {
         id: "productSummary",
-        header: DEFAULT_COLUMN_LABELS.productSummary,
+        header: tCols("productSummary"),
         cell: ({ row }) => (
           <Text fontSize="xs" color="gray.700" lineClamp={1}>
             {row.original.channelItemNo ?? "—"}
@@ -240,7 +245,7 @@ export function OrderTableV2({
       },
       total: {
         id: "total",
-        header: DEFAULT_COLUMN_LABELS.total,
+        header: tCols("total"),
         cell: ({ row }) => (
           <Text fontSize="xs" color="gray.800" textAlign="right">
             {formatMoney(row.original.total)}
@@ -249,10 +254,15 @@ export function OrderTableV2({
       },
       fulfillmentStatus: {
         id: "fulfillmentStatus",
-        header: DEFAULT_COLUMN_LABELS.fulfillmentStatus,
+        header: tCols("fulfillmentStatus"),
         cell: ({ row }) => {
           const rank = row.original.fulfillmentStatus as FulfillmentRank;
-          const label = FULFILLMENT_RANK_LABEL[rank] ?? String(rank);
+          let label: string = String(rank);
+          try {
+            label = tFulfillment(String(rank));
+          } catch {
+            label = String(rank);
+          }
           return (
             <Text fontSize="xs" color="gray.700">
               {label}
@@ -262,7 +272,7 @@ export function OrderTableV2({
       },
       trackingNo: {
         id: "trackingNo",
-        header: DEFAULT_COLUMN_LABELS.trackingNo,
+        header: tCols("trackingNo"),
         cell: ({ row }) => (
           <Text fontSize="xs" color="gray.600">
             {row.original.trackingNo ?? "—"}
@@ -279,7 +289,7 @@ export function OrderTableV2({
       if (!columnOrder.includes(k)) ordered.push(defs[k]);
     }
     return ordered;
-  }, [exposeAll65, columnOrder]);
+  }, [exposeAll65, columnOrder, tCols, tChannels, tFulfillment]);
 
   const table = useReactTable<OrderListItem>({
     data: items,
@@ -363,7 +373,7 @@ export function OrderTableV2({
           {params.sortBy && (
             <Text fontSize="xs" color="gray.400">
               {t("sortPrefix", {
-                field: SORT_FIELD_LABEL[params.sortBy as SortableField],
+                field: tSortFields(params.sortBy as SortableField),
                 dir: params.sortDir ?? "desc",
               })}
             </Text>
@@ -425,7 +435,7 @@ export function OrderTableV2({
                       bg={active ? "blue.50" : "transparent"}
                       _hover={{ bg: "gray.50" }}
                     >
-                      {SORT_FIELD_LABEL[field]}
+                      {tSortFields(field)}
                       {dir && (
                         <Text as="span" ml={1} color="gray.400">
                           ({dir})

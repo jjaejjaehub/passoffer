@@ -204,3 +204,96 @@ export interface OrderListParams {
   sortBy?: OrderSortField;
   sortDir?: "asc" | "desc";
 }
+
+// ─── 결제관리 페이지 전용 응답 ────────────────────────────────
+export type PaymentOrderListItem = OrderListItem;
+
+export interface PaymentSummary {
+  sumTotal: string; // numeric → string
+  byPaymentMethod: Record<string, number>;
+  byCurrency: Array<{ currency: string; count: number; sumTotal: string }>;
+}
+
+export interface PaymentListResponse {
+  items: PaymentOrderListItem[];
+  total: number;
+  counts: OrderCounts;
+  paymentSummary: PaymentSummary;
+}
+
+// ─── 신규주문 페이지 전용 응답 ─────────────────────────────────
+export type SlaUrgencyFlag = "overdue" | "due_soon" | "on_track";
+
+export interface SlaInfo {
+  elapsedHours: number;
+  slaDeadline: string; // ISO
+  urgencyFlag: SlaUrgencyFlag;
+}
+
+export interface NewOrderListItem extends OrderListItem {
+  sla: SlaInfo;
+}
+
+export interface SlaSummary {
+  slaHours: number;
+  warnHours: number;
+  overdueCount: number;
+  dueSoonCount: number;
+  now: string; // ISO
+}
+
+export interface NewOrderListResponse {
+  items: NewOrderListItem[];
+  total: number;
+  counts: OrderCounts;
+  slaSummary: SlaSummary;
+}
+
+// ─── 출고관리 페이지 전용 응답 ─────────────────────────────────
+export interface DispatchSummary {
+  readyCount: number;
+  labelPrintedCount: number;
+  holdOrderCount: number;
+  holdDispatchCount: number;
+  byCarrier: Array<{ carrier: string; count: number }>;
+}
+
+export interface DispatchListResponse {
+  items: OrderListItem[];
+  total: number;
+  counts: OrderCounts;
+  dispatchSummary: DispatchSummary;
+}
+
+// ─── 배송관리 페이지 전용 응답 ─────────────────────────────────
+export interface ShippingSummary {
+  shippedCount: number;
+  inTransitCount: number;
+  deliveredCount: number;
+  deliveredRate: number;
+  byCarrier: Array<{ carrier: string; count: number }>;
+}
+
+export interface ShippingListResponse {
+  items: OrderListItem[];
+  total: number;
+  counts: OrderCounts;
+  shippingSummary: ShippingSummary;
+}
+
+// ─── 전체조회 페이지 전용 응답 ─────────────────────────────────
+export interface AllOrdersSummary {
+  paymentStage: number;
+  newOrderStage: number;
+  dispatchStage: number;
+  shippingStage: number;
+  settledStage: number;
+  claimStage: number;
+}
+
+export interface AllOrdersListResponse {
+  items: OrderListItem[];
+  total: number;
+  counts: OrderCounts;
+  allSummary: AllOrdersSummary;
+}

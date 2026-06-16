@@ -4,15 +4,16 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { http } from "@/shared/api";
 import type {
-  AllOrdersListResponse,
-  AllOrdersSummary,
+  DispatchListResponse,
+  DispatchSummary,
   OrderListItem,
   OrderListParams,
 } from "@/entities/order/model/types";
 
-export const allOrdersQueries = {
-  all: () => ["all-orders"] as const,
-  list: (params: OrderListParams) => [...allOrdersQueries.all(), "list", params] as const,
+export const dispatchQueries = {
+  all: () => ["dispatch"] as const,
+  list: (params: OrderListParams) =>
+    [...dispatchQueries.all(), "list", params] as const,
 };
 
 function buildParams(params: OrderListParams): Record<string, string> {
@@ -29,20 +30,19 @@ function buildParams(params: OrderListParams): Record<string, string> {
   return out;
 }
 
-const EMPTY_ALL_SUMMARY: AllOrdersSummary = {
-  paymentStage: 0,
-  newOrderStage: 0,
-  dispatchStage: 0,
-  shippingStage: 0,
-  settledStage: 0,
-  claimStage: 0,
+const EMPTY_DISPATCH_SUMMARY: DispatchSummary = {
+  readyCount: 0,
+  labelPrintedCount: 0,
+  holdOrderCount: 0,
+  holdDispatchCount: 0,
+  byCarrier: [],
 };
 
-export function useAllOrders(params: OrderListParams) {
+export function useDispatch(params: OrderListParams) {
   const query = useQuery({
-    queryKey: allOrdersQueries.list(params),
+    queryKey: dispatchQueries.list(params),
     queryFn: () =>
-      http.get<AllOrdersListResponse>("/api/all-orders", { params: buildParams(params) }),
+      http.get<DispatchListResponse>("/api/dispatch", { params: buildParams(params) }),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });
@@ -51,7 +51,7 @@ export function useAllOrders(params: OrderListParams) {
     items: (query.data?.items ?? []) as OrderListItem[],
     total: query.data?.total ?? 0,
     counts: query.data?.counts ?? {},
-    allSummary: query.data?.allSummary ?? EMPTY_ALL_SUMMARY,
+    dispatchSummary: query.data?.dispatchSummary ?? EMPTY_DISPATCH_SUMMARY,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error,

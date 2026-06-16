@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Box, Flex } from "@chakra-ui/react";
+import { Badge, Box, Flex, HStack } from "@chakra-ui/react";
 
 import { useAllOrders } from "@/entities/all-orders";
 import type {
@@ -46,7 +46,7 @@ export function AllOrdersPage(): React.JSX.Element {
     null,
   );
 
-  const { items, total, counts, isLoading } = useAllOrders(params);
+  const { items, total, counts, allSummary, isLoading } = useAllOrders(params);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -60,6 +60,36 @@ export function AllOrdersPage(): React.JSX.Element {
         <OrdersAuxPanel />
 
         <Flex direction="column" gap={3} flex={1} minW={0}>
+          <HStack
+            gap={3}
+            px={3}
+            py={2}
+            bg="gray.50"
+            borderRadius="md"
+            borderWidth="1px"
+            borderColor="gray.200"
+            wrap="wrap"
+          >
+            <Badge colorPalette="blue" variant="solid">
+              {t("summary.paymentStage", { count: allSummary.paymentStage })}
+            </Badge>
+            <Badge colorPalette="purple" variant="solid">
+              {t("summary.newOrderStage", { count: allSummary.newOrderStage })}
+            </Badge>
+            <Badge colorPalette="orange" variant="solid">
+              {t("summary.dispatchStage", { count: allSummary.dispatchStage })}
+            </Badge>
+            <Badge colorPalette="green" variant="solid">
+              {t("summary.shippingStage", { count: allSummary.shippingStage })}
+            </Badge>
+            <Badge colorPalette="gray" variant="solid">
+              {t("summary.settledStage", { count: allSummary.settledStage })}
+            </Badge>
+            <Badge colorPalette="red" variant="solid">
+              {t("summary.claimStage", { count: allSummary.claimStage })}
+            </Badge>
+          </HStack>
+
           <OrderCounter
             counts={counts}
             selectedRanks={params.status ?? []}

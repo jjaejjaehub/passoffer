@@ -6,6 +6,8 @@ import { jwtPlugin } from './plugins/jwt';
 import { authRoutes } from './routes/auth/index';
 import { channelRoutes } from './routes/channels/index';
 import { orderRoutes } from './routes/orders/index';
+import { paymentsRoutes } from './routes/payments/index';
+import { newOrdersRoutes } from './routes/new-orders/index';
 import { dispatchRoutes } from './routes/dispatch/index';
 import { shippingRoutes } from './routes/shipping/index';
 import { allOrdersRoutes } from './routes/all-orders/index';
@@ -35,6 +37,8 @@ async function main() {
   await app.register(authRoutes, { prefix: '/api' });
   await app.register(channelRoutes, { prefix: '/api' });
   await app.register(orderRoutes, { prefix: '/api' });
+  await app.register(paymentsRoutes, { prefix: '/api' });
+  await app.register(newOrdersRoutes, { prefix: '/api' });
   await app.register(dispatchRoutes, { prefix: '/api' });
   await app.register(shippingRoutes, { prefix: '/api' });
   await app.register(allOrdersRoutes, { prefix: '/api' });

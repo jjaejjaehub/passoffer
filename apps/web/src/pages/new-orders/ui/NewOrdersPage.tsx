@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { Badge, Box, Flex, HStack, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 import {
-  useShipping,
+  useNewOrders,
   type OrderListItem,
   type OrderListParams,
 } from "@/entities/order";
@@ -22,20 +22,20 @@ import {
   type PageSize,
 } from "@/shared/config";
 
-const SHIPPING_PRESET_RANKS = [50, 60, 70];
+const NEW_ORDERS_PRESET_RANKS = [20];
 
 function buildInitialParams(pageSize: PageSize): OrderListParams {
   return {
     page: 1,
     pageSize,
-    sortBy: "shippedAt",
+    sortBy: "orderedAt",
     sortDir: "desc",
-    status: SHIPPING_PRESET_RANKS,
+    status: NEW_ORDERS_PRESET_RANKS,
   };
 }
 
-export function ShippingPage(): React.JSX.Element {
-  const t = useTranslations("pages.shipping");
+export function NewOrdersPage(): React.JSX.Element {
+  const t = useTranslations("pages.newOrders");
   const [pageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     DEFAULT_PAGE_SIZE,
@@ -49,8 +49,7 @@ export function ShippingPage(): React.JSX.Element {
     null,
   );
 
-  const { items, total, counts, shippingSummary, isLoading } =
-    useShipping(params);
+  const { items, total, counts, slaSummary, isLoading } = useNewOrders(params);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -68,46 +67,24 @@ export function ShippingPage(): React.JSX.Element {
             gap={3}
             px={3}
             py={2}
-            bg="green.50"
+            bg="orange.50"
             borderRadius="md"
             borderWidth="1px"
-            borderColor="green.200"
+            borderColor="orange.200"
             wrap="wrap"
           >
-            <Badge colorPalette="cyan" variant="solid">
-              {t("summary.shipped", { count: shippingSummary.shippedCount })}
-            </Badge>
-            <Badge colorPalette="teal" variant="solid">
-              {t("summary.inTransit", {
-                count: shippingSummary.inTransitCount,
+            <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+              {t("summary.slaLabel", {
+                sla: slaSummary.slaHours,
+                warn: slaSummary.warnHours,
               })}
+            </Text>
+            <Badge colorPalette="red" variant="solid">
+              {t("summary.overdue", { count: slaSummary.overdueCount })}
             </Badge>
-            <Badge colorPalette="green" variant="solid">
-              {t("summary.delivered", {
-                count: shippingSummary.deliveredCount,
-              })}
+            <Badge colorPalette="orange" variant="solid">
+              {t("summary.dueSoon", { count: slaSummary.dueSoonCount })}
             </Badge>
-            <Badge colorPalette="green" variant="subtle">
-              {t("summary.deliveredRate", {
-                rate: shippingSummary.deliveredRate,
-              })}
-            </Badge>
-            {shippingSummary.byCarrier.length > 0 && (
-              <>
-                <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                  {t("summary.byCarrierLabel")}
-                </Text>
-                {shippingSummary.byCarrier.map((c) => (
-                  <Badge
-                    key={c.carrier}
-                    colorPalette="gray"
-                    variant="outline"
-                  >
-                    {c.carrier} {c.count}
-                  </Badge>
-                ))}
-              </>
-            )}
           </HStack>
 
           <OrderCounter
@@ -116,7 +93,7 @@ export function ShippingPage(): React.JSX.Element {
             onChange={(ranks) =>
               setParams({
                 ...params,
-                status: ranks.length ? ranks : SHIPPING_PRESET_RANKS,
+                status: ranks.length ? ranks : NEW_ORDERS_PRESET_RANKS,
                 page: 1,
               })
             }

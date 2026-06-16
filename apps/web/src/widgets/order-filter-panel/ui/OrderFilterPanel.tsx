@@ -5,8 +5,6 @@ import { Box, Button, Flex, HStack, Icon, Input, Text } from "@chakra-ui/react";
 import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
-  CHANNEL_CONFIG,
-  type ChannelId,
   DATE_FIELD_OPTIONS,
   LIVE_CHANNELS,
   type DateField,
@@ -43,6 +41,8 @@ export function OrderFilterPanel({
   onSearchChange,
 }: OrderFilterPanelProps): React.JSX.Element {
   const t = useTranslations("widgets.orderFilterPanel");
+  const tSortFields = useTranslations("config.sortFields");
+  const tChannels = useTranslations("config.channels");
   const [localSearch, setLocalSearch] = useState<string>(search);
   const debounced = useDebouncedValue(localSearch, 300);
 
@@ -93,7 +93,7 @@ export function OrderFilterPanel({
           >
             {DATE_FIELD_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
-                {opt.label}
+                {tSortFields(opt.value)}
               </option>
             ))}
           </select>
@@ -143,7 +143,7 @@ export function OrderFilterPanel({
             <option value="">{t("allChannels")}</option>
             {LIVE_CHANNELS.map((channel) => (
               <option key={channel.id} value={channel.id}>
-                {CHANNEL_CONFIG[channel.id as ChannelId].name}
+                {tChannels(`${channel.id}.name`)}
               </option>
             ))}
           </select>

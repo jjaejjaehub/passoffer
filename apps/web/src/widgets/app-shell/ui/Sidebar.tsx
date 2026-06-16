@@ -6,6 +6,7 @@ import {
   Boxes,
   Building2,
   ChevronDown,
+  CreditCard,
   Globe,
   ChevronRight,
   LayoutDashboard,
@@ -15,6 +16,7 @@ import {
   Settings2,
   ShoppingBag,
   ShoppingCart,
+  Sparkles,
   Tag,
   Truck,
   Warehouse,
@@ -56,7 +58,7 @@ export function Sidebar(): React.JSX.Element {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const warmupRoutes = [ROUTES.dashboard, ROUTES.orders, ROUTES.products, ROUTES.claims];
+    const warmupRoutes = [ROUTES.dashboard, ROUTES.payments, ROUTES.newOrders, ROUTES.products, ROUTES.claims];
 
     const warmup = (): void => {
       for (const route of warmupRoutes) {
@@ -253,11 +255,12 @@ export function Sidebar(): React.JSX.Element {
             )}
           </Box>
 
-          {/* 주문 관리 (5메뉴: 주문/출고관리/배송관리/전체조회/클레임) */}
+          {/* 주문 관리 (6메뉴: 결제관리/신규주문/출고관리/배송관리/전체조회/클레임) */}
           <Box>
             <Flex
               {...navItemStyle(
-                isExactActive(ROUTES.orders) ||
+                isExactActive(ROUTES.payments) ||
+                  isExactActive(ROUTES.newOrders) ||
                   isActive(ROUTES.dispatch) ||
                   isActive(ROUTES.shipping) ||
                   isActive(ROUTES.allOrders) ||
@@ -270,7 +273,8 @@ export function Sidebar(): React.JSX.Element {
                 as={ShoppingCart}
                 boxSize={4}
                 color={
-                  isExactActive(ROUTES.orders) ||
+                  isExactActive(ROUTES.payments) ||
+                  isExactActive(ROUTES.newOrders) ||
                   isActive(ROUTES.dispatch) ||
                   isActive(ROUTES.shipping) ||
                   isActive(ROUTES.allOrders) ||
@@ -290,15 +294,26 @@ export function Sidebar(): React.JSX.Element {
             </Flex>
             {isOrderOpen && (
               <Box pl={9} pt={1}>
-                <Link href={ROUTES.orders} style={{ textDecoration: "none" }}
-                  onClick={() => setPendingHref(ROUTES.orders)}
-                  onMouseEnter={() => prefetch(ROUTES.orders)}
+                <Link href={ROUTES.payments} style={{ textDecoration: "none" }}
+                  onClick={() => setPendingHref(ROUTES.payments)}
+                  onMouseEnter={() => prefetch(ROUTES.payments)}
                 >
-                  <Flex {...subItemStyle(isExactActive(ROUTES.orders))}>
-                    <Icon as={ShoppingCart} boxSize={3} color="gray.400" mr={1} />
-                    <Text fontSize="sm">{t("orders.orders")}</Text>
+                  <Flex {...subItemStyle(isExactActive(ROUTES.payments))}>
+                    <Icon as={CreditCard} boxSize={3} color="gray.400" mr={1} />
+                    <Text fontSize="sm">{t("orders.payments")}</Text>
                   </Flex>
                 </Link>
+                <Box mt={1}>
+                  <Link href={ROUTES.newOrders} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.newOrders)}
+                    onMouseEnter={() => prefetch(ROUTES.newOrders)}
+                  >
+                    <Flex {...subItemStyle(isExactActive(ROUTES.newOrders))}>
+                      <Icon as={Sparkles} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">{t("orders.newOrders")}</Text>
+                    </Flex>
+                  </Link>
+                </Box>
                 <Box mt={1}>
                   <Link href={ROUTES.dispatch} style={{ textDecoration: "none" }}
                     onClick={() => setPendingHref(ROUTES.dispatch)}

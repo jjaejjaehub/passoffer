@@ -4,15 +4,16 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { http } from "@/shared/api";
 import type {
-  AllOrdersListResponse,
-  AllOrdersSummary,
-  OrderListItem,
   OrderListParams,
+  PaymentListResponse,
+  PaymentOrderListItem,
+  PaymentSummary,
 } from "@/entities/order/model/types";
 
-export const allOrdersQueries = {
-  all: () => ["all-orders"] as const,
-  list: (params: OrderListParams) => [...allOrdersQueries.all(), "list", params] as const,
+export const paymentsQueries = {
+  all: () => ["payments"] as const,
+  list: (params: OrderListParams) =>
+    [...paymentsQueries.all(), "list", params] as const,
 };
 
 function buildParams(params: OrderListParams): Record<string, string> {
@@ -29,29 +30,26 @@ function buildParams(params: OrderListParams): Record<string, string> {
   return out;
 }
 
-const EMPTY_ALL_SUMMARY: AllOrdersSummary = {
-  paymentStage: 0,
-  newOrderStage: 0,
-  dispatchStage: 0,
-  shippingStage: 0,
-  settledStage: 0,
-  claimStage: 0,
+const EMPTY_SUMMARY: PaymentSummary = {
+  sumTotal: "0",
+  byPaymentMethod: {},
+  byCurrency: [],
 };
 
-export function useAllOrders(params: OrderListParams) {
+export function usePayments(params: OrderListParams) {
   const query = useQuery({
-    queryKey: allOrdersQueries.list(params),
+    queryKey: paymentsQueries.list(params),
     queryFn: () =>
-      http.get<AllOrdersListResponse>("/api/all-orders", { params: buildParams(params) }),
+      http.get<PaymentListResponse>("/api/payments", { params: buildParams(params) }),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });
 
   return {
-    items: (query.data?.items ?? []) as OrderListItem[],
+    items: (query.data?.items ?? []) as PaymentOrderListItem[],
     total: query.data?.total ?? 0,
     counts: query.data?.counts ?? {},
-    allSummary: query.data?.allSummary ?? EMPTY_ALL_SUMMARY,
+    paymentSummary: query.data?.paymentSummary ?? EMPTY_SUMMARY,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error,

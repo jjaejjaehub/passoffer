@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, chakra, Flex, HStack, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 const ChakraButton = chakra("button");
 import { COUNTER_LINES, type CounterChip } from "@/shared/config";
@@ -54,6 +55,9 @@ export function OrderCounter({
   selectedRanks,
   onChange,
 }: OrderCounterProps): React.JSX.Element {
+  const tLines = useTranslations("config.counterLines");
+  const tSemantic = useTranslations("config.semantic");
+
   function handleClick(chip: CounterChip): void {
     // 'all' or no ranks → 전체 (필터 해제)
     if (!chip.statusRanks || chip.statusRanks.length === 0) {
@@ -87,7 +91,7 @@ export function OrderCounter({
               w="64px"
               flexShrink={0}
             >
-              {line.title}
+              {tLines(line.id)}
             </Text>
             <HStack gap={1.5} wrap="wrap">
               {line.chips.map((chip) => {
@@ -111,7 +115,7 @@ export function OrderCounter({
                     transition="all 0.12s"
                     _hover={{ opacity: 0.85 }}
                   >
-                    {chip.label}{" "}
+                    {tSemantic(chip.key)}{" "}
                     <Text as="span" fontWeight="bold" ml={0.5}>
                       {count.toLocaleString()}
                     </Text>

@@ -89,7 +89,7 @@ export async function shippingRoutes(app: FastifyInstance): Promise<void> {
     const orderByCol = SORT_COLUMNS[sortBy];
     const orderBy = sortDir === 'asc' ? asc(orderByCol) : desc(orderByCol);
 
-    const [items, totalRow, rankRows, claimRow, allRow] = await Promise.all([
+    const [items, totalRow, rankRows, claimRow, allRow, carrierRows] = await Promise.all([
       app.db
         .select()
         .from(orders)
@@ -117,6 +117,14 @@ export async function shippingRoutes(app: FastifyInstance): Promise<void> {
         .select({ n: sql<number>`count(*)::int` })
         .from(orders)
         .where(and(...baseConds)),
+      app.db
+        .select({
+          carrier: orders.trackingCarrier,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(and(...baseConds, isNotNull(orders.trackingCarrier)))
+        .groupBy(orders.trackingCarrier),
     ]);
 
     const counts: Record<string, number> = { all: allRow[0]?.n ?? 0 };
@@ -133,10 +141,28 @@ export async function shippingRoutes(app: FastifyInstance): Promise<void> {
     }
     counts.claim_any = claimRow[0]?.n ?? 0;
 
+    const shippedCount = counts['50'] ?? 0;
+    const inTransitCount = counts['60'] ?? 0;
+    const deliveredCount = counts['70'] ?? 0;
+    const totalForRate = shippedCount + inTransitCount + deliveredCount;
+    const deliveredRate = totalForRate > 0 ? Math.round((deliveredCount / totalForRate) * 1000) / 10 : 0;
+
+    const byCarrier = carrierRows
+      .filter((r): r is { carrier: string; n: number } => Boolean(r.carrier))
+      .map((r) => ({ carrier: r.carrier, count: r.n }))
+      .sort((a, b) => b.count - a.count);
+
     return {
       items,
       total: totalRow[0]?.n ?? 0,
       counts,
+      shippingSummary: {
+        shippedCount,
+        inTransitCount,
+        deliveredCount,
+        deliveredRate,
+        byCarrier,
+      },
     };
   });
 }

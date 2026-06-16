@@ -16,7 +16,13 @@ const RANK_TO_SEMANTIC: Record<number, string> = {
   80: 'settled',
   90: 'completed',
 };
-const ALL_RANKS = [10, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90] as const;
+
+// 신규주문 프리셋: 신규주문 (rank 20)
+const PRESET_RANKS = [20] as const;
+
+// SLA: 신규주문 → 출고대기 전환 SLA (hours)
+const SLA_HOURS = 24;
+const SLA_WARN_HOURS = 18;
 
 const DATE_FIELDS = {
   orderedAt: orders.orderedAt,
@@ -35,7 +41,7 @@ const SORT_COLUMNS = {
   updatedAt: orders.updatedAt,
 } as const;
 
-const listAllOrdersQuery = z.object({
+const listNewOrdersQuery = z.object({
   status: z
     .string()
     .optional()
@@ -59,18 +65,42 @@ const listAllOrdersQuery = z.object({
   sortDir: z.enum(['asc', 'desc']).default('desc'),
 });
 
-export async function allOrdersRoutes(app: FastifyInstance): Promise<void> {
-  // GET /api/all-orders — 전체조회 페이지 (모든 rank, 프리셋 없음)
-  app.get('/all-orders', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = listAllOrdersQuery.safeParse(request.query);
+type UrgencyFlag = 'overdue' | 'due_soon' | 'on_track';
+
+function computeUrgency(orderedAt: Date | null | undefined, now: Date): {
+  elapsedHours: number;
+  slaDeadline: string;
+  urgencyFlag: UrgencyFlag;
+} {
+  const ordered = orderedAt ?? now;
+  const elapsedMs = now.getTime() - ordered.getTime();
+  const elapsedHours = Math.max(0, elapsedMs / (1000 * 60 * 60));
+  const deadline = new Date(ordered.getTime() + SLA_HOURS * 60 * 60 * 1000);
+  let flag: UrgencyFlag = 'on_track';
+  if (elapsedHours >= SLA_HOURS) flag = 'overdue';
+  else if (elapsedHours >= SLA_WARN_HOURS) flag = 'due_soon';
+  return {
+    elapsedHours: Math.round(elapsedHours * 10) / 10,
+    slaDeadline: deadline.toISOString(),
+    urgencyFlag: flag,
+  };
+}
+
+export async function newOrdersRoutes(app: FastifyInstance): Promise<void> {
+  // GET /api/new-orders — 신규주문 페이지 (rank 20) + SLA 특화 필드
+  app.get('/new-orders', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = listNewOrdersQuery.safeParse(request.query);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'INVALID_QUERY', details: parsed.error.flatten() });
     }
 
     const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir } = parsed.data;
     const userId = request.user.userId;
+    const now = new Date();
+    const overdueCutoff = new Date(now.getTime() - SLA_HOURS * 60 * 60 * 1000);
+    const warnCutoff = new Date(now.getTime() - SLA_WARN_HOURS * 60 * 60 * 1000);
 
-    const baseConds = [eq(orders.userId, userId)];
+    const baseConds = [eq(orders.userId, userId), inArray(orders.fulfillmentStatus, [...PRESET_RANKS])];
     if (channelId) baseConds.push(eq(orders.channelId, channelId));
     const dateCol = DATE_FIELDS[dateField];
     if (dateFrom) baseConds.push(gte(dateCol, new Date(dateFrom)));
@@ -78,13 +108,16 @@ export async function allOrdersRoutes(app: FastifyInstance): Promise<void> {
 
     const itemsConds = [...baseConds];
     if (status && status.length > 0) {
-      itemsConds.push(inArray(orders.fulfillmentStatus, status));
+      const filtered = status.filter((s) => (PRESET_RANKS as readonly number[]).includes(s));
+      if (filtered.length > 0) {
+        itemsConds.push(inArray(orders.fulfillmentStatus, filtered));
+      }
     }
 
     const orderByCol = SORT_COLUMNS[sortBy];
     const orderBy = sortDir === 'asc' ? asc(orderByCol) : desc(orderByCol);
 
-    const [items, totalRow, rankRows, holdRows, claimRow, allRow] = await Promise.all([
+    const [rawItems, totalRow, rankRows, holdRows, claimRow, allRow, overdueRow, dueSoonRow] = await Promise.all([
       app.db
         .select()
         .from(orders)
@@ -120,10 +153,26 @@ export async function allOrdersRoutes(app: FastifyInstance): Promise<void> {
         .select({ n: sql<number>`count(*)::int` })
         .from(orders)
         .where(and(...baseConds)),
+      // 페이지 특화: SLA 초과 (orderedAt <= now - 24h)
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...baseConds, lte(orders.orderedAt, overdueCutoff))),
+      // 페이지 특화: SLA 임박 (orderedAt <= now - 18h, > now - 24h)
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...baseConds, lte(orders.orderedAt, warnCutoff), gte(orders.orderedAt, overdueCutoff))),
     ]);
 
+    // SLA 필드를 각 item에 머지
+    const items = rawItems.map((row) => ({
+      ...row,
+      sla: computeUrgency(row.orderedAt, now),
+    }));
+
     const counts: Record<string, number> = { all: allRow[0]?.n ?? 0 };
-    for (const r of ALL_RANKS) counts[String(r)] = 0;
+    for (const r of PRESET_RANKS) counts[String(r)] = 0;
     for (const row of rankRows) {
       const key = String(row.rank);
       counts[key] = row.n;
@@ -132,8 +181,9 @@ export async function allOrdersRoutes(app: FastifyInstance): Promise<void> {
         counts[semantic] = (counts[semantic] ?? 0) + row.n;
       }
     }
-    for (const sem of Object.values(RANK_TO_SEMANTIC)) {
-      if (counts[sem] === undefined) counts[sem] = 0;
+    for (const r of PRESET_RANKS) {
+      const sem = RANK_TO_SEMANTIC[r];
+      if (sem && counts[sem] === undefined) counts[sem] = 0;
     }
     counts.hold_order = 0;
     counts.hold_dispatch = 0;
@@ -143,28 +193,16 @@ export async function allOrdersRoutes(app: FastifyInstance): Promise<void> {
     }
     counts.claim_any = claimRow[0]?.n ?? 0;
 
-    const paymentStage = (counts['10'] ?? 0);
-    const newOrderStage = (counts['20'] ?? 0);
-    const dispatchStage =
-      (counts['25'] ?? 0) +
-      (counts['30'] ?? 0) +
-      (counts['35'] ?? 0) +
-      (counts['40'] ?? 0);
-    const shippingStage = (counts['50'] ?? 0) + (counts['60'] ?? 0) + (counts['70'] ?? 0);
-    const settledStage = (counts['80'] ?? 0) + (counts['90'] ?? 0);
-    const claimStage = counts.claim_any;
-
     return {
       items,
       total: totalRow[0]?.n ?? 0,
       counts,
-      allSummary: {
-        paymentStage,
-        newOrderStage,
-        dispatchStage,
-        shippingStage,
-        settledStage,
-        claimStage,
+      slaSummary: {
+        slaHours: SLA_HOURS,
+        warnHours: SLA_WARN_HOURS,
+        overdueCount: overdueRow[0]?.n ?? 0,
+        dueSoonCount: dueSoonRow[0]?.n ?? 0,
+        now: now.toISOString(),
       },
     };
   });

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex } from "@chakra-ui/react";
+import { Box, Flex, HStack, Text, Badge } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 import {
-  useOrders,
+  usePayments,
   type OrderListItem,
   type OrderListParams,
 } from "@/entities/order";
@@ -21,16 +22,20 @@ import {
   type PageSize,
 } from "@/shared/config";
 
+const PAYMENTS_PRESET_RANKS = [10];
+
 function buildInitialParams(pageSize: PageSize): OrderListParams {
   return {
     page: 1,
     pageSize,
-    sortBy: "orderedAt",
+    sortBy: "paidAt",
     sortDir: "desc",
+    status: PAYMENTS_PRESET_RANKS,
   };
 }
 
-export function OrdersPage(): React.JSX.Element {
+export function PaymentsPage(): React.JSX.Element {
+  const t = useTranslations("pages.payments");
   const [pageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     DEFAULT_PAGE_SIZE,
@@ -44,13 +49,13 @@ export function OrdersPage(): React.JSX.Element {
     null,
   );
 
-  const { items, total, counts, isLoading } = useOrders(params);
+  const { items, total, counts, paymentSummary, isLoading } = usePayments(params);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <PageHeader
-        title="주문 관리"
-        description="주문을 조회하고 상태를 변경할 수 있습니다."
+        title={t("title")}
+        description={t("description")}
         mb={2}
       />
 
@@ -58,13 +63,43 @@ export function OrdersPage(): React.JSX.Element {
         <OrdersAuxPanel />
 
         <Flex direction="column" gap={3} flex={1} minW={0}>
+          <HStack
+            gap={3}
+            px={3}
+            py={2}
+            bg="gray.50"
+            borderRadius="md"
+            borderWidth="1px"
+            borderColor="gray.200"
+            wrap="wrap"
+          >
+            <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+              {t("summary.totalAmount")}
+            </Text>
+            <Text fontSize="sm" fontWeight="bold" color="gray.900">
+              {paymentSummary.sumTotal}
+            </Text>
+            {paymentSummary.byCurrency.map((c) => (
+              <Badge key={c.currency} colorPalette="blue" variant="subtle">
+                {c.currency} · {c.count}건 · {c.sumTotal}
+              </Badge>
+            ))}
+            {Object.entries(paymentSummary.byPaymentMethod).map(
+              ([method, count]) => (
+                <Badge key={method} colorPalette="gray" variant="outline">
+                  {method}: {count}
+                </Badge>
+              ),
+            )}
+          </HStack>
+
           <OrderCounter
             counts={counts}
             selectedRanks={params.status ?? []}
             onChange={(ranks) =>
               setParams({
                 ...params,
-                status: ranks.length ? ranks : undefined,
+                status: ranks.length ? ranks : PAYMENTS_PRESET_RANKS,
                 page: 1,
               })
             }

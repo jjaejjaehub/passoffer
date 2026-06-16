@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import {
   CHANNEL_CONFIG,
   type ChannelId,
@@ -47,34 +48,74 @@ function formatMoney(v: unknown): string {
   return n.toLocaleString();
 }
 
-function formatChannel(v: unknown): string {
-  if (!v) return "—";
-  return CHANNEL_CONFIG[v as ChannelId]?.name ?? String(v);
+function makeFormatChannel(
+  tChannels: (key: string) => string,
+): (v: unknown) => string {
+  return (v: unknown) => {
+    if (!v) return "—";
+    const id = v as ChannelId;
+    try {
+      return tChannels(`${id}.name`);
+    } catch {
+      return CHANNEL_CONFIG[id]?.name ?? String(v);
+    }
+  };
 }
 
-function formatFulfillment(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  return FULFILLMENT_RANK_LABEL[v as FulfillmentRank] ?? String(v);
+function makeFormatFulfillment(
+  tRank: (key: string) => string,
+): (v: unknown) => string {
+  return (v: unknown) => {
+    if (v === null || v === undefined) return "—";
+    const k = v as FulfillmentRank;
+    try {
+      return tRank(String(k));
+    } catch {
+      return FULFILLMENT_RANK_LABEL[k] ?? String(v);
+    }
+  };
 }
 
-function formatHold(v: unknown): string {
-  if (!v) return "—";
-  const key = String(v) as keyof typeof HOLD_LABEL;
-  return HOLD_LABEL[key] ?? String(v);
+function makeFormatHold(
+  tHold: (key: string) => string,
+): (v: unknown) => string {
+  return (v: unknown) => {
+    if (!v) return "—";
+    const key = String(v) as keyof typeof HOLD_LABEL;
+    try {
+      return tHold(key);
+    } catch {
+      return HOLD_LABEL[key] ?? String(v);
+    }
+  };
 }
 
-function formatSemantic(v: unknown): string {
-  if (!v) return "—";
-  const key = String(v) as keyof typeof SEMANTIC_LABEL;
-  return SEMANTIC_LABEL[key] ?? String(v);
+function makeFormatSemantic(
+  tSemantic: (key: string) => string,
+): (v: unknown) => string {
+  return (v: unknown) => {
+    if (!v) return "—";
+    const key = String(v) as keyof typeof SEMANTIC_LABEL;
+    try {
+      return tSemantic(key);
+    } catch {
+      return SEMANTIC_LABEL[key] ?? String(v);
+    }
+  };
 }
 
-const SECTIONS: SectionDef[] = [
+function buildSections(formatters: {
+  channel: (v: unknown) => string;
+  fulfillment: (v: unknown) => string;
+  hold: (v: unknown) => string;
+  semantic: (v: unknown) => string;
+}): SectionDef[] {
+  return [
   {
     id: "identity",
     title: "주문 식별",
     fields: [
-      { key: "channelId", label: "채널", format: formatChannel },
+      { key: "channelId", label: "채널", format: formatters.channel },
       { key: "channelOrderId", label: "주문번호" },
       { key: "channelPackNo", label: "팩번호" },
       { key: "channelItemNo", label: "상품번호" },
@@ -157,14 +198,14 @@ const SECTIONS: SectionDef[] = [
     id: "status",
     title: "상태",
     fields: [
-      { key: "fulfillmentStatus", label: "이행상태", format: formatFulfillment },
+      { key: "fulfillmentStatus", label: "이행상태", format: formatters.fulfillment },
       { key: "claimStatus", label: "클레임상태" },
-      { key: "displayStatus", label: "표시상태", format: formatSemantic },
+      { key: "displayStatus", label: "표시상태", format: formatters.semantic },
       { key: "isDispatchDelayed", label: "출고지연", format: formatBool },
       { key: "dispatchHoldReason", label: "출고보류 사유" },
       { key: "syncLocked", label: "동기화 잠금", format: formatBool },
-      { key: "holdStatus", label: "보류구분", format: formatHold },
-      { key: "heldFromStatus", label: "보류 직전 상태", format: formatFulfillment },
+      { key: "holdStatus", label: "보류구분", format: formatters.hold },
+      { key: "heldFromStatus", label: "보류 직전 상태", format: formatters.fulfillment },
     ],
   },
   {
@@ -197,7 +238,8 @@ const SECTIONS: SectionDef[] = [
       { key: "updatedAt", label: "수정일시", format: formatDate },
     ],
   },
-];
+  ];
+}
 
 function renderValue(field: FieldDef, row: OrderListItem): string {
   const v = row[field.key];
@@ -213,6 +255,29 @@ export function OrderDetailModal({
   open,
   onClose,
 }: OrderDetailModalProps): React.JSX.Element | null {
+  const tChannels = useTranslations("config.channels");
+  const tRank = useTranslations("config.fulfillmentRank");
+  const tHold = useTranslations("config.hold");
+  const tSemantic = useTranslations("config.semantic");
+
+  const formatChannel = makeFormatChannel(
+    (k: string) => tChannels(k as never),
+  );
+  const formatFulfillment = makeFormatFulfillment(
+    (k: string) => tRank(k as never),
+  );
+  const formatHold = makeFormatHold((k: string) => tHold(k as never));
+  const formatSemantic = makeFormatSemantic(
+    (k: string) => tSemantic(k as never),
+  );
+
+  const sections = buildSections({
+    channel: formatChannel,
+    fulfillment: formatFulfillment,
+    hold: formatHold,
+    semantic: formatSemantic,
+  });
+
   if (!order) return null;
 
   return (
@@ -244,7 +309,7 @@ export function OrderDetailModal({
 
             <Dialog.Body maxH="70vh" overflowY="auto">
               <Flex direction="column" gap={5}>
-                {SECTIONS.map((section) => (
+                {sections.map((section) => (
                   <Box key={section.id}>
                     <Text
                       fontSize="xs"
