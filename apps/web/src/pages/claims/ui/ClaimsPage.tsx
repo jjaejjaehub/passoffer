@@ -3,11 +3,12 @@
 import { Suspense, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Box, Button, Flex, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, HStack, Text } from "@chakra-ui/react";
 import { format, subDays } from "date-fns";
 import { AlertTriangle, KeyIcon } from "lucide-react";
 
 import { useChannelApiKey, useActiveChannel } from "@/entities/channel";
+import { useClaimsSummary } from "@/entities/claims";
 import { useQoo10Claims, useQoo10CancelProcess, useQoo10ClaimAccept, useQoo10ClaimRedelivery } from "@/entities/order";
 import { useShopifyReturns } from "@/entities/order";
 import { appToaster } from "@/shared/ui";
@@ -436,6 +437,8 @@ function ClaimsPageContent(): React.JSX.Element {
 
   const channelId: ChannelId | "all" = activeChannel;
 
+  const { summary } = useClaimsSummary({ dateField: "orderedAt" });
+
   function renderClaimsSection(): React.JSX.Element {
     switch (channelId) {
       case "shopify":
@@ -464,6 +467,34 @@ function ClaimsPageContent(): React.JSX.Element {
         description={t("description")}
         mb={2}
       />
+
+      <HStack
+        gap={3}
+        px={3}
+        py={2}
+        bg="gray.50"
+        borderRadius="md"
+        borderWidth="1px"
+        borderColor="gray.200"
+        wrap="wrap"
+        mb={2}
+      >
+        <Badge colorPalette="red" variant="solid">
+          {t("summary.cancelStage", { count: summary.cancel })}
+        </Badge>
+        <Badge colorPalette="orange" variant="solid">
+          {t("summary.returnStage", { count: summary.return })}
+        </Badge>
+        <Badge colorPalette="purple" variant="solid">
+          {t("summary.exchangeStage", { count: summary.exchange })}
+        </Badge>
+        <Badge colorPalette="blue" variant="solid">
+          {t("summary.swapStage", { count: summary.swap })}
+        </Badge>
+        <Badge colorPalette="gray" variant="solid">
+          {t("summary.totalStage", { count: summary.total })}
+        </Badge>
+      </HStack>
 
       <ClaimFilterBar
         channelId={channelId}

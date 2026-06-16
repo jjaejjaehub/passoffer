@@ -46,6 +46,13 @@ const SORT_COLUMNS = {
   updatedAt: orders.updatedAt,
 } as const;
 
+const claimsSummaryQuery = z.object({
+  dateField: z.enum(['orderedAt', 'paidAt', 'shippedAt']).default('orderedAt'),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  channelId: z.string().uuid().optional(),
+});
+
 const listClaimsQuery = z.object({
   claimStatus: z
     .string()
@@ -168,5 +175,46 @@ export async function claimRoutes(app: FastifyInstance): Promise<void> {
       total: totalRow[0]?.n ?? 0,
       counts,
     };
+  });
+
+  // GET /api/claims-summary — 클레임 페이지 상단 요약 (claimType 분포)
+  app.get('/claims-summary', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = claimsSummaryQuery.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_QUERY', details: parsed.error.flatten() });
+    }
+
+    const { dateField, dateFrom, dateTo, channelId } = parsed.data;
+    const userId = request.user.userId;
+
+    const baseConds = [eq(orders.userId, userId), isNotNull(orders.claimStatus)];
+    if (channelId) baseConds.push(eq(orders.channelId, channelId));
+    const dateCol = DATE_FIELDS[dateField];
+    if (dateFrom) baseConds.push(gte(dateCol, new Date(dateFrom)));
+    if (dateTo) baseConds.push(lte(dateCol, new Date(dateTo)));
+
+    const [typeRows, totalRow] = await Promise.all([
+      app.db
+        .select({
+          claimType: orders.claimType,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(and(...baseConds, isNotNull(orders.claimType)))
+        .groupBy(orders.claimType),
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...baseConds)),
+    ]);
+
+    const summary = { cancel: 0, return: 0, exchange: 0, swap: 0, total: totalRow[0]?.n ?? 0 };
+    for (const row of typeRows) {
+      if (row.claimType && row.claimType in summary) {
+        (summary as Record<string, number>)[row.claimType] = row.n;
+      }
+    }
+
+    return { summary };
   });
 }
