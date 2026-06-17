@@ -19,6 +19,7 @@ import { masterProductRoutes } from './routes/master-products/index';
 import { skuRoutes } from './routes/skus/index';
 import { warehouseRoutes } from './routes/warehouses/index';
 import { userSettingsRoutes } from './routes/user-settings/index';
+import { orderEventLogRoutes } from './routes/order-event-logs/index';
 
 const app = Fastify({ logger: { level: 'info' } });
 
@@ -51,6 +52,7 @@ async function main() {
   await app.register(skuRoutes, { prefix: '/api' });
   await app.register(warehouseRoutes, { prefix: '/api' });
   await app.register(userSettingsRoutes, { prefix: '/api' });
+  await app.register(orderEventLogRoutes, { prefix: '/api' });
 
   const port = app.config.PORT ?? 4000;
   await app.listen({ port, host: '0.0.0.0' });

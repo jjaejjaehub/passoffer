@@ -41,6 +41,7 @@
     "externalSellers": "외부 상품",
     "channels": "채널 관리",
     "orderSettings": "주문 환경설정",
+    "orderEventLogs": "주문 이벤트 로그",
     "userLoading": "로딩 중...",
     "logout": "로그아웃",
     "language": "언어"
@@ -1405,6 +1406,51 @@
       "actions": {
         "cancel": "취소",
         "save": "저장"
+      }
+    },
+    "orderEventLogs": {
+      "title": "주문 이벤트 로그",
+      "description": "자동 매칭, 중복 의심, 상태 동기화, 수집 오류 등 주문 처리 이벤트를 조회합니다.",
+      "actions": {
+        "refresh": "새로고침",
+        "downloadCsv": "CSV 다운로드",
+        "loadMore": "더 보기",
+        "noMore": "마지막 페이지입니다"
+      },
+      "filters": {
+        "eventType": "이벤트 유형",
+        "result": "결과",
+        "channel": "채널",
+        "dateFrom": "시작 일시",
+        "dateTo": "종료 일시",
+        "all": "전체"
+      },
+      "eventType": {
+        "auto_match_success": "자동 매칭 성공",
+        "auto_match_failed": "자동 매칭 실패",
+        "duplicate_suspect": "중복 의심",
+        "status_sync": "상태 동기화",
+        "collect_error": "수집 오류"
+      },
+      "result": {
+        "ok": "정상",
+        "warn": "경고",
+        "error": "오류"
+      },
+      "table": {
+        "createdAt": "발생 시각",
+        "eventType": "이벤트",
+        "result": "결과",
+        "channel": "채널",
+        "order": "주문",
+        "message": "메시지"
+      },
+      "empty": {
+        "title": "이벤트 로그가 없습니다",
+        "description": "필터 조건을 변경하거나 잠시 후 다시 시도해 주세요."
+      },
+      "errors": {
+        "loadFailed": "로그 조회 실패"
       }
     }
   },

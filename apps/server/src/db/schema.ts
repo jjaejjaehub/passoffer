@@ -68,6 +68,15 @@ export const claimStatusEnum = pgEnum('claim_status', [
 export const orderActorEnum = pgEnum('order_actor', ['channel', 'user', 'system']);
 export const orderMatchedByEnum = pgEnum('order_matched_by', ['auto', 'manual', 'rule']);
 
+export const orderEventLogTypeEnum = pgEnum('order_event_log_type', [
+  'auto_match_success',
+  'auto_match_failed',
+  'duplicate_suspect',
+  'status_sync',
+  'collect_error',
+]);
+export const orderEventLogResultEnum = pgEnum('order_event_log_result', ['ok', 'warn', 'error']);
+
 export const listedProductSyncStatusEnum = pgEnum('listed_product_sync_status', [
   'PENDING',
   'SYNCED',
@@ -260,6 +269,30 @@ export const orderStatusHistory = pgTable('order_status_history', {
   reason: text('reason'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+// ─── order_event_log ───────────────────────────────────────────
+// 자동매칭/중복의심/sync 등 운영 이벤트 로그. orderStatusHistory와 달리 user 단위로 조회.
+
+export const orderEventLog = pgTable(
+  'order_event_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    channelId: uuid('channel_id').references(() => channels.id, { onDelete: 'set null' }),
+    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+    orderItemId: uuid('order_item_id').references(() => orderItems.id, { onDelete: 'set null' }),
+    eventType: orderEventLogTypeEnum('event_type').notNull(),
+    result: orderEventLogResultEnum('result').notNull(),
+    message: text('message'),
+    detail: jsonb('detail'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_order_event_log_user_created').on(t.userId, t.createdAt),
+    index('idx_order_event_log_event_type').on(t.eventType),
+    index('idx_order_event_log_channel').on(t.channelId),
+  ],
+);
 
 // ─── products ───────────────────────────────────────────────────
 

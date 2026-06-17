@@ -7,6 +7,7 @@ import {
   Building2,
   ChevronDown,
   CreditCard,
+  FileText,
   Globe,
   ChevronRight,
   LayoutDashboard,
@@ -538,6 +539,18 @@ export function Sidebar(): React.JSX.Element {
             <Flex {...navItemStyle(isActive(ROUTES.settings.orders))}>
               <Icon as={Settings2} boxSize={4} color="gray.500" />
               <Text fontSize="sm">{t("orderSettings")}</Text>
+            </Flex>
+          </Link>
+
+          {/* 운영 로그 — 주문 이벤트 */}
+          <Link href={ROUTES.logs.orderEvents} style={{ textDecoration: "none" }}
+            onClick={() => setPendingHref(ROUTES.logs.orderEvents)}
+            onMouseEnter={() => prefetch(ROUTES.logs.orderEvents)}
+            onFocus={() => prefetch(ROUTES.logs.orderEvents)}
+          >
+            <Flex {...navItemStyle(isActive(ROUTES.logs.orderEvents))}>
+              <Icon as={FileText} boxSize={4} color="gray.500" />
+              <Text fontSize="sm">{t("orderEventLogs")}</Text>
             </Flex>
           </Link>
         </Stack>

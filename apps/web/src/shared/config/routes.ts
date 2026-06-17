@@ -35,6 +35,9 @@ export const ROUTES = {
     channels: '/settings/channels',
     orders: '/settings/orders',
   },
+  logs: {
+    orderEvents: '/logs/order-events',
+  },
   auth: {
     login: '/login',
     signup: '/signup',

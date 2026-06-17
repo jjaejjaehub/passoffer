@@ -41,6 +41,7 @@
     "externalSellers": "外部商品",
     "channels": "チャネル管理",
     "orderSettings": "注文環境設定",
+    "orderEventLogs": "注文イベントログ",
     "userLoading": "読み込み中...",
     "logout": "ログアウト",
     "language": "言語"
@@ -1405,6 +1406,51 @@
       "actions": {
         "cancel": "キャンセル",
         "save": "保存"
+      }
+    },
+    "orderEventLogs": {
+      "title": "注文イベントログ",
+      "description": "自動マッチング、重複疑い、ステータス同期、収集エラーなど注文処理イベントを照会します。",
+      "actions": {
+        "refresh": "更新",
+        "downloadCsv": "CSVダウンロード",
+        "loadMore": "もっと見る",
+        "noMore": "最後のページです"
+      },
+      "filters": {
+        "eventType": "イベント種別",
+        "result": "結果",
+        "channel": "チャネル",
+        "dateFrom": "開始日時",
+        "dateTo": "終了日時",
+        "all": "すべて"
+      },
+      "eventType": {
+        "auto_match_success": "自動マッチング成功",
+        "auto_match_failed": "自動マッチング失敗",
+        "duplicate_suspect": "重複疑い",
+        "status_sync": "ステータス同期",
+        "collect_error": "収集エラー"
+      },
+      "result": {
+        "ok": "正常",
+        "warn": "警告",
+        "error": "エラー"
+      },
+      "table": {
+        "createdAt": "発生時刻",
+        "eventType": "イベント",
+        "result": "結果",
+        "channel": "チャネル",
+        "order": "注文",
+        "message": "メッセージ"
+      },
+      "empty": {
+        "title": "イベントログがありません",
+        "description": "フィルター条件を変更するか、しばらくしてから再度お試しください。"
+      },
+      "errors": {
+        "loadFailed": "ログの読み込みに失敗しました"
       }
     }
   },

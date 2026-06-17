@@ -9,6 +9,7 @@ import type {
 import {
   channels,
   DEFAULT_USER_ORDER_SETTINGS,
+  orderEventLog,
   orders,
   orderItems,
   orderStatusHistory,
@@ -100,6 +101,16 @@ export class OrderService {
         const adapter = await this.buildAdapter(params.userId, row.id, channelKey);
         if (!adapter) {
           result.errors.push({ channelOrderId: "", message: "adapter_unavailable" });
+          await this.logEvent(this.app.db, {
+            userId: params.userId,
+            channelId: row.id,
+            orderId: null,
+            orderItemId: null,
+            eventType: "collect_error",
+            result: "error",
+            message: "어댑터 사용 불가 (자격증명 확인 필요)",
+            detail: { channelKey, phase: "build_adapter" },
+          });
           results.push(result);
           continue;
         }
@@ -120,16 +131,42 @@ export class OrderService {
             else if (upsertResult === "updated") result.updated += 1;
             else result.skipped += 1;
           } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
             result.errors.push({
               channelOrderId: std.channelOrderId,
-              message: err instanceof Error ? err.message : String(err),
+              message,
+            });
+            await this.logEvent(this.app.db, {
+              userId: params.userId,
+              channelId: row.id,
+              orderId: null,
+              orderItemId: null,
+              eventType: "collect_error",
+              result: "error",
+              message: `주문 upsert 실패 (${std.channelOrderId}): ${message}`,
+              detail: {
+                channelKey,
+                phase: "upsert",
+                channelOrderId: std.channelOrderId,
+              },
             });
           }
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         result.errors.push({
           channelOrderId: "",
-          message: err instanceof Error ? err.message : String(err),
+          message,
+        });
+        await this.logEvent(this.app.db, {
+          userId: params.userId,
+          channelId: row.id,
+          orderId: null,
+          orderItemId: null,
+          eventType: "collect_error",
+          result: "error",
+          message: `수집 실패: ${message}`,
+          detail: { channelKey, phase: "pull" },
         });
       }
       results.push(result);
@@ -165,6 +202,16 @@ export class OrderService {
         const adapter = await this.buildAdapter(params.userId, row.id, channelKey);
         if (!adapter) {
           result.errors.push({ channelOrderId: "", message: "adapter_unavailable" });
+          await this.logEvent(this.app.db, {
+            userId: params.userId,
+            channelId: row.id,
+            orderId: null,
+            orderItemId: null,
+            eventType: "collect_error",
+            result: "error",
+            message: "어댑터 사용 불가 (동기화 단계)",
+            detail: { channelKey, phase: "sync_build_adapter" },
+          });
           results.push(result);
           continue;
         }
@@ -179,16 +226,42 @@ export class OrderService {
             if (changed) result.updated += 1;
             else result.skipped += 1;
           } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
             result.errors.push({
               channelOrderId: std.channelOrderId,
-              message: err instanceof Error ? err.message : String(err),
+              message,
+            });
+            await this.logEvent(this.app.db, {
+              userId: params.userId,
+              channelId: row.id,
+              orderId: null,
+              orderItemId: null,
+              eventType: "collect_error",
+              result: "error",
+              message: `동기화 실패 (${std.channelOrderId}): ${message}`,
+              detail: {
+                channelKey,
+                phase: "sync_one",
+                channelOrderId: std.channelOrderId,
+              },
             });
           }
         }
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         result.errors.push({
           channelOrderId: "",
-          message: err instanceof Error ? err.message : String(err),
+          message,
+        });
+        await this.logEvent(this.app.db, {
+          userId: params.userId,
+          channelId: row.id,
+          orderId: null,
+          orderItemId: null,
+          eventType: "collect_error",
+          result: "error",
+          message: `동기화 실패: ${message}`,
+          detail: { channelKey, phase: "sync_pull" },
         });
       }
       results.push(result);
@@ -413,7 +486,14 @@ export class OrderService {
 
         const orderId = inserted[0]?.id;
         if (orderId) {
-          await this.insertLineItems(txDb, orderId, userId, std.lineItems, settings);
+          await this.insertLineItems(
+            txDb,
+            userId,
+            channelId,
+            orderId,
+            std.lineItems,
+            settings,
+          );
           await txDb.insert(orderStatusHistory).values({
             orderId,
             fromFulfillment: null,
@@ -477,39 +557,140 @@ export class OrderService {
 
   private async insertLineItems(
     txDb: DbLike,
-    orderId: string,
     userId: string,
+    channelId: string,
+    orderId: string,
     lines: StandardOrderItem[],
     settings: UserOrderSettings,
   ): Promise<void> {
     if (!lines || lines.length === 0) return;
 
     for (const line of lines) {
-      let matched: { skuId: string | null; skuCode: string | null; skuName: string | null } = {
+      let matched: Awaited<ReturnType<typeof this.autoMatchSku>> = {
         skuId: null,
         skuCode: null,
         skuName: null,
+        candidates: [],
+        matches: [],
       };
       if (settings.autoMatchSku) {
         matched = await this.autoMatchSku(txDb, userId, line);
       }
-      await txDb.insert(orderItems).values({
-        orderId,
-        lineNo: line.lineNo,
-        channelItemCode: line.channelItemCode,
-        channelItemTitle: line.channelItemTitle,
-        channelOption: line.channelOption,
-        channelOptionCode: line.channelOptionCode,
-        orderQty: line.orderQty,
-        unitPrice: numStr(line.unitPrice),
-        totalPrice: numStr(line.totalPrice),
-        skuId: matched.skuId,
-        skuCode: matched.skuCode,
-        skuName: matched.skuName,
-        outputQty: line.outputQty ?? 0,
-        appliedGifts: line.appliedGifts ?? [],
-        warehouseId: line.warehouseId,
+      const inserted = await txDb
+        .insert(orderItems)
+        .values({
+          orderId,
+          lineNo: line.lineNo,
+          channelItemCode: line.channelItemCode,
+          channelItemTitle: line.channelItemTitle,
+          channelOption: line.channelOption,
+          channelOptionCode: line.channelOptionCode,
+          orderQty: line.orderQty,
+          unitPrice: numStr(line.unitPrice),
+          totalPrice: numStr(line.totalPrice),
+          skuId: matched.skuId,
+          skuCode: matched.skuCode,
+          skuName: matched.skuName,
+          outputQty: line.outputQty ?? 0,
+          appliedGifts: line.appliedGifts ?? [],
+          warehouseId: line.warehouseId,
+        })
+        .returning({ id: orderItems.id });
+      const orderItemId = inserted[0]?.id ?? null;
+
+      if (settings.autoMatchSku) {
+        if (matched.matches.length > 1) {
+          await this.logEvent(txDb, {
+            userId,
+            channelId,
+            orderId,
+            orderItemId,
+            eventType: "duplicate_suspect",
+            result: "warn",
+            message: `SKU 후보 ${matched.matches.length}건 발견 — 첫 번째(${matched.skuCode})를 사용`,
+            detail: {
+              candidates: matched.candidates,
+              matches: matched.matches.map((m) => ({ code: m.code, name: m.name })),
+              chosen: matched.skuCode,
+              channelItemCode: line.channelItemCode,
+              channelOptionCode: line.channelOptionCode,
+            },
+          });
+        } else if (matched.skuId) {
+          await this.logEvent(txDb, {
+            userId,
+            channelId,
+            orderId,
+            orderItemId,
+            eventType: "auto_match_success",
+            result: "ok",
+            message: `SKU 매칭 성공: ${matched.skuCode}`,
+            detail: {
+              skuCode: matched.skuCode,
+              skuName: matched.skuName,
+              channelItemCode: line.channelItemCode,
+              channelOptionCode: line.channelOptionCode,
+            },
+          });
+        } else {
+          await this.logEvent(txDb, {
+            userId,
+            channelId,
+            orderId,
+            orderItemId,
+            eventType: "auto_match_failed",
+            result: "warn",
+            message:
+              matched.candidates.length === 0
+                ? "매칭할 코드가 비어있음"
+                : `SKU 미발견: ${matched.candidates.join(", ")}`,
+            detail: {
+              candidates: matched.candidates,
+              channelItemCode: line.channelItemCode,
+              channelOptionCode: line.channelOptionCode,
+              channelItemTitle: line.channelItemTitle,
+              channelOption: line.channelOption,
+            },
+          });
+        }
+      }
+    }
+  }
+
+  private async logEvent(
+    txDb: DbLike,
+    params: {
+      userId: string;
+      channelId: string | null;
+      orderId: string | null;
+      orderItemId: string | null;
+      eventType:
+        | "auto_match_success"
+        | "auto_match_failed"
+        | "duplicate_suspect"
+        | "status_sync"
+        | "collect_error";
+      result: "ok" | "warn" | "error";
+      message?: string | null;
+      detail?: unknown;
+    },
+  ): Promise<void> {
+    try {
+      await txDb.insert(orderEventLog).values({
+        userId: params.userId,
+        channelId: params.channelId,
+        orderId: params.orderId,
+        orderItemId: params.orderItemId,
+        eventType: params.eventType,
+        result: params.result,
+        message: params.message ?? null,
+        detail: (params.detail ?? null) as Record<string, unknown> | null,
       });
+    } catch (err) {
+      this.app.log.warn(
+        { err, eventType: params.eventType, userId: params.userId },
+        "order_event_log insert failed",
+      );
     }
   }
 
@@ -517,21 +698,45 @@ export class OrderService {
     txDb: DbLike,
     userId: string,
     line: StandardOrderItem,
-  ): Promise<{ skuId: string | null; skuCode: string | null; skuName: string | null }> {
+  ): Promise<{
+    skuId: string | null;
+    skuCode: string | null;
+    skuName: string | null;
+    candidates: string[];
+    matches: Array<{ id: string; code: string; name: string | null }>;
+  }> {
     const candidates = [line.channelOptionCode, line.channelItemCode].filter(
       (v): v is string => !!v && v.trim().length > 0,
     );
     if (candidates.length === 0) {
-      return { skuId: null, skuCode: null, skuName: null };
+      return {
+        skuId: null,
+        skuCode: null,
+        skuName: null,
+        candidates,
+        matches: [],
+      };
     }
     const found = await txDb
       .select({ id: skus.id, code: skus.code, name: skus.name })
       .from(skus)
-      .where(and(eq(skus.userId, userId), inArray(skus.code, candidates)))
-      .limit(1);
-    const hit = found[0];
-    if (!hit) return { skuId: null, skuCode: null, skuName: null };
-    return { skuId: hit.id, skuCode: hit.code, skuName: hit.name ?? null };
+      .where(and(eq(skus.userId, userId), inArray(skus.code, candidates)));
+    const matches = found.map((r) => ({
+      id: r.id,
+      code: r.code,
+      name: r.name ?? null,
+    }));
+    const hit = matches[0];
+    if (!hit) {
+      return { skuId: null, skuCode: null, skuName: null, candidates, matches };
+    }
+    return {
+      skuId: hit.id,
+      skuCode: hit.code,
+      skuName: hit.name,
+      candidates,
+      matches,
+    };
   }
 
   // ── sync (status update only) ─────────────────────────────────
@@ -602,6 +807,22 @@ export class OrderService {
         actor: "channel",
         actorId: channelId,
         reason: "channel_status_sync",
+      });
+      await this.logEvent(txDb, {
+        userId,
+        channelId,
+        orderId: row.id,
+        orderItemId: null,
+        eventType: "status_sync",
+        result: "ok",
+        message: `상태 ${currentRank} → ${guard.next}`,
+        detail: {
+          from: currentRank,
+          to: guard.next,
+          channelKey,
+          trackingNo: std.trackingNo ?? null,
+          trackingCarrier: std.trackingCarrier ?? null,
+        },
       });
       return true;
     });
