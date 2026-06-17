@@ -5,6 +5,12 @@
       "subtitle": "OMS"
     },
     "navigation": "Navigation",
+    "quickCollect": {
+      "label": "퀵수집",
+      "loading": "수집 중...",
+      "success": "수집 {collected}건 · 동기화 {synced}건 완료",
+      "error": "퀵수집 중 오류가 발생했습니다"
+    },
     "dashboard": "대시보드",
     "products": {
       "root": "상품 관리",
@@ -34,6 +40,7 @@
     "inquiry": "상품 문의",
     "externalSellers": "외부 상품",
     "channels": "채널 관리",
+    "orderSettings": "주문 환경설정",
     "userLoading": "로딩 중...",
     "logout": "로그아웃",
     "language": "언어"
@@ -58,7 +65,8 @@
         "orders": "주문 정보를 불러오는 중 문제가 발생했습니다.",
         "products": "상품 목록을 불러오는 중 문제가 발생했습니다.",
         "productNew": "상품 등록 중 문제가 발생했습니다.",
-        "channels": "채널 설정을 불러오는 중 문제가 발생했습니다."
+        "channels": "채널 설정을 불러오는 중 문제가 발생했습니다.",
+        "orderSettings": "주문 환경설정을 불러오는 중 문제가 발생했습니다."
       }
     },
     "notFound": {
@@ -1248,6 +1256,45 @@
         "errors": {
           "oauthUrlFailed": "OAuth URL 생성 실패"
         }
+      }
+    },
+    "settingsOrders": {
+      "title": "주문 환경설정",
+      "description": "주문 수집·동기화 동작과 자동매칭 정책을 관리합니다.",
+      "save": "저장",
+      "saving": "저장 중...",
+      "lookbackDays": {
+        "label": "수집 대상 기간",
+        "help": "최근 N일치 주문을 채널에서 가져옵니다.",
+        "unit": "일",
+        "error": "1~365 사이로 입력해 주세요."
+      },
+      "autoMatchSku": {
+        "label": "SKU 자동 매칭",
+        "help": "수집 시 채널 상품 코드 기준으로 마스터 SKU를 자동 매칭합니다.",
+        "checkboxLabel": "자동 매칭 사용"
+      },
+      "dispatchDelay": {
+        "label": "출고 지연 임계값",
+        "help": "신규 주문 후 며칠이 지나면 지연 경고를 표시할지 설정합니다.",
+        "unit": "일",
+        "error": "0~30 사이로 입력해 주세요."
+      },
+      "bundleKey": {
+        "label": "합포장 키",
+        "help": "선택한 항목이 모두 같은 주문을 자동으로 묶어 합포장 후보로 분류합니다.",
+        "options": {
+          "receiverName": "수령인 이름",
+          "receiverTel": "수령인 연락처",
+          "zipCode": "우편번호",
+          "receiverAddr": "수령인 주소"
+        }
+      },
+      "toast": {
+        "savedTitle": "저장되었습니다",
+        "savedDescription": "주문 환경설정이 업데이트되었습니다.",
+        "errorTitle": "저장 실패",
+        "errorDescription": "잠시 후 다시 시도해 주세요."
       }
     },
     "productEditShopify": {

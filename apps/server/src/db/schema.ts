@@ -838,3 +838,30 @@ export const statusRuleOverrides = pgTable(
     index('idx_status_rule_overrides_channel_status').on(t.channelId, t.channelStatus),
   ],
 );
+
+// ─── user_settings ──────────────────────────────────────────────
+// 사용자별 환경설정. settings 컬럼은 영역(orders, sync 등)별로 jsonb 객체 보관.
+// orders: { lookbackDays, autoMatchSku, dispatchDelayThresholdDays, bundleKey: string[] }
+
+export const DEFAULT_USER_ORDER_SETTINGS = {
+  lookbackDays: 30,
+  autoMatchSku: true,
+  dispatchDelayThresholdDays: 3,
+  bundleKey: ['receiverName', 'receiverTel', 'zipCode'] as string[],
+} as const;
+
+export type UserOrderSettings = {
+  lookbackDays: number;
+  autoMatchSku: boolean;
+  dispatchDelayThresholdDays: number;
+  bundleKey: string[];
+};
+
+export const userSettings = pgTable('user_settings', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  orders: jsonb('orders').$type<UserOrderSettings>().notNull().default(DEFAULT_USER_ORDER_SETTINGS),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { ChannelService } from '../../services/ChannelService';
+import { OrderService } from '../../services/OrderService';
 import { orders, orderItems, masterProductVariants, masterProducts } from '../../db/schema';
 
 // fulfillment rank → 의미 키 매핑 (counts 응답용)
@@ -97,6 +98,22 @@ const shipDateBody = z.object({
   channelOrderId: z.string().min(1),
   channelType: z.string().min(1),
   shipDate: z.string().nullable(),
+});
+
+const collectOrdersBody = z.object({
+  channelIds: z.array(z.string().uuid()).min(1),
+  sinceDate: z.string().datetime(),
+  untilDate: z.string().datetime().optional(),
+});
+
+const syncOrdersBody = z.object({
+  channelIds: z.array(z.string().uuid()).min(1),
+  sinceDate: z.string().datetime(),
+  untilDate: z.string().datetime().optional(),
+});
+
+const quickCollectBody = z.object({
+  channelIds: z.array(z.string().uuid()).optional(),
 });
 
 export async function orderRoutes(app: FastifyInstance): Promise<void> {
@@ -533,6 +550,70 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       return { ok: true };
     },
   );
+
+  // POST /api/orders/collect — 채널 다중 수집 (DB upsert + SKU 자동매칭)
+  app.post('/orders/collect', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = collectOrdersBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.collectOrders({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+        sinceDate: parsed.data.sinceDate,
+        untilDate: parsed.data.untilDate,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '주문 수집 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'COLLECT_FAILED', message });
+    }
+  });
+
+  // POST /api/orders/sync — 채널 다중 동기화 (rank 단조증가 가드)
+  app.post('/orders/sync', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = syncOrdersBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.syncOrders({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+        sinceDate: parsed.data.sinceDate,
+        untilDate: parsed.data.untilDate,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '주문 동기화 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'SYNC_FAILED', message });
+    }
+  });
+
+  // POST /api/orders/quick-collect — 전역 퀵수집: user_settings.lookbackDays 기반 수집+동기화 일괄
+  app.post('/orders/quick-collect', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = quickCollectBody.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.quickCollect({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '퀵수집 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'QUICK_COLLECT_FAILED', message });
+    }
+  });
 
   // PATCH /api/orders/:channelId/:orderId/note
   app.patch<{ Params: { channelId: string; orderId: string } }>(

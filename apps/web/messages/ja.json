@@ -5,6 +5,12 @@
       "subtitle": "OMS"
     },
     "navigation": "ナビゲーション",
+    "quickCollect": {
+      "label": "クイック収集",
+      "loading": "収集中...",
+      "success": "収集 {collected}件 · 同期 {synced}件 完了",
+      "error": "クイック収集中にエラーが発生しました"
+    },
     "dashboard": "ダッシュボード",
     "products": {
       "root": "商品管理",
@@ -34,6 +40,7 @@
     "inquiry": "商品問い合わせ",
     "externalSellers": "外部商品",
     "channels": "チャネル管理",
+    "orderSettings": "注文環境設定",
     "userLoading": "読み込み中...",
     "logout": "ログアウト",
     "language": "言語"
@@ -58,7 +65,8 @@
         "orders": "注文情報の読み込み中に問題が発生しました。",
         "products": "商品一覧の読み込み中に問題が発生しました。",
         "productNew": "商品登録中に問題が発生しました。",
-        "channels": "チャネル設定の読み込み中に問題が発生しました。"
+        "channels": "チャネル設定の読み込み中に問題が発生しました。",
+        "orderSettings": "注文環境設定の読み込み中に問題が発生しました。"
       }
     },
     "notFound": {
@@ -1248,6 +1256,45 @@
         "errors": {
           "oauthUrlFailed": "OAuth URL生成失敗"
         }
+      }
+    },
+    "settingsOrders": {
+      "title": "注文環境設定",
+      "description": "注文収集・同期の挙動と自動マッチングポリシーを管理します。",
+      "save": "保存",
+      "saving": "保存中...",
+      "lookbackDays": {
+        "label": "収集対象期間",
+        "help": "直近N日分の注文をチャネルから取得します。",
+        "unit": "日",
+        "error": "1〜365の範囲で入力してください。"
+      },
+      "autoMatchSku": {
+        "label": "SKU自動マッチング",
+        "help": "収集時にチャネル商品コードを基準にマスターSKUを自動マッチングします。",
+        "checkboxLabel": "自動マッチングを使用"
+      },
+      "dispatchDelay": {
+        "label": "出荷遅延しきい値",
+        "help": "新規注文後、何日経過したら遅延警告を表示するか設定します。",
+        "unit": "日",
+        "error": "0〜30の範囲で入力してください。"
+      },
+      "bundleKey": {
+        "label": "同梱キー",
+        "help": "選択した項目がすべて一致する注文を自動でまとめ、同梱候補として分類します。",
+        "options": {
+          "receiverName": "受取人氏名",
+          "receiverTel": "受取人連絡先",
+          "zipCode": "郵便番号",
+          "receiverAddr": "受取人住所"
+        }
+      },
+      "toast": {
+        "savedTitle": "保存しました",
+        "savedDescription": "注文環境設定が更新されました。",
+        "errorTitle": "保存失敗",
+        "errorDescription": "しばらくしてからもう一度お試しください。"
       }
     },
     "productEditShopify": {

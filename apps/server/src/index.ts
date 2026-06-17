@@ -18,6 +18,7 @@ import { qoo10Routes } from './routes/qoo10/index';
 import { masterProductRoutes } from './routes/master-products/index';
 import { skuRoutes } from './routes/skus/index';
 import { warehouseRoutes } from './routes/warehouses/index';
+import { userSettingsRoutes } from './routes/user-settings/index';
 
 const app = Fastify({ logger: { level: 'info' } });
 
@@ -49,6 +50,7 @@ async function main() {
   await app.register(masterProductRoutes, { prefix: '/api' });
   await app.register(skuRoutes, { prefix: '/api' });
   await app.register(warehouseRoutes, { prefix: '/api' });
+  await app.register(userSettingsRoutes, { prefix: '/api' });
 
   const port = app.config.PORT ?? 4000;
   await app.listen({ port, host: '0.0.0.0' });

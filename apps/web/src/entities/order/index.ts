@@ -103,3 +103,19 @@ export type {
   ShopifyReturnsQueryResult,
 } from './api/shopifyReturnQueries';
 
+export {
+  useCollectOrders,
+  useSyncOrders,
+  useQuickCollect,
+} from './api/orderSyncMutations';
+export type {
+  ChannelKey,
+  ChannelOpResult,
+  CollectResult,
+  SyncResult,
+  QuickCollectResult,
+  CollectOrdersInput,
+  SyncOrdersInput,
+  QuickCollectInput,
+} from './api/orderSyncMutations';
+

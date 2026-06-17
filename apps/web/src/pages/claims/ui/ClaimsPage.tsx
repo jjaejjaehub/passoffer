@@ -25,6 +25,7 @@ import {
   type ClaimStatusFilter,
 } from "@/widgets/claim-table";
 import { ShopifyReturnDetailModal } from "@/features/view-return-detail";
+import { OrderSyncButtons } from "@/features/sync-orders";
 
 // ─── 상수 ─────────────────────────────────────────────────────
 
@@ -466,6 +467,7 @@ function ClaimsPageContent(): React.JSX.Element {
         title={t("title")}
         description={t("description")}
         mb={2}
+        actions={<OrderSyncButtons />}
       />
 
       <HStack

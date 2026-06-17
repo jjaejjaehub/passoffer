@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Flex, Icon, Stack, Text } from "@chakra-ui/react";
+import { Box, Button, Flex, Icon, Stack, Text } from "@chakra-ui/react";
 import {
   BookOpen,
   Boxes,
@@ -20,6 +20,7 @@ import {
   Tag,
   Truck,
   Warehouse,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,10 +28,12 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/entities/auth";
+import { useQuickCollect } from "@/entities/order";
 import { LocaleSwitcher } from "@/features/locale-switcher";
 import { ROUTES } from "@/shared/config";
 import { credentialQueries } from "@/shared/lib/credentialQueryKeys";
 import { usePrefetchRoute } from "@/shared/lib/usePrefetchRoute";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export function Sidebar(): React.JSX.Element {
   const pathname = usePathname();
@@ -51,6 +54,28 @@ export function Sidebar(): React.JSX.Element {
   const [isWarehouseOpen, setIsWarehouseOpen] = useState<boolean>(true);
   const queryClient = useQueryClient();
   const { prefetch } = usePrefetchRoute();
+  const quickCollect = useQuickCollect();
+
+  const handleQuickCollect = (): void => {
+    quickCollect.mutate(undefined, {
+      onSuccess: (result) => {
+        appToaster.create({
+          title: t("quickCollect.success", {
+            collected:
+              result.collect.totalInserted + result.collect.totalUpdated,
+            synced: result.sync.totalUpdated,
+          }),
+          type: "success",
+        });
+      },
+      onError: () => {
+        appToaster.create({
+          title: t("quickCollect.error"),
+          type: "error",
+        });
+      },
+    });
+  };
 
   // credential이 캐시에 로드된 후 유휴 상태에서 주요 페이지를 선프리패치한다.
   // credential 미로드 상태에서 warmup을 실행해도 no-op이 되므로,
@@ -178,6 +203,19 @@ export function Sidebar(): React.JSX.Element {
         </Box>
       </Flex>
 
+      {/* 퀵수집 — 어디서든 호출 가능한 전역 버튼 */}
+      <Button
+        onClick={handleQuickCollect}
+        loading={quickCollect.isPending}
+        loadingText={t("quickCollect.loading")}
+        size="sm"
+        mb={4}
+        w="full"
+        colorPalette="blue"
+      >
+        <Icon as={Zap} boxSize={4} mr={2} />
+        {t("quickCollect.label")}
+      </Button>
 
       <Box>
         <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>
@@ -488,6 +526,18 @@ export function Sidebar(): React.JSX.Element {
             <Flex {...navItemStyle(isActive(ROUTES.settings.channels))}>
               <Icon as={Settings2} boxSize={4} color="gray.500" />
               <Text fontSize="sm">{t("channels")}</Text>
+            </Flex>
+          </Link>
+
+          {/* 주문 환경설정 */}
+          <Link href={ROUTES.settings.orders} style={{ textDecoration: "none" }}
+            onClick={() => setPendingHref(ROUTES.settings.orders)}
+            onMouseEnter={() => prefetch(ROUTES.settings.orders)}
+            onFocus={() => prefetch(ROUTES.settings.orders)}
+          >
+            <Flex {...navItemStyle(isActive(ROUTES.settings.orders))}>
+              <Icon as={Settings2} boxSize={4} color="gray.500" />
+              <Text fontSize="sm">{t("orderSettings")}</Text>
             </Flex>
           </Link>
         </Stack>

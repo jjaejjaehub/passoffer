@@ -42,6 +42,48 @@ function qoo10ToFulfillment(f: Qoo10ShippingFields): FulfillmentRank {
   return 30;
 }
 
+export interface ShopifyFulfillmentFields {
+  /** Shopify Admin GraphQL OrderDisplayFinancialStatus */
+  displayFinancialStatus?: string | null;
+  /** Shopify Admin GraphQL OrderDisplayFulfillmentStatus */
+  displayFulfillmentStatus?: string | null;
+  trackingNo?: string | null;
+  shippedAt?: string | null;
+  deliveredAt?: string | null;
+  /** order.cancelledAt (true 면 95 처리는 호출자 책임, 여기선 보류) */
+  cancelledAt?: string | null;
+}
+
+/**
+ * Shopify → fulfillmentStatus rank 결정.
+ *
+ * 우선순위(높은 rank 우선):
+ *   deliveredAt 존재                                       → 70 배송완료
+ *   displayFulfillmentStatus = DELIVERED                   → 70
+ *   displayFulfillmentStatus = IN_TRANSIT|OUT_FOR_DELIVERY → 60 배송중
+ *   shippedAt 존재 or status = FULFILLED|PARTIALLY_FULFILLED → 50 출고완료
+ *   trackingNo 존재 (UNFULFILLED 상태에서 송장만 등록)      → 40 운송장출력
+ *   financial = PAID|PARTIALLY_PAID and UNFULFILLED        → 30 출고대기
+ *   financial = PENDING|AUTHORIZED                         → 10 결제완료(대기)
+ *   기타                                                   → 20 신규주문
+ */
+function shopifyToFulfillment(f: ShopifyFulfillmentFields): FulfillmentRank {
+  if (f.deliveredAt) return 70;
+  const fs = (f.displayFulfillmentStatus ?? '').toUpperCase();
+  const pay = (f.displayFinancialStatus ?? '').toUpperCase();
+
+  if (fs === 'DELIVERED') return 70;
+  if (fs === 'IN_TRANSIT' || fs === 'OUT_FOR_DELIVERY') return 60;
+  if (f.shippedAt) return 50;
+  if (fs === 'FULFILLED' || fs === 'PARTIALLY_FULFILLED') return 50;
+  if (f.trackingNo) return 40;
+  if ((pay === 'PAID' || pay === 'PARTIALLY_PAID') && (fs === 'UNFULFILLED' || fs === '')) {
+    return 30;
+  }
+  if (pay === 'PENDING' || pay === 'AUTHORIZED') return 10;
+  return 20;
+}
+
 const RANK_ORDER: FulfillmentRank[] = [10, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90];
 
 function isHigherOrEqual(next: FulfillmentRank, current: FulfillmentRank): boolean {
@@ -97,6 +139,9 @@ export function applyRankGuard(
 export const StatusRuleEngine = {
   qoo10: {
     toFulfillment: qoo10ToFulfillment,
+  },
+  shopify: {
+    toFulfillment: shopifyToFulfillment,
   },
   applyRankGuard,
   RANK_ORDER,

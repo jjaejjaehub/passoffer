@@ -33,6 +33,7 @@ export const ROUTES = {
   externalSellers: '/external-sellers',
   settings: {
     channels: '/settings/channels',
+    orders: '/settings/orders',
   },
   auth: {
     login: '/login',

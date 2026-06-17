@@ -14,6 +14,7 @@ import { OrderFilterPanel } from "@/widgets/order-filter-panel";
 import { OrderTableV2 } from "@/widgets/order-table-v2";
 import { OrdersAuxPanel } from "@/widgets/orders-aux-panel";
 import { OrderDetailModal } from "@/features/order-detail-modal";
+import { OrderSyncButtons } from "@/features/sync-orders";
 import { PageHeader } from "@/shared/ui";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
 import {
@@ -54,6 +55,7 @@ export function AllOrdersPage(): React.JSX.Element {
         title={t("title")}
         description={t("description")}
         mb={2}
+        actions={<OrderSyncButtons />}
       />
 
       <Flex gap={3} align="flex-start" flex={1} minH={0}>
