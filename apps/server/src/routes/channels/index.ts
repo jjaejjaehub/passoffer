@@ -266,10 +266,20 @@ export async function channelRoutes(app: FastifyInstance): Promise<void> {
         const { listedProducts } = await import('../../db/schema');
         const { eq, and } = await import('drizzle-orm');
         const linkedRows = await app.db
-          .select({ channelItemId: listedProducts.channelItemId, id: listedProducts.id, masterProductId: listedProducts.masterProductId })
+          .select({
+            channelItemId: listedProducts.channelItemId,
+            id: listedProducts.id,
+            masterProductId: listedProducts.masterProductId,
+            syncStatus: listedProducts.syncStatus,
+          })
           .from(listedProducts)
           .where(and(eq(listedProducts.channelId, request.params.id)));
-        const linkedMap = new Map(linkedRows.map((r) => [r.channelItemId, { listedProductId: r.id, masterProductId: r.masterProductId }]));
+        const linkedMap = new Map(
+          linkedRows.map((r) => [
+            r.channelItemId,
+            { listedProductId: r.id, masterProductId: r.masterProductId, syncStatus: r.syncStatus },
+          ]),
+        );
 
         const itemsWithLinkStatus = result.items.map((item) => ({
           ...item,
@@ -321,6 +331,7 @@ export async function channelRoutes(app: FastifyInstance): Promise<void> {
           linkStatus: linked ? ('linked' as const) : ('unlinked' as const),
           listedProductId: linked?.id ?? null,
           masterProductId: linked?.masterProductId ?? null,
+          syncStatus: linked?.syncStatus ?? null,
           variantLinks,
         };
       } catch (err: unknown) {

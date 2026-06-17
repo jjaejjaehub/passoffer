@@ -2,6 +2,7 @@
 
 import { Box, Button, Flex, SimpleGrid, Spinner, Stack, Text } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import type { Order } from "@/entities/order";
 import { ClaimStatusBadge, StatusBadge } from "@/entities/order";
@@ -79,6 +80,7 @@ export function OrderQuickDrawer({
   onOpenChange,
   order,
 }: OrderQuickDrawerProps): React.JSX.Element | null {
+  const tChannels = useTranslations('config.channels');
   const qoo10ChannelUuid = useChannelUuid('qoo10');
   const isQoo10Channel = !!order && !!qoo10ChannelUuid && order.channelId === qoo10ChannelUuid;
 
@@ -90,6 +92,12 @@ export function OrderQuickDrawer({
   if (!open || !order) return null;
 
   const channel = CHANNEL_CONFIG[order.channelId];
+  let channelName: string = channel?.name ?? order.channelId;
+  try {
+    channelName = tChannels(`${order.channelId}.name`);
+  } catch {
+    channelName = channel?.name ?? order.channelId;
+  }
 
   // COD 관련 데이터가 있는지 여부
   const hasCodInfo =
@@ -188,7 +196,7 @@ export function OrderQuickDrawer({
                   fontSize="xs"
                   color="gray.700"
                 >
-                  {channel?.name ?? order.channelId}
+                  {channelName}
                 </Box>
                 {detail?.OrderType && (
                   <Box

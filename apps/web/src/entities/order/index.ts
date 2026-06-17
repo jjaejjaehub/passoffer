@@ -1,6 +1,12 @@
 export * from './model/types';
 export * from './model/constants';
 
+export { ordersQueries, useOrders } from './api/ordersQueries';
+export { paymentsQueries, usePayments } from './api/paymentsQueries';
+export { newOrdersQueries, useNewOrders } from './api/newOrdersQueries';
+export { dispatchQueries, useDispatch } from './api/dispatchQueries';
+export { shippingQueries, useShipping } from './api/shippingQueries';
+
 export {
   useQoo10MonthlyDashboard,
   useQoo10Claims,
@@ -96,4 +102,20 @@ export type {
   ShopifyReturnsQueryParams,
   ShopifyReturnsQueryResult,
 } from './api/shopifyReturnQueries';
+
+export {
+  useCollectOrders,
+  useSyncOrders,
+  useQuickCollect,
+} from './api/orderSyncMutations';
+export type {
+  ChannelKey,
+  ChannelOpResult,
+  CollectResult,
+  SyncResult,
+  QuickCollectResult,
+  CollectOrdersInput,
+  SyncOrdersInput,
+  QuickCollectInput,
+} from './api/orderSyncMutations';
 

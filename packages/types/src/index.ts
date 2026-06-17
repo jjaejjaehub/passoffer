@@ -600,3 +600,6 @@ export interface IChannelAdapter {
   updateSellerCode?(channelVariantId: string, newCode: string): Promise<UpdateSellerCodeResult>;
   pushVariantStock?(channelItemId: string, channelVariantId: string, newQty: number): Promise<void>;
 }
+
+// StandardOrder v2 (Canonical 주문 모델) — 별도 파일에 정의
+export * from './standard-order';

@@ -6,12 +6,19 @@ import { jwtPlugin } from './plugins/jwt';
 import { authRoutes } from './routes/auth/index';
 import { channelRoutes } from './routes/channels/index';
 import { orderRoutes } from './routes/orders/index';
+import { paymentsRoutes } from './routes/payments/index';
+import { newOrdersRoutes } from './routes/new-orders/index';
+import { dispatchRoutes } from './routes/dispatch/index';
+import { shippingRoutes } from './routes/shipping/index';
+import { allOrdersRoutes } from './routes/all-orders/index';
 import { productRoutes } from './routes/products/index';
 import { claimRoutes } from './routes/claims/index';
 import { inventoryRoutes } from './routes/inventory/index';
 import { qoo10Routes } from './routes/qoo10/index';
 import { masterProductRoutes } from './routes/master-products/index';
+import { skuRoutes } from './routes/skus/index';
 import { warehouseRoutes } from './routes/warehouses/index';
+import { userSettingsRoutes } from './routes/user-settings/index';
 
 const app = Fastify({ logger: { level: 'info' } });
 
@@ -31,12 +38,19 @@ async function main() {
   await app.register(authRoutes, { prefix: '/api' });
   await app.register(channelRoutes, { prefix: '/api' });
   await app.register(orderRoutes, { prefix: '/api' });
+  await app.register(paymentsRoutes, { prefix: '/api' });
+  await app.register(newOrdersRoutes, { prefix: '/api' });
+  await app.register(dispatchRoutes, { prefix: '/api' });
+  await app.register(shippingRoutes, { prefix: '/api' });
+  await app.register(allOrdersRoutes, { prefix: '/api' });
   await app.register(productRoutes, { prefix: '/api' });
   await app.register(claimRoutes, { prefix: '/api' });
   await app.register(inventoryRoutes, { prefix: '/api' });
   await app.register(qoo10Routes, { prefix: '/api' });
   await app.register(masterProductRoutes, { prefix: '/api' });
+  await app.register(skuRoutes, { prefix: '/api' });
   await app.register(warehouseRoutes, { prefix: '/api' });
+  await app.register(userSettingsRoutes, { prefix: '/api' });
 
   const port = app.config.PORT ?? 4000;
   await app.listen({ port, host: '0.0.0.0' });

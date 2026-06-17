@@ -10,6 +10,7 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 
@@ -37,11 +38,12 @@ type InventoryChannel = "qoo10" | "shopify";
 const DETAIL_VIEWABLE = new Set(["S1", "S2"]);
 
 const QOO10_STATUS_TABS = [
-  { label: "거래가능 (S2)", value: "S2" },
-  { label: "거래대기 (S1)", value: "S1" },
-];
+  { labelKey: "available", value: "S2" },
+  { labelKey: "waiting", value: "S1" },
+] as const;
 
 function Qoo10InventorySection(): React.JSX.Element {
+  const t = useTranslations("pages.inventory");
   const [statusFilter, setStatusFilter] = useState("S2");
   const [page, setPage] = useState("1");
   const [editingItem, setEditingItem] = useState<Product | null>(null);
@@ -181,7 +183,7 @@ function Qoo10InventorySection(): React.JSX.Element {
               bg={isActive ? "gray.100" : "transparent"}
               _hover={{ bg: isActive ? "gray.100" : "gray.50" }}
             >
-              {tab.label}
+              {t(`qoo10StatusTabs.${tab.labelKey}` as "qoo10StatusTabs.available")}
             </Button>
           );
         })}
@@ -198,7 +200,7 @@ function Qoo10InventorySection(): React.JSX.Element {
           mb={4}
         >
           <Text fontSize="sm" color="orange.700">
-            Qoo10 API 키가 없습니다. 채널 설정에서 API 키를 등록해 주세요.
+            {t("noApiKey.qoo10")}
           </Text>
         </Box>
       )}
@@ -236,7 +238,7 @@ function Qoo10InventorySection(): React.JSX.Element {
           textAlign="center"
         >
           <Text fontSize="sm" color="gray.500">
-            상품이 없습니다.
+            {t("empty")}
           </Text>
         </Box>
       ) : null}
@@ -257,7 +259,7 @@ function Qoo10InventorySection(): React.JSX.Element {
               setPage((p) => String(Math.max(1, parseInt(p, 10) - 1)))
             }
           >
-            이전
+            {t("pagination.prev")}
           </Button>
           <Text fontSize="sm" color="gray.600" px={2}>
             {page} / {totalPages || 1}
@@ -270,7 +272,7 @@ function Qoo10InventorySection(): React.JSX.Element {
             disabled={parseInt(page, 10) >= (totalPages || 1)}
             onClick={() => setPage((p) => String(parseInt(p, 10) + 1))}
           >
-            다음
+            {t("pagination.next")}
           </Button>
         </HStack>
       ) : null}
@@ -291,10 +293,10 @@ function Qoo10InventorySection(): React.JSX.Element {
 // ─── Shopify 재고 섹션 ─────────────────────────────────────────
 
 const SHOPIFY_STATUS_TABS = [
-  { id: "all", label: "전체" },
-  { id: "ACTIVE", label: "판매" },
-  { id: "DRAFT", label: "판매중지" },
-  { id: "ARCHIVED", label: "보관됨" },
+  { id: "all" },
+  { id: "ACTIVE" },
+  { id: "DRAFT" },
+  { id: "ARCHIVED" },
 ] as const;
 
 type ShopifyStatusId = (typeof SHOPIFY_STATUS_TABS)[number]["id"];
@@ -305,6 +307,7 @@ interface EditingVariant {
 }
 
 function ShopifyInventorySection(): React.JSX.Element {
+  const t = useTranslations("pages.inventory");
   const [statusFilter, setStatusFilter] = useState<ShopifyStatusId>("all");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -348,8 +351,8 @@ function ShopifyInventorySection(): React.JSX.Element {
     const qty = parseInt(newQty, 10);
     if (Number.isNaN(qty) || qty < 0) {
       appToaster.create({
-        title: "유효하지 않은 수량",
-        description: "0 이상의 정수를 입력해 주세요.",
+        title: t("toasts.invalidQtyTitle"),
+        description: t("toasts.invalidQtyDescription"),
         type: "error",
       });
       return;
@@ -366,15 +369,15 @@ function ShopifyInventorySection(): React.JSX.Element {
         },
       );
       appToaster.create({
-        title: "재고가 업데이트되었습니다",
+        title: t("toasts.updateSuccess"),
         type: "success",
       });
       void queryClient.invalidateQueries({ queryKey: shopifyInventoryQueryRoot });
       setEditing(null);
     } catch {
       appToaster.create({
-        title: "재고 업데이트 실패",
-        description: "잠시 후 다시 시도해 주세요.",
+        title: t("toasts.updateErrorTitle"),
+        description: t("toasts.updateErrorDescription"),
         type: "error",
       });
     } finally {
@@ -393,7 +396,7 @@ function ShopifyInventorySection(): React.JSX.Element {
         py={3}
       >
         <Text fontSize="sm" color="orange.700">
-          Shopify API 키가 없습니다. 채널 설정에서 API 키를 등록해 주세요.
+          {t("noApiKey.shopify")}
         </Text>
       </Box>
     );
@@ -423,7 +426,7 @@ function ShopifyInventorySection(): React.JSX.Element {
                 bg={isActive ? "gray.100" : "transparent"}
                 _hover={{ bg: isActive ? "gray.100" : "gray.50" }}
               >
-                {tab.label}
+                {t(`shopifyStatusTabs.${tab.id}` as "shopifyStatusTabs.all")}
               </Button>
             );
           })}
@@ -443,7 +446,7 @@ function ShopifyInventorySection(): React.JSX.Element {
         >
           <Search size={14} color="var(--chakra-colors-gray-400)" />
           <Input
-            placeholder="상품명 검색"
+            placeholder={t("searchPlaceholder")}
             fontSize="sm"
             border="none"
             outline="none"
@@ -489,7 +492,7 @@ function ShopifyInventorySection(): React.JSX.Element {
             mt={2}
             onClick={() => refetch()}
           >
-            다시 시도
+            {t("pagination.retry")}
           </Button>
         </Box>
       ) : null}
@@ -509,7 +512,7 @@ function ShopifyInventorySection(): React.JSX.Element {
           textAlign="center"
         >
           <Text fontSize="sm" color="gray.500">
-            상품이 없습니다.
+            {t("empty")}
           </Text>
         </Box>
       ) : (
@@ -534,10 +537,10 @@ function ShopifyInventorySection(): React.JSX.Element {
                 setAfterCursor(last || undefined);
               }}
             >
-              이전
+              {t("pagination.prev")}
             </Button>
             <Text fontSize="sm" color="gray.600" px={2}>
-              {cursorStack.length + 1} 페이지
+              {t("pagination.pageLabel", { page: cursorStack.length + 1 })}
             </Text>
             <Button
               type="button"
@@ -552,7 +555,7 @@ function ShopifyInventorySection(): React.JSX.Element {
                 }
               }}
             >
-              다음
+              {t("pagination.next")}
             </Button>
           </HStack>
         </>
@@ -580,7 +583,7 @@ function ShopifyInventorySection(): React.JSX.Element {
             onClick={(e) => e.stopPropagation()}
           >
             <Text fontWeight="semibold" fontSize="md" mb={1}>
-              재고 수정
+              {t("editModal.title")}
             </Text>
             <Text fontSize="sm" color="gray.600" mb={4}>
               {editing.product.title}
@@ -590,14 +593,14 @@ function ShopifyInventorySection(): React.JSX.Element {
             </Text>
 
             <Text fontSize="xs" color="gray.500" mb={1}>
-              현재 재고: {editing.variant.inventoryQuantity}
+              {t("editModal.currentStock", { qty: editing.variant.inventoryQuantity })}
             </Text>
             <Input
               type="number"
               min={0}
               value={newQty}
               onChange={(e) => setNewQty(e.target.value)}
-              placeholder="새 수량 입력"
+              placeholder={t("editModal.placeholder")}
               mb={4}
             />
 
@@ -608,7 +611,7 @@ function ShopifyInventorySection(): React.JSX.Element {
                 onClick={() => setEditing(null)}
                 disabled={isSaving}
               >
-                취소
+                {t("editModal.cancel")}
               </Button>
               <Button
                 size="sm"
@@ -616,7 +619,7 @@ function ShopifyInventorySection(): React.JSX.Element {
                 onClick={handleSaveInventory}
                 loading={isSaving}
               >
-                저장
+                {t("editModal.save")}
               </Button>
             </HStack>
           </Box>
@@ -638,6 +641,7 @@ function ShopifyInventoryTable({
     variant: ShopifyInventoryVariant,
   ) => void;
 }): React.JSX.Element {
+  const t = useTranslations("pages.inventory");
   const allVariants = products.flatMap((p) =>
     p.variants.filter((v) => v.tracked),
   );
@@ -662,7 +666,7 @@ function ShopifyInventoryTable({
               bg="red.100"
               color="red.700"
             >
-              재고 부족 {outOfStockCount}개
+              {t("stockBadges.outOfStock", { count: outOfStockCount })}
             </Box>
           )}
           {lowStockCount > 0 && (
@@ -677,7 +681,7 @@ function ShopifyInventoryTable({
               bg="orange.100"
               color="orange.700"
             >
-              임박 {lowStockCount}개
+              {t("stockBadges.lowStock", { count: lowStockCount })}
             </Box>
           )}
         </HStack>
@@ -706,17 +710,19 @@ function ShopifyInventoryTable({
               boxShadow="inset 0 -1px 0 var(--chakra-colors-gray-100)"
             >
               <Box as="tr">
-                {[
-                  { label: "상품명", width: "240px" },
-                  { label: "변형", width: "160px" },
-                  { label: "SKU", width: "140px" },
-                  { label: "가격", width: "100px" },
-                  { label: "재고", width: "80px" },
-                  { label: "추적", width: "60px" },
-                  { label: "", width: "80px" },
-                ].map((col) => (
+                {(
+                  [
+                    { key: "title", width: "240px" },
+                    { key: "variant", width: "160px" },
+                    { key: "sku", width: "140px" },
+                    { key: "price", width: "100px" },
+                    { key: "stock", width: "80px" },
+                    { key: "tracking", width: "60px" },
+                    { key: null, width: "80px" },
+                  ] as const
+                ).map((col, idx) => (
                   <Box
-                    key={col.label}
+                    key={col.key ?? `empty-${idx}`}
                     as="th"
                     px={4}
                     py={3}
@@ -727,7 +733,7 @@ function ShopifyInventoryTable({
                     minW={col.width}
                     w={col.width}
                   >
-                    {col.label}
+                    {col.key ? t(`table.${col.key}` as "table.title") : ""}
                   </Box>
                 ))}
               </Box>
@@ -833,7 +839,7 @@ function ShopifyInventoryTable({
                         color={variant.tracked ? "green.600" : "gray.400"}
                         fontSize="xs"
                       >
-                        {variant.tracked ? "추적" : "미추적"}
+                        {variant.tracked ? t("table.tracked") : t("table.untracked")}
                       </Box>
                       <Box as="td" px={4} py={3} minW="80px">
                         {variant.tracked && (
@@ -844,7 +850,7 @@ function ShopifyInventoryTable({
                             borderColor="gray.300"
                             onClick={() => onEditClick(product, variant)}
                           >
-                            수정
+                            {t("table.edit")}
                           </Button>
                         )}
                       </Box>
@@ -868,6 +874,7 @@ const CHANNEL_TABS: { id: InventoryChannel; label: string }[] = [
 ];
 
 export function InventoryPage(): React.JSX.Element {
+  const t = useTranslations("pages.inventory");
   const { activeChannel } = useActiveChannel();
 
   const defaultChannel: InventoryChannel =
@@ -881,10 +888,10 @@ export function InventoryPage(): React.JSX.Element {
       {/* Header */}
       <Box mb={4}>
         <Text fontSize="xl" fontWeight="semibold" color="gray.900">
-          재고 관리
+          {t("title")}
         </Text>
         <Text fontSize="sm" color="gray.500" mt={0.5}>
-          채널별 상품 재고를 조회하고 수정합니다.
+          {t("description")}
         </Text>
       </Box>
 

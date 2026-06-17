@@ -2,6 +2,7 @@
 
 import type React from 'react';
 import { HStack, Button } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 import type { ChannelId } from '@/shared/config';
 import { CHANNEL_NAMES, LIVE_CHANNELS } from '@/shared/config';
 
@@ -14,6 +15,7 @@ export function ChannelFilterBar({
   value,
   onChange,
 }: ChannelFilterBarProps): React.JSX.Element {
+  const tChannels = useTranslations('config.channels');
   const handleToggle = (channelId: ChannelId): void => {
     const isSelected = value.includes(channelId);
     if (isSelected) {
@@ -27,6 +29,12 @@ export function ChannelFilterBar({
     <HStack gap={2}>
       {LIVE_CHANNELS.map((channel) => {
         const isSelected = value.includes(channel.id);
+        let channelName: string = CHANNEL_NAMES[channel.id];
+        try {
+          channelName = tChannels(`${channel.id}.name`);
+        } catch {
+          channelName = CHANNEL_NAMES[channel.id];
+        }
         return (
           <Button
             key={channel.id}
@@ -40,7 +48,7 @@ export function ChannelFilterBar({
             }}
             onClick={() => handleToggle(channel.id)}
           >
-            {CHANNEL_NAMES[channel.id]}
+            {channelName}
           </Button>
         );
       })}

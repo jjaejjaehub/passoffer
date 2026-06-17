@@ -906,33 +906,86 @@ export class Qoo10Adapter implements IChannelAdapter {
 
     console.log('[UpdateGoods] raw.AvailableDateType:', JSON.stringify(raw.AvailableDateType), 'raw.AvailableDateValue:', JSON.stringify(raw.AvailableDateValue));
 
+    const d = data as Record<string, unknown>;
+    const pick = (key: string): string | undefined => {
+      const v = d[key];
+      return v === undefined || v === null || v === '' ? undefined : String(v);
+    };
+
+    // qoo10.* 우선 → 공통 필드 폴백 (registerProduct와 동일 패턴)
+    const images = Array.isArray(d.images) ? (d.images as Array<{ url: string }>) : [];
+    const tags = Array.isArray(d.tags) ? (d.tags as string[]) : [];
+    const weightKg = d.Weight
+      ? pick('Weight')
+      : d.weightG
+        ? String(Math.round((Number(d.weightG) / 1000) * 100) / 100)
+        : undefined;
+
+    const overrides: Record<string, string | undefined> = {
+      ItemTitle: pick('ItemTitle') ?? pick('title'),
+      ItemDescription: pick('ItemDescription') ?? pick('descriptionHtml'),
+      StandardImage: pick('StandardImage') ?? images[0]?.url,
+      SellerCode: pick('SellerCode') ?? pick('sku'),
+      ItemPrice: pick('ItemPrice') ?? pick('price'),
+      RetailPrice: pick('RetailPrice') ?? pick('ItemPrice') ?? pick('price'),
+      ItemQty: pick('ItemQty') ?? (data.qty !== undefined ? String(data.qty) : pick('inventoryQuantity')),
+      Weight: weightKg,
+      Keyword: pick('Keyword') ?? (tags.length > 0 ? tags.slice(0, 10).join(',') : undefined),
+      Material: pick('Material') ?? pick('material'),
+      ProductionPlace: pick('ProductionPlace') ?? pick('countryOfOrigin'),
+      ModelNm: pick('ModelNM') ?? pick('ModelNm') ?? pick('vendor'),
+      BrandNo: pick('BrandNo'),
+      ShippingNo: pick('ShippingNo'),
+      TaxRate: pick('TaxRate'),
+      ExpireDate: pick('ExpireDate'),
+      VideoURL: pick('VideoURL'),
+      AvailableDateType: pick('AvailableDateType'),
+      AvailableDateValue: pick('AvailableDateValue'),
+      ProductionPlaceType: pick('ProductionPlaceType'),
+      AdultYN: pick('AdultYN'),
+      PromotionName: pick('PromotionName'),
+      ContactInfo: pick('ContactInfo'),
+      DesiredShippingDate: pick('DesiredShippingDate'),
+      ManufactureDate: pick('ManufactureDate') ?? pick('ManufacturerDate'),
+      IndustrialCodeType: pick('IndustrialCodeType'),
+      IndustrialCode: pick('IndustrialCode'),
+      OptionShippingNo1: pick('OptionShippingNo1'),
+      OptionShippingNo2: pick('OptionShippingNo2'),
+    };
+
     // 2) UpdateGoods 호출 (현재 값 기반 + 변경분 덮어쓰기)
     const updateForm = new URLSearchParams({ returnType: 'json' });
     updateForm.set('ItemCode', itemCode);
     updateForm.set('SecondSubCat', raw.SecondSubCatCd);
-    updateForm.set('ItemTitle', (data.title as string | undefined) ?? raw.ItemTitle);
-    updateForm.set('ProductionPlaceType', raw.ProductionPlaceType);
-    updateForm.set('AdultYN', raw.AdultYN);
-    const availableDateType = raw.AvailableDateType ?? '0';
-    updateForm.set('AvailableDateType', availableDateType);
-    const availableDateValue = raw.AvailableDateValue ?? '1';
-    updateForm.set('AvailableDateValue', availableDateValue);
-    if (data.qty !== undefined) updateForm.set('ItemQty', String(data.qty));
-    if (raw.SellerCode) updateForm.set('SellerCode', raw.SellerCode);
-    if (raw.RetailPrice) updateForm.set('RetailPrice', raw.RetailPrice);
-    if (raw.ShippingNo) updateForm.set('ShippingNo', raw.ShippingNo);
-    if (raw.Keyword) updateForm.set('Keyword', raw.Keyword);
-    if (raw.ModelNM) updateForm.set('ModelNm', raw.ModelNM);
-    if (raw.Material) updateForm.set('Material', raw.Material);
-    if (raw.ProductionPlace) updateForm.set('ProductionPlace', raw.ProductionPlace);
-    if (raw.DesiredShippingDate) updateForm.set('DesiredShippingDate', raw.DesiredShippingDate);
-    if (raw.BrandNo) updateForm.set('BrandNo', raw.BrandNo);
-    if (raw.ManufacturerDate) updateForm.set('ManufactureDate', raw.ManufacturerDate);
-    if (raw.IndustrialCodeType) updateForm.set('IndustrialCodeType', raw.IndustrialCodeType);
-    if (raw.IndustrialCode) updateForm.set('IndustrialCode', raw.IndustrialCode);
-    if (raw.ContactInfo) updateForm.set('ContactInfo', raw.ContactInfo);
-    if (raw.OptionShippingNo1) updateForm.set('OptionShippingNo1', raw.OptionShippingNo1);
-    if (raw.OptionShippingNo2) updateForm.set('OptionShippingNo2', raw.OptionShippingNo2);
+    updateForm.set('ItemTitle', overrides.ItemTitle ?? raw.ItemTitle);
+    updateForm.set('ProductionPlaceType', overrides.ProductionPlaceType ?? raw.ProductionPlaceType);
+    updateForm.set('AdultYN', overrides.AdultYN ?? raw.AdultYN);
+    updateForm.set('AvailableDateType', overrides.AvailableDateType ?? raw.AvailableDateType ?? '0');
+    updateForm.set('AvailableDateValue', overrides.AvailableDateValue ?? raw.AvailableDateValue ?? '1');
+    if (overrides.ItemQty !== undefined) updateForm.set('ItemQty', overrides.ItemQty);
+    if (overrides.ItemPrice !== undefined) updateForm.set('ItemPrice', overrides.ItemPrice);
+    if (overrides.SellerCode ?? raw.SellerCode) updateForm.set('SellerCode', overrides.SellerCode ?? raw.SellerCode);
+    if (overrides.StandardImage) updateForm.set('StandardImage', overrides.StandardImage);
+    if (overrides.ItemDescription) updateForm.set('ItemDescription', overrides.ItemDescription);
+    if (overrides.RetailPrice ?? raw.RetailPrice) updateForm.set('RetailPrice', overrides.RetailPrice ?? raw.RetailPrice);
+    if (overrides.ShippingNo ?? raw.ShippingNo) updateForm.set('ShippingNo', overrides.ShippingNo ?? raw.ShippingNo);
+    if (overrides.Keyword ?? raw.Keyword) updateForm.set('Keyword', overrides.Keyword ?? raw.Keyword);
+    if (overrides.ModelNm ?? raw.ModelNM) updateForm.set('ModelNm', overrides.ModelNm ?? raw.ModelNM);
+    if (overrides.Material ?? raw.Material) updateForm.set('Material', overrides.Material ?? raw.Material);
+    if (overrides.ProductionPlace ?? raw.ProductionPlace) updateForm.set('ProductionPlace', overrides.ProductionPlace ?? raw.ProductionPlace);
+    if (overrides.Weight) updateForm.set('Weight', overrides.Weight);
+    if (overrides.DesiredShippingDate ?? raw.DesiredShippingDate) updateForm.set('DesiredShippingDate', overrides.DesiredShippingDate ?? raw.DesiredShippingDate);
+    if (overrides.BrandNo ?? raw.BrandNo) updateForm.set('BrandNo', overrides.BrandNo ?? raw.BrandNo);
+    if (overrides.ManufactureDate ?? raw.ManufacturerDate) updateForm.set('ManufactureDate', overrides.ManufactureDate ?? raw.ManufacturerDate);
+    if (overrides.IndustrialCodeType ?? raw.IndustrialCodeType) updateForm.set('IndustrialCodeType', overrides.IndustrialCodeType ?? raw.IndustrialCodeType);
+    if (overrides.IndustrialCode ?? raw.IndustrialCode) updateForm.set('IndustrialCode', overrides.IndustrialCode ?? raw.IndustrialCode);
+    if (overrides.ContactInfo ?? raw.ContactInfo) updateForm.set('ContactInfo', overrides.ContactInfo ?? raw.ContactInfo);
+    if (overrides.TaxRate) updateForm.set('TaxRate', overrides.TaxRate);
+    if (overrides.ExpireDate) updateForm.set('ExpireDate', overrides.ExpireDate);
+    if (overrides.VideoURL) updateForm.set('VideoURL', overrides.VideoURL);
+    if (overrides.PromotionName) updateForm.set('PromotionName', overrides.PromotionName);
+    if (raw.OptionShippingNo1) updateForm.set('OptionShippingNo1', overrides.OptionShippingNo1 ?? raw.OptionShippingNo1);
+    if (raw.OptionShippingNo2) updateForm.set('OptionShippingNo2', overrides.OptionShippingNo2 ?? raw.OptionShippingNo2);
 
     const updateRes = await fetch(`${BASE_URL}/ItemsBasic.UpdateGoods`, {
       method: 'POST',
@@ -1234,7 +1287,27 @@ export class Qoo10Adapter implements IChannelAdapter {
   }
 
   async getChannelProduct(channelItemId: string): Promise<ChannelProduct> {
-    const detail = await this.getProductDetail(channelItemId);
+    const url = 'https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ItemsLookup.qapi/GetItemDetailInfo';
+    const form = new URLSearchParams({ ItemCode: channelItemId, returnType: 'json' });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        GiosisCertificationKey: this.certKey,
+        QAPIVersion: '1.2',
+        Accept: 'application/json',
+      },
+      body: form.toString(),
+    });
+    if (!res.ok) throw new Error(`Qoo10 HTTP error: ${res.status}`);
+    const data = (await res.json()) as Qoo10ApiResponse<Qoo10ItemDetailRaw[]>;
+    if (data.ResultCode !== 0) {
+      throw new Error(`Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`);
+    }
+    const rawDetail = data.ResultObject[0];
+    if (!rawDetail) throw new Error(`Product not found: ${channelItemId}`);
+    const detail = adaptItemDetail(rawDetail, this.channelId);
+
     let variants = await this.fetchItemOptions(channelItemId);
     if (variants.length === 0) {
       variants = [{ channelVariantId: channelItemId, optionCode: detail.sellerCode || undefined }];
@@ -1246,7 +1319,7 @@ export class Qoo10Adapter implements IChannelAdapter {
       price: String(detail.price) || undefined,
       images: detail.imageUrl ? [detail.imageUrl] : [],
       variants,
-      raw: detail,
+      raw: rawDetail,
     };
   }
 

@@ -1,8 +1,67 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { ChannelService } from '../../services/ChannelService';
+import { OrderService } from '../../services/OrderService';
 import { orders, orderItems, masterProductVariants, masterProducts } from '../../db/schema';
+
+// fulfillment rank → 의미 키 매핑 (counts 응답용)
+const RANK_TO_SEMANTIC: Record<number, string> = {
+  10: 'paid',
+  20: 'new',
+  25: 'hold_order',
+  30: 'ready',
+  35: 'hold_dispatch',
+  40: 'label_printed',
+  50: 'shipped',
+  60: 'in_transit',
+  70: 'delivered',
+  80: 'settled',
+  90: 'completed',
+};
+const ALL_RANKS = [10, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90] as const;
+
+const DATE_FIELDS = {
+  orderedAt: orders.orderedAt,
+  paidAt: orders.paidAt,
+  shippedAt: orders.shippedAt,
+} as const;
+
+// drizzle column map for sorting
+const SORT_COLUMNS = {
+  orderedAt: orders.orderedAt,
+  paidAt: orders.paidAt,
+  shippedAt: orders.shippedAt,
+  fulfillmentStatus: orders.fulfillmentStatus,
+  total: orders.total,
+  channelOrderId: orders.channelOrderId,
+  createdAt: orders.createdAt,
+  updatedAt: orders.updatedAt,
+} as const;
+
+const listOrdersQuery = z.object({
+  status: z
+    .string()
+    .optional()
+    .transform((v) =>
+      v
+        ? v
+            .split(',')
+            .map((s) => Number.parseInt(s.trim(), 10))
+            .filter((n) => Number.isFinite(n))
+        : undefined,
+    ),
+  dateField: z.enum(['orderedAt', 'paidAt', 'shippedAt']).default('orderedAt'),
+  dateFrom: z.string().datetime().optional(),
+  dateTo: z.string().datetime().optional(),
+  channelId: z.string().uuid().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(500).default(100),
+  sortBy: z
+    .enum(['orderedAt', 'paidAt', 'shippedAt', 'fulfillmentStatus', 'total', 'channelOrderId', 'createdAt', 'updatedAt'])
+    .default('orderedAt'),
+  sortDir: z.enum(['asc', 'desc']).default('desc'),
+});
 
 const cancelBody = z.object({
   reason: z.string().optional(),
@@ -29,14 +88,6 @@ const orderNoteBody = z.object({
   note: z.string(),
 });
 
-const ordersQuery = z.object({
-  channelId: z.string().uuid(),
-  startDate: z.string().regex(/^\d{8}$/),
-  endDate: z.string().regex(/^\d{8}$/),
-  status: z.string().optional(),
-  searchCondition: z.string().optional(),
-});
-
 const shipmentBody = z.object({
   carrierId: z.string().min(1),
   trackingNumber: z.string().min(1),
@@ -49,90 +100,143 @@ const shipDateBody = z.object({
   shipDate: z.string().nullable(),
 });
 
+const collectOrdersBody = z.object({
+  channelIds: z.array(z.string().uuid()).min(1),
+  sinceDate: z.string().datetime(),
+  untilDate: z.string().datetime().optional(),
+});
+
+const syncOrdersBody = z.object({
+  channelIds: z.array(z.string().uuid()).min(1),
+  sinceDate: z.string().datetime(),
+  untilDate: z.string().datetime().optional(),
+});
+
+const quickCollectBody = z.object({
+  channelIds: z.array(z.string().uuid()).optional(),
+});
+
 export async function orderRoutes(app: FastifyInstance): Promise<void> {
-  // GET /api/orders
+  // GET /api/orders — A안: { items, total, counts(전체 분포) }
+  // counts 는 status 필터와 무관하게 항상 dateField/channelId 조건만 적용된 전체 분포를 반환.
   app.get('/orders', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = ordersQuery.safeParse(request.query);
+    const parsed = listOrdersQuery.safeParse(request.query);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'INVALID_QUERY', details: parsed.error.flatten() });
     }
 
-    const svc = new ChannelService(app, request.user.userId);
-    const adapter = await svc.getAdapter(parsed.data.channelId);
-    if (!adapter.getOrders) {
-      return reply.status(501).send({ error: 'NOT_SUPPORTED', message: '이 채널은 주문 조회를 지원하지 않습니다.' });
-    }
-    const result = await adapter.getOrders({
-      startDate: parsed.data.startDate,
-      endDate: parsed.data.endDate,
-      status: parsed.data.status,
-      searchCondition: parsed.data.searchCondition,
-    });
+    const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir } = parsed.data;
+    const userId = request.user.userId;
 
-    // 채널 어댑터에서 받은 주문을 DB에 동기화 — ship-date 저장 등 후속 작업이 의존
-    // 동기화 실패는 조회 응답을 막지 않는다 (best-effort)
-    try {
-      if (Array.isArray(result) && result.length > 0) {
-        const userId = request.user.userId;
-        const channelId = parsed.data.channelId;
-        const channelOrderIds = result.map((o) => o.channelOrderId).filter(Boolean);
-        const existing = channelOrderIds.length
-          ? await app.db
-              .select({ channelOrderId: orders.channelOrderId })
-              .from(orders)
-              .where(and(eq(orders.userId, userId), inArray(orders.channelOrderId, channelOrderIds)))
-          : [];
-        const existingSet = new Set(existing.map((r) => r.channelOrderId));
-        const newOrders = result.filter((o) => o.channelOrderId && !existingSet.has(o.channelOrderId));
-        if (newOrders.length > 0) {
-          const toInsert = newOrders.map((o) => ({
-            userId,
-            channelId,
-            channelOrderId: o.channelOrderId,
-            status: 'PENDING' as const,
-            orderedAt: o.orderedAt ? new Date(o.orderedAt) : new Date(),
-            buyerName: o.buyer?.name ?? null,
-            buyerPhone: o.buyer?.tel ?? o.buyer?.mobile ?? null,
-            buyerEmail: o.buyer?.email ?? null,
-            receiver: o.shipping?.receiver ?? null,
-            shippingAddress: o.shipping?.shippingAddress ?? null,
-            zipCode: o.shipping?.zipCode ?? null,
-            currency: o.payment?.currency ?? 'JPY',
-            totalAmount: o.payment?.totalAmount != null ? String(o.payment.totalAmount) : null,
-            carrierId: o.carrierId ?? null,
-            trackingNumber: o.trackingNumber ?? null,
-            shipDate: o.shipDate ? new Date(o.shipDate) : null,
-            rawData: o as unknown as Record<string, unknown>,
-          }));
-          const inserted = await app.db
-            .insert(orders)
-            .values(toInsert)
-            .returning({ id: orders.id, channelOrderId: orders.channelOrderId });
-          const idMap = new Map(inserted.map((r) => [r.channelOrderId, r.id]));
-          const itemRows = newOrders.flatMap((o) => {
-            const orderId = idMap.get(o.channelOrderId);
-            if (!orderId || !o.items?.length) return [];
-            return o.items.map((it) => ({
-              orderId,
-              productName: it.productName,
-              option: it.option ?? null,
-              sku: it.sku ?? null,
-              quantity: it.quantity,
-              unitPrice: it.unitPrice != null ? String(it.unitPrice) : null,
-              totalPrice: it.totalPrice != null ? String(it.totalPrice) : null,
-            }));
-          });
-          if (itemRows.length > 0) {
-            await app.db.insert(orderItems).values(itemRows);
-          }
-        }
+    // status 필터를 제외한 공통 조건 — counts/items 양쪽에서 공유
+    const baseConds = [eq(orders.userId, userId)];
+    if (channelId) baseConds.push(eq(orders.channelId, channelId));
+    const dateCol = DATE_FIELDS[dateField];
+    if (dateFrom) baseConds.push(gte(dateCol, new Date(dateFrom)));
+    if (dateTo) baseConds.push(lte(dateCol, new Date(dateTo)));
+
+    const itemsConds = [...baseConds];
+    if (status && status.length > 0) {
+      itemsConds.push(inArray(orders.fulfillmentStatus, status));
+    }
+
+    const orderByCol = SORT_COLUMNS[sortBy];
+    const orderBy = sortDir === 'asc' ? asc(orderByCol) : desc(orderByCol);
+
+    const [items, totalRow, rankRows, holdRows, claimRow, allRow] = await Promise.all([
+      app.db
+        .select()
+        .from(orders)
+        .where(and(...itemsConds))
+        .orderBy(orderBy)
+        .limit(pageSize)
+        .offset((page - 1) * pageSize),
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...itemsConds)),
+      app.db
+        .select({
+          rank: orders.fulfillmentStatus,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(and(...baseConds))
+        .groupBy(orders.fulfillmentStatus),
+      app.db
+        .select({
+          holdStatus: orders.holdStatus,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(and(...baseConds, isNotNull(orders.holdStatus)))
+        .groupBy(orders.holdStatus),
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...baseConds, isNotNull(orders.claimStatus))),
+      app.db
+        .select({ n: sql<number>`count(*)::int` })
+        .from(orders)
+        .where(and(...baseConds)),
+    ]);
+
+    const counts: Record<string, number> = { all: allRow[0]?.n ?? 0 };
+    for (const r of ALL_RANKS) counts[String(r)] = 0;
+    for (const row of rankRows) {
+      const key = String(row.rank);
+      counts[key] = row.n;
+      const semantic = RANK_TO_SEMANTIC[row.rank];
+      if (semantic && semantic !== 'hold_order' && semantic !== 'hold_dispatch') {
+        counts[semantic] = (counts[semantic] ?? 0) + row.n;
       }
-    } catch (err) {
-      app.log.warn({ err }, 'orders DB sync skipped');
     }
+    // 의미 키 0 초기화 (rankRows 가 비어도 응답 키 보장)
+    for (const sem of Object.values(RANK_TO_SEMANTIC)) {
+      if (counts[sem] === undefined) counts[sem] = 0;
+    }
+    counts.hold_order = 0;
+    counts.hold_dispatch = 0;
+    for (const row of holdRows) {
+      if (row.holdStatus === 'order_hold') counts.hold_order = row.n;
+      else if (row.holdStatus === 'dispatch_hold') counts.hold_dispatch = row.n;
+    }
+    counts.claim_any = claimRow[0]?.n ?? 0;
 
-    return result;
+    return {
+      items,
+      total: totalRow[0]?.n ?? 0,
+      counts,
+    };
   });
+
+  // GET /api/orders/channel/:channelId — 외부 채널 어댑터를 거친 라이브 조회 (옛 GET /orders 자리)
+  app.get<{ Params: { channelId: string } }>(
+    '/orders/channel/:channelId',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const query = z
+        .object({
+          startDate: z.string().regex(/^\d{8}$/),
+          endDate: z.string().regex(/^\d{8}$/),
+          status: z.string().optional(),
+          searchCondition: z.string().optional(),
+        })
+        .safeParse(request.query);
+      if (!query.success) {
+        return reply.status(400).send({ error: 'INVALID_QUERY', details: query.error.flatten() });
+      }
+      const svc = new ChannelService(app, request.user.userId);
+      const adapter = await svc.getAdapter(request.params.channelId);
+      if (!adapter.getOrders) {
+        return reply
+          .status(501)
+          .send({ error: 'NOT_SUPPORTED', message: '이 채널은 주문 조회를 지원하지 않습니다.' });
+      }
+      const result = await adapter.getOrders(query.data);
+      return result;
+    },
+  );
 
   // GET /api/orders/:channelId/:orderId
   app.get<{ Params: { channelId: string; orderId: string } }>(
@@ -183,7 +287,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       await app.db
         .update(orders)
         .set({
-          shipDate: shipDateValue,
+          shippingDueDate: shipDateValue,
           updatedAt: new Date(),
         })
         .where(and(eq(orders.channelOrderId, channelOrderId), eq(orders.userId, userId)));
@@ -212,7 +316,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       const rows = await app.db
         .select({
           channelOrderId: orders.channelOrderId,
-          shipDate: orders.shipDate,
+          shipDate: orders.shippingDueDate,
         })
         .from(orders)
         .where(and(inArray(orders.channelOrderId, ids), eq(orders.userId, userId)));
@@ -270,16 +374,16 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
           await app.db
             .update(orders)
             .set({
-              status: 'SHIPPED',
-              carrierId: parsed.data.carrierId,
-              trackingNumber: parsed.data.trackingNumber,
-              shipDate: shipDateValue,
+              fulfillmentStatus: 50,
+              trackingCarrier: parsed.data.carrierId,
+              trackingNo: parsed.data.trackingNumber,
+              shippedAt: shipDateValue,
               updatedAt: new Date(),
             })
             .where(eq(orders.id, localOrderId));
 
           const items = await app.db
-            .select({ sku: orderItems.sku, quantity: orderItems.quantity })
+            .select({ sku: orderItems.skuCode, quantity: orderItems.orderQty })
             .from(orderItems)
             .where(eq(orderItems.orderId, localOrderId));
 
@@ -340,7 +444,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       });
       await app.db
         .update(orders)
-        .set({ status: 'CANCELLED' })
+        .set({ claimStatus: 'cancel_done', claimType: 'cancel' })
         .where(
           and(
             eq(orders.userId, request.user.userId),
@@ -446,6 +550,70 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       return { ok: true };
     },
   );
+
+  // POST /api/orders/collect — 채널 다중 수집 (DB upsert + SKU 자동매칭)
+  app.post('/orders/collect', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = collectOrdersBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.collectOrders({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+        sinceDate: parsed.data.sinceDate,
+        untilDate: parsed.data.untilDate,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '주문 수집 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'COLLECT_FAILED', message });
+    }
+  });
+
+  // POST /api/orders/sync — 채널 다중 동기화 (rank 단조증가 가드)
+  app.post('/orders/sync', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = syncOrdersBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.syncOrders({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+        sinceDate: parsed.data.sinceDate,
+        untilDate: parsed.data.untilDate,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '주문 동기화 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'SYNC_FAILED', message });
+    }
+  });
+
+  // POST /api/orders/quick-collect — 전역 퀵수집: user_settings.lookbackDays 기반 수집+동기화 일괄
+  app.post('/orders/quick-collect', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = quickCollectBody.safeParse(request.body ?? {});
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.quickCollect({
+        userId: request.user.userId,
+        channelIds: parsed.data.channelIds,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '퀵수집 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'QUICK_COLLECT_FAILED', message });
+    }
+  });
 
   // PATCH /api/orders/:channelId/:orderId/note
   app.patch<{ Params: { channelId: string; orderId: string } }>(

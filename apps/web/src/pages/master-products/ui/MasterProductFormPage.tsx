@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { brandQueries } from "@/entities/brand";
 import { shippingTemplateQueries } from "@/entities/shipping-template";
@@ -35,6 +36,7 @@ import {
   usePullSalesFromChannel,
 } from "@/entities/master-product";
 import type { OptionAxisState } from "@/entities/product";
+import { SkuPickerCell } from "@/entities/sku";
 import { ListToChannelModal } from "@/features/list-to-channel";
 import { SyncConfirmModal } from "@/features/sync-listed-products";
 import { OptionAxisForm } from "@/features/product-edit";
@@ -66,13 +68,18 @@ interface VariantOptionCell {
   value: string;
 }
 
+interface DraftAttachedSku {
+  skuId: string;
+  code: string;
+  qty: number;
+}
+
 interface MasterVariantRow {
   /** 테이블 표시용 임시 key (저장 전) */
   _key: string;
-  sku: string;
   options: VariantOptionCell[];
   price: string;
-  stock: string;
+  attachedSkus: DraftAttachedSku[];
 }
 
 interface Props {
@@ -102,10 +109,9 @@ function cartesian(axes: OptionAxisState[]): MasterVariantRow[] {
   }
   return combos.map((options) => ({
     _key: genKey(),
-    sku: "",
     options,
     price: "",
-    stock: "0",
+    attachedSkus: [],
   }));
 }
 
@@ -121,20 +127,22 @@ function checkPlatformReadiness(
   platformValues: Record<string, string>,
 ): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
+  const platformDescriptionKey =
+    def.key === "QOO10_JP" ? "qoo10.ItemDescription" :
+    def.key === "SHOPIFY" ? "shopify.descriptionHtml" : null;
   for (const commonKey of def.requiredCommonFields) {
     const val = commonValues[commonKey] ?? "";
     if (commonKey === "images") {
-      if (!val) missing.push("이미지");
+      if (!val) missing.push("images");
     } else if (!val.trim()) {
-      const labelMap: Record<string, string> = {
-        title: "상품명",
-        weightG: "무게(g)",
-        descriptionHtml: "상품 설명",
-        brand: "브랜드",
-        hsCode: "HS 코드",
-        countryOfOrigin: "원산지",
-      };
-      missing.push(labelMap[commonKey] ?? commonKey);
+      if (
+        commonKey === "descriptionHtml" &&
+        platformDescriptionKey &&
+        (platformValues[platformDescriptionKey] ?? "").trim()
+      ) {
+        continue;
+      }
+      missing.push(commonKey);
     }
   }
   for (const field of def.fields) {
@@ -154,6 +162,8 @@ function checkPlatformReadiness(
 // ── 컴포넌트 ──────────────────────────────────────────────────────
 
 export function MasterProductFormPage({ id }: Props): React.JSX.Element {
+  const t = useTranslations("pages.masterProductForm");
+  const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEdit = !!id;
@@ -202,26 +212,23 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
   const draftApplied = useRef(false);
 
   // ── 단일 상품 SKU/재고 (신규 등록, 옵션 없음) ─────────────────────
-  const [singleSku, setSingleSku] = useState("");
+  const [singleAttachedSkus, setSingleAttachedSkus] = useState<DraftAttachedSku[]>([]);
   const [singlePrice, setSinglePrice] = useState("");
-  const [singleStock, setSingleStock] = useState("0");
 
   // ── 편집 모드 변형 ────────────────────────────────────────────────
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
   const [editingVariant, setEditingVariant] = useState<{
-    sku: string;
     /** groupName -> value */
     optionValues: Record<string, string>;
     price: string;
-    stock: string;
-  }>({ sku: "", optionValues: {}, price: "", stock: "" });
+    attachedSkus: DraftAttachedSku[];
+  }>({ optionValues: {}, price: "", attachedSkus: [] });
 
   // 단일 변형 추가 폼 (편집 모드)
-  const [newVariantSku, setNewVariantSku] = useState("");
   /** groupName -> value */
   const [newVariantOptionValues, setNewVariantOptionValues] = useState<Record<string, string>>({});
   const [newVariantPrice, setNewVariantPrice] = useState("");
-  const [newVariantStock, setNewVariantStock] = useState("");
+  const [newVariantAttachedSkus, setNewVariantAttachedSkus] = useState<DraftAttachedSku[]>([]);
 
   // ── Qoo10 브랜드 autocomplete ────────────────────────────────────
   const [brandKeyword, setBrandKeyword] = useState("");
@@ -291,8 +298,15 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       qoo10: qoo10Connected,
       shopify: shopifyConnected,
     };
-    return PLATFORM_DEFS.filter((def) => def.apiAvailable && map[def.channelId]);
-  }, [qoo10Connected, shopifyConnected]);
+    const apiAvailable = PLATFORM_DEFS.filter(
+      (def) => def.apiAvailable && map[def.channelId],
+    );
+    if (!isEdit) return apiAvailable;
+    const linkedKeys = new Set(
+      (detail?.listedProducts ?? []).map((lp) => lp.channelType),
+    );
+    return apiAvailable.filter((def) => linkedKeys.has(def.key));
+  }, [qoo10Connected, shopifyConnected, isEdit, detail?.listedProducts]);
 
   const [listModalOpen, setListModalOpen] = useState(false);
   const [syncModalOpen, setSyncModalOpen] = useState(false);
@@ -303,26 +317,38 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
     if (!detail) return;
     setCode(detail.code);
     setTitle(detail.title);
-    const b = detail.brand ?? "";
+
+    const attrs = detail.attributes as Record<string, unknown>;
+    const common = (attrs?.common as Record<string, unknown> | undefined) ?? {};
+    const commonStr = (k: string) => (typeof common[k] === "string" ? (common[k] as string) : "");
+    const commonNum = (k: string) => (typeof common[k] === "number" ? (common[k] as number) : undefined);
+    const commonArr = <T,>(k: string) => (Array.isArray(common[k]) ? (common[k] as T[]) : []);
+
+    const b = commonStr("brand");
     if (!b) { setNoBrand(true); setBrand(""); }
     else { setNoBrand(false); setBrand(b); }
-    setHsCode(detail.hsCode ?? "");
+    setHsCode(commonStr("hsCode"));
 
-    const origin = detail.countryOfOrigin ?? "";
+    const origin = commonStr("countryOfOrigin");
     setCountryOfOrigin(origin);
     if (!origin || origin === "대한민국" || origin === "국내") setOriginType("domestic");
     else if (origin === "기타" || origin === "기타(ETC)") setOriginType("other");
     else setOriginType("overseas");
 
-    setMaterial(detail.material ?? "");
-    setWeightG(detail.weightG != null ? String(detail.weightG) : "");
-    setRetailPrice(detail.retailPrice ?? "");
-    setTagsInput(detail.tags.join(", "));
-    setDescriptionHtml(detail.descriptionHtml ?? "");
-    setImages(detail.images.map((img) => ({ url: img.url, altText: img.altText ?? "" })));
+    setMaterial(commonStr("material"));
+    const w = commonNum("weightG");
+    setWeightG(w != null ? String(w) : "");
+    setRetailPrice(commonStr("retailPrice"));
+    setTagsInput(commonArr<string>("tags").join(", "));
+    setDescriptionHtml(commonStr("descriptionHtml"));
+    setImages(
+      commonArr<{ url: string; altText?: string }>("images").map((img) => ({
+        url: img.url,
+        altText: img.altText ?? "",
+      })),
+    );
 
     const restored: Record<string, string> = {};
-    const attrs = detail.attributes as Record<string, unknown>;
     for (const [ns, obj] of Object.entries(attrs)) {
       if (typeof obj === "object" && obj !== null) {
         for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
@@ -380,16 +406,28 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
   );
 
   // ── Qoo10 ItemQty / ItemPrice 자동 동기화 ────────────────────────
+  // 변형별 가용재고 = min(floor(sku.stock / bom.qty)) over attachedSkus
   const totalVariantStock = useMemo(() => {
     if (isEdit) {
       const vs = detail?.variants ?? [];
-      return vs.reduce((sum, v) => sum + (Number(v.stock) || 0), 0);
+      return vs.reduce((sum, v) => {
+        const attached = v.attachedSkus ?? [];
+        if (attached.length === 0) return sum;
+        const avail = Math.min(
+          ...attached.map((s) => Math.floor((Number(s.stock) || 0) / Math.max(1, Number(s.qty) || 1))),
+        );
+        return sum + Math.max(0, avail);
+      }, 0);
     }
     if (draftVariants.length > 0) {
-      return draftVariants.reduce((sum, r) => sum + (Number(r.stock) || 0), 0);
+      return draftVariants.reduce((sum, r) => {
+        // 신규 등록 시 SKU 재고 정보를 즉시 알기 어려우므로 0 처리 (저장 후 재조회 시 반영)
+        if (r.attachedSkus.length === 0) return sum;
+        return sum;
+      }, 0);
     }
-    return Number(singleStock) || 0;
-  }, [isEdit, detail?.variants, draftVariants, singleStock]);
+    return 0;
+  }, [isEdit, detail?.variants, draftVariants]);
 
   const firstVariantPrice = useMemo(() => {
     if (isEdit) {
@@ -426,6 +464,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
     setPlatformValues((prev) => ({ ...prev, [key]: value }));
   };
 
+  const buildOriginValue = (): string | undefined => {
+    if (originType === "domestic") return countryOfOrigin.trim() || "대한민국";
+    return countryOfOrigin.trim() || undefined;
+  };
+
   const buildAttributes = (): Record<string, unknown> => {
     const result: Record<string, Record<string, unknown>> = {};
     for (const [flatKey, value] of Object.entries(platformValues)) {
@@ -437,43 +480,47 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       if (!result[ns]) result[ns] = {};
       result[ns][field] = value;
     }
-    return result;
-  };
 
-  const buildOriginValue = (): string | undefined => {
-    if (originType === "domestic") return countryOfOrigin.trim() || "대한민국";
-    return countryOfOrigin.trim() || undefined;
+    const common: Record<string, unknown> = {};
+    if (!noBrand && brand.trim()) common.brand = brand.trim();
+    if (hsCode.trim()) common.hsCode = hsCode.trim();
+    const origin = buildOriginValue();
+    if (origin) common.countryOfOrigin = origin;
+    if (material.trim()) common.material = material.trim();
+    if (weightG.trim()) common.weightG = Number(weightG.trim());
+    if (retailPrice.trim()) common.retailPrice = retailPrice.trim();
+    if (descriptionHtml.trim()) common.descriptionHtml = descriptionHtml.trim();
+    const tagArr = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
+    if (tagArr.length > 0) common.tags = tagArr;
+    const imgArr = images
+      .filter((img) => img.url)
+      .map((img, i) => ({
+        url: img.url,
+        altText: img.altText || undefined,
+        order: i,
+      }));
+    if (imgArr.length > 0) common.images = imgArr;
+    if (Object.keys(common).length > 0) result.common = common;
+
+    return result;
   };
 
   const buildPayload = () => ({
     code: code.trim(),
     title: title.trim(),
-    brand: noBrand ? undefined : (brand.trim() || undefined),
-    hsCode: hsCode.trim() || undefined,
-    countryOfOrigin: buildOriginValue(),
-    material: material.trim() || undefined,
-    weightG: weightG.trim() ? Number(weightG.trim()) : undefined,
-    retailPrice: retailPrice.trim() || undefined,
-    tags: tagsInput.split(",").map((t) => t.trim()).filter(Boolean),
-    descriptionHtml: descriptionHtml.trim() || undefined,
-    images: images.map((img, i) => ({
-      url: img.url,
-      altText: img.altText || undefined,
-      order: i,
-    })),
     attributes: buildAttributes(),
   });
 
   const handleSubmit = async (): Promise<void> => {
     setFormError("");
     if (!code.trim() || !title.trim()) {
-      setFormError("상품 코드와 상품명은 필수입니다.");
+      setFormError(t("toasts.requiredCodeName"));
       return;
     }
     try {
       if (isEdit) {
         const result = await updateProduct(buildPayload());
-        appToaster.create({ title: "저장 완료", type: "success" });
+        appToaster.create({ title: t("toasts.saveSuccess"), type: "success" });
         if (result.linkedCount > 0 && detail?.listedProducts?.length) {
           setSyncTargets(
             detail.listedProducts.map((lp) => ({
@@ -487,60 +534,67 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         }
       } else {
         const created = await createProduct(buildPayload());
-        // useAddVariant 훅은 마스터 상품 ID를 hook 초기화 시점에 캡처하므로,
-        // 신규 등록 직후에는 created.id로 직접 POST해야 한다.
         const variantsUrl = `/api/master-products/${created.id}/variants`;
 
+        const attachSkus = async (
+          variantId: string,
+          attached: DraftAttachedSku[],
+        ): Promise<void> => {
+          for (let i = 0; i < attached.length; i++) {
+            const a = attached[i];
+            try {
+              await http.post(`/api/skus/${a.skuId}/master-variants`, {
+                masterVariantId: variantId,
+                qty: Math.max(1, Number(a.qty) || 1),
+                position: i,
+              });
+            } catch {
+              // 개별 attach 실패는 계속
+            }
+          }
+        };
+
         if (draftVariants.length > 0) {
-          // 옵션 그룹 먼저 저장 (서버에서 옵션값 정합성 검증)
           if (optionAxes.length > 0) {
             try {
               await http.put(`/api/master-products/${created.id}/option-groups`, {
                 groups: optionAxes.map((a) => ({ name: a.name, values: a.values })),
               });
             } catch {
-              appToaster.create({ title: "옵션 그룹 저장 실패", type: "error" });
+              appToaster.create({ title: t("toasts.optionGroupSaveFailed"), type: "error" });
             }
           }
-          // 옵션 조합으로 생성된 변형들을 일괄 저장
           for (const row of draftVariants) {
-            if (!row.sku.trim()) continue;
+            if (row.attachedSkus.length === 0) continue;
             try {
-              await http.post(variantsUrl, {
-                sku: row.sku.trim(),
+              const createdVariant = await http.post<{ id: string }>(variantsUrl, {
                 optionValues: row.options,
                 price: row.price.trim() || undefined,
-                stock: Number(row.stock) || 0,
               });
+              await attachSkus(createdVariant.id, row.attachedSkus);
             } catch {
-              // 개별 실패는 계속 진행
+              // 개별 실패는 계속
             }
           }
-        } else {
-          // 옵션 없는 단일 상품: 단일 SKU/재고 변형을 1개 자동 생성
-          const sku = singleSku.trim() || code.trim();
-          if (sku) {
-            try {
-              await http.post(variantsUrl, {
-                sku,
-                price: singlePrice.trim() || undefined,
-                stock: Number(singleStock) || 0,
-              });
-            } catch {
-              // 등록은 이미 완료되었으므로 변형 실패만 토스트로 안내
-              appToaster.create({ title: "단일 변형 저장 실패", type: "error" });
-            }
+        } else if (singleAttachedSkus.length > 0) {
+          try {
+            const createdVariant = await http.post<{ id: string }>(variantsUrl, {
+              price: singlePrice.trim() || undefined,
+            });
+            await attachSkus(createdVariant.id, singleAttachedSkus);
+          } catch {
+            appToaster.create({ title: t("toasts.singleVariantSaveFailed"), type: "error" });
           }
         }
 
         await queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
 
-        appToaster.create({ title: "등록 완료", type: "success" });
+        appToaster.create({ title: t("toasts.createSuccess"), type: "success" });
         router.push(ROUTES.masterProductEdit(created.id));
         return;
       }
     } catch {
-      appToaster.create({ title: isEdit ? "수정 실패" : "등록 실패", type: "error" });
+      appToaster.create({ title: t(isEdit ? "toasts.updateFailed" : "toasts.createFailed"), type: "error" });
     }
   };
 
@@ -575,8 +629,8 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
   // ── 편집 모드 변형 핸들러 ────────────────────────────────────────
 
   const handleAddVariant = async (): Promise<void> => {
-    if (!newVariantSku.trim()) {
-      appToaster.create({ title: "SKU는 필수입니다.", type: "error" });
+    if (newVariantAttachedSkus.length === 0) {
+      appToaster.create({ title: t("toasts.skuRequired"), type: "error" });
       return;
     }
     const groups = detail?.optionGroups ?? [];
@@ -584,18 +638,29 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       .map((g) => ({ groupName: g.name, value: (newVariantOptionValues[g.name] ?? "").trim() }))
       .filter((c) => c.value.length > 0);
     try {
-      await addVariant({
-        sku: newVariantSku.trim(),
+      const variant = await addVariant({
         optionValues: optionValues.length > 0 ? optionValues : undefined,
         price: newVariantPrice.trim() || undefined,
-        stock: Number(newVariantStock) || 0,
       });
-      setNewVariantSku("");
+      for (let i = 0; i < newVariantAttachedSkus.length; i++) {
+        const a = newVariantAttachedSkus[i];
+        try {
+          await http.post(`/api/skus/${a.skuId}/master-variants`, {
+            masterVariantId: variant.id,
+            qty: Math.max(1, Number(a.qty) || 1),
+            position: i,
+          });
+        } catch {
+          // skip
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
       setNewVariantOptionValues({});
-      setNewVariantPrice(""); setNewVariantStock("");
-      appToaster.create({ title: "변형 추가 완료", type: "success" });
+      setNewVariantPrice("");
+      setNewVariantAttachedSkus([]);
+      appToaster.create({ title: t("toasts.variantAddSuccess"), type: "success" });
     } catch {
-      appToaster.create({ title: "변형 추가 실패", type: "error" });
+      appToaster.create({ title: t("toasts.variantAddFailed"), type: "error" });
     }
   };
 
@@ -608,25 +673,63 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       await updateVariant({
         variantId,
         input: {
-          sku: editingVariant.sku.trim(),
           optionValues: optionValues.length > 0 ? optionValues : undefined,
           price: editingVariant.price.trim() || undefined,
-          stock: Number(editingVariant.stock) || 0,
         },
       });
+
+      // 기존 BOM과 비교하여 detach/attach diff 적용
+      const original = (detail?.variants ?? []).find((v) => v.id === variantId);
+      const originalMap = new Map((original?.attachedSkus ?? []).map((s) => [s.skuId, s]));
+      const nextMap = new Map(editingVariant.attachedSkus.map((s) => [s.skuId, s]));
+
+      // detach: 기존에 있었지만 새 목록에 없는 것
+      for (const [skuId] of originalMap) {
+        if (!nextMap.has(skuId)) {
+          try {
+            await http.delete(`/api/skus/${skuId}/master-variants/${variantId}`);
+          } catch {
+            // skip
+          }
+        }
+      }
+      // attach: 새로 추가됐거나 qty/position이 바뀐 것
+      // (BOM 갱신은 백엔드가 upsert 시맨틱을 가졌다고 가정하지 않고 detach 후 attach)
+      for (let i = 0; i < editingVariant.attachedSkus.length; i++) {
+        const a = editingVariant.attachedSkus[i];
+        const prev = originalMap.get(a.skuId);
+        const changed =
+          !prev ||
+          Number(prev.qty) !== Number(a.qty || 1) ||
+          Number(prev.position) !== i;
+        if (!changed) continue;
+        try {
+          if (prev) {
+            await http.delete(`/api/skus/${a.skuId}/master-variants/${variantId}`);
+          }
+          await http.post(`/api/skus/${a.skuId}/master-variants`, {
+            masterVariantId: variantId,
+            qty: Math.max(1, Number(a.qty) || 1),
+            position: i,
+          });
+        } catch {
+          // skip
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
       setEditingVariantId(null);
-      appToaster.create({ title: "변형 수정 완료", type: "success" });
+      appToaster.create({ title: t("toasts.variantUpdateSuccess"), type: "success" });
     } catch {
-      appToaster.create({ title: "변형 수정 실패", type: "error" });
+      appToaster.create({ title: t("toasts.variantUpdateFailed"), type: "error" });
     }
   };
 
   const handleDeleteVariant = async (variantId: string): Promise<void> => {
     try {
       await deleteVariant(variantId);
-      appToaster.create({ title: "변형 삭제 완료", type: "success" });
+      appToaster.create({ title: t("toasts.variantDeleteSuccess"), type: "success" });
     } catch {
-      appToaster.create({ title: "변형 삭제 실패", type: "error" });
+      appToaster.create({ title: t("toasts.variantDeleteFailed"), type: "error" });
     }
   };
 
@@ -659,20 +762,20 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
       {/* ── 헤더 ── */}
       <Flex align="flex-start" justify="space-between" mb={6}>
         <PageHeader
-          title={isEdit ? "마스터 상품 편집" : "마스터 상품 등록"}
+          title={isEdit ? t("header.editTitle") : t("header.createTitle")}
           description={
             isEdit
-              ? "마스터 상품 정보를 수정합니다."
-              : "새 마스터 상품을 등록합니다. 등록 후 각 채널에 개별 등록할 수 있습니다."
+              ? t("header.editDescription")
+              : t("header.createDescription")
           }
         />
         <Flex gap={2} mt={1} flexShrink={0}>
           <Button size="sm" variant="ghost" onClick={() => router.push(ROUTES.masterProducts)}>
-            취소
+            {t("actions.cancel")}
           </Button>
           {isEdit && (
             <Button size="sm" variant="outline" colorPalette="blue" onClick={() => setListModalOpen(true)}>
-              채널 등록
+              {t("actions.listToChannels")}
             </Button>
           )}
           <Button
@@ -684,7 +787,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
             loading={isSaving}
             disabled={isSaving}
           >
-            {isEdit ? "저장" : "등록"}
+            {isEdit ? t("actions.save") : t("actions.create")}
           </Button>
         </Flex>
       </Flex>
@@ -697,24 +800,24 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
 
       <Stack gap={6} >
         {/* ── 기본 정보 ── */}
-        <Section title="기본 정보">
+        <Section title={t("basicInfo.section")}>
           <Stack gap={4}>
             {/* 코드 + 상품명 */}
             <Flex gap={4} direction={{ base: "column", md: "row" }}>
               <Box flex="1">
-                <Label required>상품 코드</Label>
-                <Input size="sm" value={code} onChange={(e) => setCode(e.target.value)} placeholder="예: PROD-001" />
-                <HelperText>Passoffer 내부 관리 코드</HelperText>
+                <Label required>{t("basicInfo.productCode")}</Label>
+                <Input size="sm" value={code} onChange={(e) => setCode(e.target.value)} placeholder={t("basicInfo.productCodePlaceholder")} />
+                <HelperText>{t("basicInfo.productCodeHelper")}</HelperText>
               </Box>
               <Box flex="2">
-                <Label required>상품명</Label>
-                <Input size="sm" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="상품명 입력" />
+                <Label required>{t("basicInfo.title")}</Label>
+                <Input size="sm" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("basicInfo.titlePlaceholder")} />
               </Box>
             </Flex>
 
             {/* 브랜드 (Shopee 패턴: 브랜드 없음 체크박스) */}
             <Box>
-              <Label>브랜드</Label>
+              <Label>{t("basicInfo.brand")}</Label>
               <Flex align="center" gap={2} mb={2}>
                 <Checkbox.Root
                   checked={noBrand}
@@ -723,7 +826,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                 >
                   <Checkbox.HiddenInput />
                   <Checkbox.Control />
-                  <Checkbox.Label fontSize="sm" color="gray.600">브랜드 없음 (No Brand)</Checkbox.Label>
+                  <Checkbox.Label fontSize="sm" color="gray.600">{t("basicInfo.noBrand")}</Checkbox.Label>
                 </Checkbox.Root>
               </Flex>
               {!noBrand && (
@@ -731,7 +834,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   size="sm"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  placeholder="브랜드명 입력"
+                  placeholder={t("basicInfo.brandPlaceholder")}
                 />
               )}
             </Box>
@@ -739,18 +842,18 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
             {/* HS코드 + 소비자가 */}
             <Flex gap={4} direction={{ base: "column", md: "row" }}>
               <Box flex="1">
-                <Label>HS 코드</Label>
-                <Input size="sm" value={hsCode} onChange={(e) => setHsCode(e.target.value)} placeholder="예: 6109.10" />
+                <Label>{t("basicInfo.hsCode")}</Label>
+                <Input size="sm" value={hsCode} onChange={(e) => setHsCode(e.target.value)} placeholder={t("basicInfo.hsCodePlaceholder")} />
               </Box>
               <Box flex="1">
-                <Label>소비자가</Label>
-                <Input size="sm" type="number" value={retailPrice} onChange={(e) => setRetailPrice(e.target.value)} placeholder="예: 29000" />
+                <Label>{t("basicInfo.retailPrice")}</Label>
+                <Input size="sm" type="number" value={retailPrice} onChange={(e) => setRetailPrice(e.target.value)} placeholder={t("basicInfo.retailPricePlaceholder")} />
               </Box>
             </Flex>
 
             {/* 원산지: 유형 + 상세 */}
             <Box>
-              <Label>원산지</Label>
+              <Label>{t("basicInfo.originCountry")}</Label>
               <Flex gap={3} direction={{ base: "column", md: "row" }}>
                 <Box flexShrink={0} minW="140px">
                   <Select
@@ -762,9 +865,9 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                       else setCountryOfOrigin("");
                     }}
                   >
-                    <option value="domestic">국내 (대한민국)</option>
-                    <option value="overseas">해외</option>
-                    <option value="other">기타</option>
+                    <option value="domestic">{t("basicInfo.originDomestic")}</option>
+                    <option value="overseas">{t("basicInfo.originForeign")}</option>
+                    <option value="other">{t("basicInfo.originOther")}</option>
                   </Select>
                 </Box>
                 <Box flex="1">
@@ -774,49 +877,44 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                     onChange={(e) => setCountryOfOrigin(e.target.value)}
                     placeholder={
                       originType === "domestic"
-                        ? "예: 서울특별시"
+                        ? t("basicInfo.originDomesticPlaceholder")
                         : originType === "overseas"
-                          ? "예: 중국, China"
-                          : "자유 입력"
+                          ? t("basicInfo.originForeignPlaceholder")
+                          : t("basicInfo.originOtherPlaceholder")
                     }
                   />
                 </Box>
               </Flex>
-              <HelperText>
-                {originType === "domestic" && "국내 제조 상품. 지역 입력 시 더 상세한 정보 제공 가능."}
-                {originType === "overseas" && "해외 제조 국가를 입력하세요 (한글 또는 영문)."}
-                {originType === "other" && "국가 구분이 어렵거나 복합 원산지인 경우 자유 입력하세요."}
-              </HelperText>
             </Box>
 
             {/* 소재 + 무게 */}
             <Flex gap={4} direction={{ base: "column", md: "row" }}>
               <Box flex="1">
-                <Label>소재</Label>
-                <Input size="sm" value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="예: 면 100%" />
+                <Label>{t("basicInfo.material")}</Label>
+                <Input size="sm" value={material} onChange={(e) => setMaterial(e.target.value)} placeholder={t("basicInfo.materialPlaceholder")} />
               </Box>
               <Box flex="1">
-                <Label>무게 (g)</Label>
-                <Input size="sm" type="number" value={weightG} onChange={(e) => setWeightG(e.target.value)} placeholder="예: 300" />
+                <Label>{t("basicInfo.weight")}</Label>
+                <Input size="sm" type="number" value={weightG} onChange={(e) => setWeightG(e.target.value)} placeholder={t("basicInfo.weightPlaceholder")} />
               </Box>
             </Flex>
 
             {/* 태그 */}
             <Box>
-              <Label>태그</Label>
-              <Input size="sm" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder="예: 의류, 여성, 반팔" />
-              <HelperText>쉼표로 구분하여 입력하세요</HelperText>
+              <Label>{t("basicInfo.tags")}</Label>
+              <Input size="sm" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} placeholder={t("basicInfo.tagsPlaceholder")} />
+              <HelperText>{t("basicInfo.tagsHelper")}</HelperText>
             </Box>
           </Stack>
         </Section>
 
         {/* ── 상품 설명 ── */}
-        <Section title="상품 설명">
+        <Section title={t("description.section")}>
           <ShopifyHtmlEditor value={descriptionHtml} onChange={setDescriptionHtml} />
         </Section>
 
         {/* ── 이미지 ── */}
-        <Section title="이미지">
+        <Section title={t("images.section")}>
           {images.length > 0 && (
             <Box mb={4} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
               {images.map((img, idx) => (
@@ -844,33 +942,33 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   </Box>
                   <Text fontSize="xs" color="gray.400" flexShrink={0}>#{idx + 1}</Text>
                   <Button size="xs" variant="ghost" colorPalette="red" onClick={() => handleRemoveImage(idx)} flexShrink={0}>
-                    삭제
+                    {t("images.delete")}
                   </Button>
                 </Flex>
               ))}
             </Box>
           )}
           <Box p={4} borderWidth="1px" borderColor="gray.200" borderRadius="md" bg="gray.50">
-            <Text fontSize="sm" fontWeight="medium" mb={3}>이미지 추가</Text>
+            <Text fontSize="sm" fontWeight="medium" mb={3}>{t("images.add")}</Text>
             <Flex gap={3} direction={{ base: "column", md: "row" }}>
               <Box flex="2">
-                <Label>이미지 URL</Label>
+                <Label>{t("images.url")}</Label>
                 <Input
                   size="sm"
                   bg="white"
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="https://..."
+                  placeholder={t("images.urlPlaceholder")}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddImage(); } }}
                 />
               </Box>
               <Box flex="1">
-                <Label>대체 텍스트</Label>
-                <Input size="sm" bg="white" value={newImageAlt} onChange={(e) => setNewImageAlt(e.target.value)} placeholder="이미지 설명" />
+                <Label>{t("images.altLabel")}</Label>
+                <Input size="sm" bg="white" value={newImageAlt} onChange={(e) => setNewImageAlt(e.target.value)} placeholder={t("images.alt")} />
               </Box>
               <Box pt={{ base: 0, md: "22px" }}>
                 <Button size="sm" variant="outline" onClick={handleAddImage} disabled={!newImageUrl.trim()}>
-                  추가
+                  {t("images.addButton")}
                 </Button>
               </Box>
             </Flex>
@@ -881,7 +979,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         {!isEdit && (
           <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" overflow="hidden">
             <Box px={5} py={4} borderBottomWidth="1px" borderColor="gray.200">
-              <Text fontSize="md" fontWeight="semibold">옵션 (Variants)</Text>
+              <Text fontSize="md" fontWeight="semibold">{t("options.section")}</Text>
             </Box>
             <Box px={5} pt={5} pb={3}>
               <OptionAxisForm
@@ -890,14 +988,14 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                 maxValues={20}
                 onAxesChange={setOptionAxes}
                 onApply={handleOptionApply}
-                applyLabel="↓ 옵션 조합 생성"
+                applyLabel={t("options.generateCombinations")}
               />
             </Box>
 
             {draftVariants.length > 0 && (
               <Box px={5} pb={5}>
                 <Text fontSize="sm" fontWeight="medium" mb={3} color="gray.700">
-                  옵션 목록 ({draftVariants.length}개) — SKU와 가격/재고를 입력하세요
+                  {t("options.listHeading", { count: draftVariants.length })}
                 </Text>
                 <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
                   <Table.Root size="sm">
@@ -905,12 +1003,12 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                       <Table.Row bg="gray.50">
                         {optionAxes.map((ax) => (
                           <Table.ColumnHeader key={ax.id} fontWeight="medium" color="gray.600" w="24">
-                            {ax.name || "옵션"}
+                            {ax.name || t("options.thOption")}
                           </Table.ColumnHeader>
                         ))}
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="28">SKU</Table.ColumnHeader>
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="20">가격 (₩)</Table.ColumnHeader>
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="16">재고</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="60">{t("options.thSku")}</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="20">{t("options.thPrice")}</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="16">{t("options.thStock")}</Table.ColumnHeader>
                         <Table.ColumnHeader w="8" />
                       </Table.Row>
                     </Table.Header>
@@ -925,11 +1023,13 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             </Table.Cell>
                           ))}
                           <Table.Cell>
-                            <Input
-                              size="xs"
-                              value={row.sku}
-                              onChange={(e) => updateDraftRow(row._key, "sku", e.target.value)}
-                              placeholder="SKU"
+                            <SkuPickerCell
+                              attached={row.attachedSkus}
+                              onChange={(next) =>
+                                setDraftVariants((prev) =>
+                                  prev.map((r) => (r._key === row._key ? { ...r, attachedSkus: next } : r)),
+                                )
+                              }
                             />
                           </Table.Cell>
                           <Table.Cell>
@@ -942,13 +1042,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             />
                           </Table.Cell>
                           <Table.Cell>
-                            <Input
-                              size="xs"
-                              type="number"
-                              value={row.stock}
-                              onChange={(e) => updateDraftRow(row._key, "stock", e.target.value)}
-                              placeholder="0"
-                            />
+                            <Text fontSize="xs" color="gray.400">{t("options.afterSave")}</Text>
                           </Table.Cell>
                           <Table.Cell>
                             <Button size="xs" variant="ghost" colorPalette="red" onClick={() => removeDraftRow(row._key)}>
@@ -961,7 +1055,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   </Table.Root>
                 </Box>
                 <Text fontSize="xs" color="gray.400" mt={2}>
-                  * SKU 미입력 행은 등록 시 건너뜁니다. 등록 버튼 클릭 시 마스터 상품과 함께 저장됩니다.
+                  {t("options.skuNote")}
                 </Text>
               </Box>
             )}
@@ -969,25 +1063,24 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
             {draftVariants.length === 0 && optionAxes.length === 0 && (
               <Box px={5} pb={5}>
                 <Text fontSize="sm" fontWeight="medium" mb={3} color="gray.700">
-                  단일 상품 — SKU와 가격/재고를 입력하세요
+                  {t("options.singleHeading")}
                 </Text>
                 <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
                   <Table.Root size="sm">
                     <Table.Header>
                       <Table.Row bg="gray.50">
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="40">SKU</Table.ColumnHeader>
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="28">가격 (₩)</Table.ColumnHeader>
-                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="20">재고</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="60">{t("options.thSku")}</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="28">{t("options.thPrice")}</Table.ColumnHeader>
+                        <Table.ColumnHeader fontWeight="medium" color="gray.600" w="20">{t("options.thStock")}</Table.ColumnHeader>
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
                       <Table.Row>
                         <Table.Cell>
-                          <Input
-                            size="xs"
-                            value={singleSku}
-                            onChange={(e) => setSingleSku(e.target.value)}
-                            placeholder={code.trim() ? `(공란 시 ${code.trim()} 사용)` : "SKU"}
+                          <SkuPickerCell
+                            attached={singleAttachedSkus}
+                            onChange={setSingleAttachedSkus}
+                            placeholder={t("variants.skuSearchRequired")}
                           />
                         </Table.Cell>
                         <Table.Cell>
@@ -1000,20 +1093,14 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                           />
                         </Table.Cell>
                         <Table.Cell>
-                          <Input
-                            size="xs"
-                            type="number"
-                            value={singleStock}
-                            onChange={(e) => setSingleStock(e.target.value)}
-                            placeholder="0"
-                          />
+                          <Text fontSize="xs" color="gray.400">{t("options.afterSave")}</Text>
                         </Table.Cell>
                       </Table.Row>
                     </Table.Body>
                   </Table.Root>
                 </Box>
                 <Text fontSize="xs" color="gray.400" mt={2}>
-                  * 위에서 옵션을 추가하면 옵션 조합별 SKU/재고 입력으로 전환됩니다.
+                  {t("options.singleNote")}
                 </Text>
               </Box>
             )}
@@ -1025,19 +1112,19 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
           const detailGroups = detail?.optionGroups ?? [];
           const totalCols = 1 + detailGroups.length + 3; // SKU + groups + price + stock + actions
           return (
-          <Section title="변형 (Variants)">
+          <Section title={t("variants.section")}>
             <Box overflowX="auto">
               <Table.Root size="sm">
                 <Table.Header>
                   <Table.Row bg="gray.50">
-                    <Table.ColumnHeader fontWeight="medium" color="gray.600">SKU</Table.ColumnHeader>
+                    <Table.ColumnHeader fontWeight="medium" color="gray.600" minW="80">{t("variants.thSku")}</Table.ColumnHeader>
                     {detailGroups.map((g) => (
                       <Table.ColumnHeader key={g.id} fontWeight="medium" color="gray.600">
                         {g.name}
                       </Table.ColumnHeader>
                     ))}
-                    <Table.ColumnHeader fontWeight="medium" color="gray.600">가격</Table.ColumnHeader>
-                    <Table.ColumnHeader fontWeight="medium" color="gray.600">재고</Table.ColumnHeader>
+                    <Table.ColumnHeader fontWeight="medium" color="gray.600">{t("variants.thPrice")}</Table.ColumnHeader>
+                    <Table.ColumnHeader fontWeight="medium" color="gray.600">{t("variants.thStock")}</Table.ColumnHeader>
                     <Table.ColumnHeader />
                   </Table.Row>
                 </Table.Header>
@@ -1046,7 +1133,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                     <Table.Row>
                       <Table.Cell colSpan={totalCols}>
                         <Text fontSize="sm" color="gray.400" textAlign="center" py={4}>
-                          등록된 변형이 없습니다. 아래에서 추가하세요.
+                          {t("variants.empty")}
                         </Text>
                       </Table.Cell>
                     </Table.Row>
@@ -1054,9 +1141,17 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   {variants.map((v) => {
                     const valueByGroup: Record<string, string> = {};
                     for (const opt of v.options) valueByGroup[opt.groupName] = opt.value;
+                    const availableStock = v.attachedSkus.length === 0
+                      ? 0
+                      : Math.min(...v.attachedSkus.map((s) => Math.floor((s.stock ?? 0) / Math.max(1, s.qty))));
                     return editingVariantId === v.id ? (
                       <Table.Row key={v.id} bg="blue.50">
-                        <Table.Cell><Input size="xs" value={editingVariant.sku} onChange={(e) => setEditingVariant((p) => ({ ...p, sku: e.target.value }))} /></Table.Cell>
+                        <Table.Cell>
+                          <SkuPickerCell
+                            attached={editingVariant.attachedSkus}
+                            onChange={(next) => setEditingVariant((p) => ({ ...p, attachedSkus: next }))}
+                          />
+                        </Table.Cell>
                         {detailGroups.map((g) => (
                           <Table.Cell key={g.id}>
                             <Input
@@ -1079,24 +1174,36 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                           </Table.Cell>
                         ))}
                         <Table.Cell><Input size="xs" value={editingVariant.price} onChange={(e) => setEditingVariant((p) => ({ ...p, price: e.target.value }))} /></Table.Cell>
-                        <Table.Cell><Input size="xs" type="number" value={editingVariant.stock} onChange={(e) => setEditingVariant((p) => ({ ...p, stock: e.target.value }))} /></Table.Cell>
+                        <Table.Cell><Text fontSize="xs" color="gray.400">{t("variants.afterSave")}</Text></Table.Cell>
                         <Table.Cell>
                           <Flex gap={1}>
-                            <Button size="xs" bg="gray.900" color="white" _hover={{ bg: "gray.800" }} onClick={() => void handleSaveVariant(v.id)}>저장</Button>
-                            <Button size="xs" variant="ghost" onClick={() => setEditingVariantId(null)}>취소</Button>
+                            <Button size="xs" bg="gray.900" color="white" _hover={{ bg: "gray.800" }} onClick={() => void handleSaveVariant(v.id)}>{t("variants.save")}</Button>
+                            <Button size="xs" variant="ghost" onClick={() => setEditingVariantId(null)}>{t("variants.cancel")}</Button>
                           </Flex>
                         </Table.Cell>
                       </Table.Row>
                     ) : (
                       <Table.Row key={v.id} _hover={{ bg: "gray.50" }}>
-                        <Table.Cell><Text fontSize="sm" fontWeight="medium">{v.sku}</Text></Table.Cell>
+                        <Table.Cell>
+                          {v.attachedSkus.length === 0 ? (
+                            <Text fontSize="xs" color="gray.400">{t("variants.unlinked")}</Text>
+                          ) : (
+                            <Flex gap={1} wrap="wrap">
+                              {v.attachedSkus.map((s) => (
+                                <Text key={s.skuId} fontSize="xs" px={1.5} py={0.5} bg="gray.100" borderRadius="sm">
+                                  {s.code} × {s.qty}
+                                </Text>
+                              ))}
+                            </Flex>
+                          )}
+                        </Table.Cell>
                         {detailGroups.map((g) => (
                           <Table.Cell key={g.id}>
                             <Text fontSize="sm" color="gray.600">{valueByGroup[g.name] ?? "-"}</Text>
                           </Table.Cell>
                         ))}
                         <Table.Cell><Text fontSize="sm">{v.price ?? "-"}</Text></Table.Cell>
-                        <Table.Cell><Text fontSize="sm">{v.stock}</Text></Table.Cell>
+                        <Table.Cell><Text fontSize="sm">{availableStock}</Text></Table.Cell>
                         <Table.Cell>
                           <Flex gap={1}>
                             <Button
@@ -1107,16 +1214,19 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                 const initialValues: Record<string, string> = {};
                                 for (const opt of v.options) initialValues[opt.groupName] = opt.value;
                                 setEditingVariant({
-                                  sku: v.sku,
                                   optionValues: initialValues,
                                   price: v.price ?? "",
-                                  stock: String(v.stock),
+                                  attachedSkus: v.attachedSkus.map((s) => ({
+                                    skuId: s.skuId,
+                                    code: s.code,
+                                    qty: s.qty,
+                                  })),
                                 });
                               }}
                             >
-                              편집
+                              {t("variants.edit")}
                             </Button>
-                            <Button size="xs" variant="outline" colorPalette="red" onClick={() => void handleDeleteVariant(v.id)}>삭제</Button>
+                            <Button size="xs" variant="outline" colorPalette="red" onClick={() => void handleDeleteVariant(v.id)}>{t("variants.delete")}</Button>
                           </Flex>
                         </Table.Cell>
                       </Table.Row>
@@ -1125,7 +1235,13 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
 
                   {/* 신규 변형 입력 행 */}
                   <Table.Row bg="gray.50">
-                    <Table.Cell><Input size="xs" value={newVariantSku} onChange={(e) => setNewVariantSku(e.target.value)} placeholder="SKU *" /></Table.Cell>
+                    <Table.Cell>
+                      <SkuPickerCell
+                        attached={newVariantAttachedSkus}
+                        onChange={setNewVariantAttachedSkus}
+                        placeholder={t("variants.skuSearchRequired")}
+                      />
+                    </Table.Cell>
                     {detailGroups.map((g) => (
                       <Table.Cell key={g.id}>
                         <Input
@@ -1144,10 +1260,10 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                         </datalist>
                       </Table.Cell>
                     ))}
-                    <Table.Cell><Input size="xs" value={newVariantPrice} onChange={(e) => setNewVariantPrice(e.target.value)} placeholder="가격" /></Table.Cell>
-                    <Table.Cell><Input size="xs" type="number" value={newVariantStock} onChange={(e) => setNewVariantStock(e.target.value)} placeholder="재고" /></Table.Cell>
+                    <Table.Cell><Input size="xs" value={newVariantPrice} onChange={(e) => setNewVariantPrice(e.target.value)} placeholder={t("variants.price")} /></Table.Cell>
+                    <Table.Cell><Text fontSize="xs" color="gray.400">{t("variants.afterSave")}</Text></Table.Cell>
                     <Table.Cell>
-                      <Button size="xs" bg="gray.900" color="white" _hover={{ bg: "gray.800" }} onClick={() => void handleAddVariant()}>추가</Button>
+                      <Button size="xs" bg="gray.900" color="white" _hover={{ bg: "gray.800" }} onClick={() => void handleAddVariant()}>{t("variants.add")}</Button>
                     </Table.Cell>
                   </Table.Row>
                 </Table.Body>
@@ -1160,17 +1276,21 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         {/* ── 플랫폼별 추가 정보 ── */}
         <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" overflow="hidden">
           <Box px={5} py={4} borderBottomWidth="1px" borderColor="gray.200">
-            <Text fontSize="md" fontWeight="semibold">플랫폼별 추가 정보</Text>
+            <Text fontSize="md" fontWeight="semibold">{t("platform.section")}</Text>
             <Text fontSize="sm" color="gray.500" mt={0.5}>
-              각 채널에 등록할 때 필요한 플랫폼 전용 필드를 입력하세요.
+              {t("platform.description")}
             </Text>
           </Box>
 
           {connectedPlatformKeys.length === 0 ? (
             <Box px={5} py={10} textAlign="center">
-              <Text fontSize="sm" color="gray.500" fontWeight="medium">연결된 플랫폼이 없습니다</Text>
+              <Text fontSize="sm" color="gray.500" fontWeight="medium">
+                {isEdit ? t("platform.noLinkedChannels") : t("platform.noLinkedPlatforms")}
+              </Text>
               <Text fontSize="xs" color="gray.400" mt={1}>
-                설정 &gt; 채널 연결에서 API 키를 등록하면 여기에 표시됩니다.
+                {isEdit
+                  ? t("platform.noLinkedHint")
+                  : t("platform.noPlatformHint")}
               </Text>
             </Box>
           ) : (
@@ -1182,16 +1302,16 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                 const statusBadge = hasAnyInput || ready ? (
                   ready ? (
                     <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="green.50" color="green.700" border="1px solid" borderColor="green.200">
-                      ✓ 등록 가능
+                      {t("platform.ready")}
                     </Box>
                   ) : (
                     <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="orange.50" color="orange.700" border="1px solid" borderColor="orange.200">
-                      필수값 미입력 ({missing.length}개)
+                      {t("platform.missingRequired", { count: missing.length })}
                     </Box>
                   )
                 ) : (
                   <Box px={2} py={0.5} borderRadius="full" fontSize="xs" color="gray.400" border="1px solid" borderColor="gray.200">
-                    미입력
+                    {t("platform.notFilled")}
                   </Box>
                 );
 
@@ -1219,7 +1339,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                         {statusBadge}
                         {!ready && hasAnyInput && missing.length > 0 && (
                           <Text fontSize="xs" color="gray.400" truncate>
-                            미입력: {missing.join(" · ")}
+                            {t("platform.missingInline", { fields: missing.map((k) => t(`labelMap.${k}`)).join(" · ") })}
                           </Text>
                         )}
                       </Flex>
@@ -1231,10 +1351,10 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                         {hasAnyInput && !ready && missing.length > 0 && (
                           <Box mb={4} px={4} py={3} bg="orange.50" borderWidth="1px" borderColor="orange.200" borderRadius="md">
                             <Text fontSize="sm" color="orange.700" fontWeight="medium">
-                              채널 등록 전 아래 항목을 입력해 주세요
+                              {t("platform.fixBefore")}
                             </Text>
                             <Text fontSize="xs" color="orange.600" mt={1}>
-                              {missing.join(", ")}
+                              {missing.map((k) => t(`labelMap.${k}`)).join(", ")}
                             </Text>
                           </Box>
                         )}
@@ -1245,7 +1365,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             <Box>
                               <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
                                 <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
-                                  카테고리
+                                  {t("platform.categoryHeader")}
                                 </Text>
                               </Box>
                               {categoryQuery.isLoading ? (
@@ -1257,7 +1377,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                               ) : (
                                 <Stack gap={3}>
                                   <Box>
-                                    <Label required>대분류</Label>
+                                    <Label required>{t("platform.categoryMain")}</Label>
                                     <Select
                                       value={mainCatCd}
                                       onChange={(e) => {
@@ -1266,14 +1386,14 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                         setPlatformValue("qoo10.SecondSubCat", "");
                                       }}
                                     >
-                                      <option value="">대분류 선택</option>
+                                      <option value="">{t("platform.categoryMainPlaceholder")}</option>
                                       {mainCatOptions.map((opt) => (
                                         <option key={opt.code} value={opt.code}>{opt.name}</option>
                                       ))}
                                     </Select>
                                   </Box>
                                   <Box>
-                                    <Label required>중분류</Label>
+                                    <Label required>{t("platform.categoryMid")}</Label>
                                     <Select
                                       value={midCatCd}
                                       onChange={(e) => {
@@ -1282,26 +1402,26 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       }}
                                       disabled={!mainCatCd}
                                     >
-                                      <option value="">중분류 선택</option>
+                                      <option value="">{t("platform.categoryMidPlaceholder")}</option>
                                       {midCatOptions.map((opt) => (
                                         <option key={opt.code} value={opt.code}>{opt.name}</option>
                                       ))}
                                     </Select>
                                   </Box>
                                   <Box>
-                                    <Label required>소분류</Label>
+                                    <Label required>{t("platform.categorySub")}</Label>
                                     <Select
                                       value={platformValues["qoo10.SecondSubCat"] ?? ""}
                                       onChange={(e) => setPlatformValue("qoo10.SecondSubCat", e.target.value)}
                                       disabled={!midCatCd}
                                     >
-                                      <option value="">소분류 선택</option>
+                                      <option value="">{t("platform.categorySubPlaceholder")}</option>
                                       {secondSubCatOptions.map((opt) => (
                                         <option key={opt.code} value={opt.code}>{opt.name}</option>
                                       ))}
                                     </Select>
                                     {platformValues["qoo10.SecondSubCat"] && (
-                                      <HelperText>코드: {platformValues["qoo10.SecondSubCat"]}</HelperText>
+                                      <HelperText>{t("platform.categoryCode", { code: platformValues["qoo10.SecondSubCat"] })}</HelperText>
                                     )}
                                   </Box>
                                 </Stack>
@@ -1314,10 +1434,10 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             <Box>
                               <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
                                 <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
-                                  브랜드
+                                  {t("platform.brandHeader")}
                                 </Text>
                               </Box>
-                              <Label>브랜드 검색</Label>
+                              <Label>{t("platform.brandSearch")}</Label>
                               <Flex align="center" gap={2} mb={2}>
                                 <Checkbox.Root
                                   checked={platformValues["qoo10.NoBrand"] === "true"}
@@ -1336,7 +1456,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                 >
                                   <Checkbox.HiddenInput />
                                   <Checkbox.Control />
-                                  <Checkbox.Label fontSize="sm" color="gray.600">입력하지 않음</Checkbox.Label>
+                                  <Checkbox.Label fontSize="sm" color="gray.600">{t("platform.brandSkip")}</Checkbox.Label>
                                 </Checkbox.Root>
                               </Flex>
                               {platformValues["qoo10.NoBrand"] !== "true" && (
@@ -1351,7 +1471,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       setSelectedBrandLabel("");
                                     }}
                                     onFocus={() => setIsBrandDropdownOpen(true)}
-                                    placeholder="브랜드명을 입력해 주세요 (2글자 이상)"
+                                    placeholder={t("platform.brandSearchPlaceholder")}
                                     autoComplete="off"
                                   />
                                   {isBrandDropdownOpen && debouncedBrandKeyword.length >= 2 && (
@@ -1377,7 +1497,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                           <Skeleton height="28px" />
                                         </Stack>
                                       ) : brandResults.length === 0 ? (
-                                        <Text fontSize="sm" color="gray.500" py={2} textAlign="center">검색 결과가 없습니다.</Text>
+                                        <Text fontSize="sm" color="gray.500" py={2} textAlign="center">{t("platform.brandNoResult")}</Text>
                                       ) : (
                                         <Stack gap={1}>
                                           {brandResults.map((brand) => {
@@ -1408,7 +1528,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     </Box>
                                   )}
                                   {platformValues["qoo10.BrandNo"] && selectedBrandLabel && (
-                                    <HelperText>선택됨: {selectedBrandLabel}</HelperText>
+                                    <HelperText>{t("platform.brandSelected", { name: selectedBrandLabel })}</HelperText>
                                   )}
                                 </Box>
                               )}
@@ -1440,15 +1560,15 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       </Text>
                                     </Box>
                                   )}
-                                  <Label required>발송가능일 타입</Label>
+                                  <Label required>{t("platform.availableDateTypeLabel")}</Label>
                                   <Select
                                     value={platformValues["qoo10.AvailableDateType"] ?? "0"}
                                     onChange={(e) => setPlatformValue("qoo10.AvailableDateType", e.target.value)}
                                   >
-                                    <option value="0">일반발송 (3영업일)</option>
-                                    <option value="1">상품준비일</option>
-                                    <option value="2">출시일</option>
-                                    <option value="3">당일발송</option>
+                                    <option value="0">{t("platform.availableDateType0")}</option>
+                                    <option value="1">{t("platform.availableDateType1")}</option>
+                                    <option value="2">{t("platform.availableDateType2")}</option>
+                                    <option value="3">{t("platform.availableDateType3")}</option>
                                   </Select>
                                 </Box>
                               );
@@ -1458,14 +1578,14 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             if (field.key === "qoo10.AvailableDateValue") {
                               const dateType = platformValues["qoo10.AvailableDateType"] ?? "0";
                               const placeholder =
-                                dateType === "0" ? "1~3 (일반발송일)" :
-                                dateType === "1" ? "4~14 (준비일 수)" :
-                                dateType === "2" ? "2025/09/26 (출시일)" :
-                                "14:30 (당일발송 마감시간)";
+                                dateType === "0" ? t("platform.availableDateValuePlaceholder0") :
+                                dateType === "1" ? t("platform.availableDateValuePlaceholder1") :
+                                dateType === "2" ? t("platform.availableDateValuePlaceholder2") :
+                                t("platform.availableDateValuePlaceholder3");
                               const isRequired = dateType !== "0";
                               return (
                                 <Box key={field.key}>
-                                  <Label required={isRequired}>발송가능일 값</Label>
+                                  <Label required={isRequired}>{t("platform.availableDateValueLabel")}</Label>
                                   <Input
                                     size="sm"
                                     value={platformValues["qoo10.AvailableDateValue"] ?? ""}
@@ -1473,7 +1593,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     placeholder={placeholder}
                                   />
                                   {dateType === "0" && (
-                                    <HelperText>일반발송 선택 시 미입력이면 1(영업일)로 자동 처리됩니다.</HelperText>
+                                    <HelperText>{t("platform.availableDateValueHelper")}</HelperText>
                                   )}
                                 </Box>
                               );
@@ -1490,7 +1610,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       </Text>
                                     </Box>
                                   )}
-                                  <Label required>재고 수량</Label>
+                                  <Label required>{t("platform.itemQtyLabel")}</Label>
                                   <Input
                                     size="sm"
                                     type="number"
@@ -1501,7 +1621,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     cursor="default"
                                   />
                                   <HelperText>
-                                    변형(Variants) 재고 합계에서 자동 계산됩니다. (현재: {totalVariantStock}개)
+                                    {t("platform.itemQtyHelper", { total: totalVariantStock })}
                                   </HelperText>
                                 </Box>
                               );
@@ -1518,7 +1638,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       </Text>
                                     </Box>
                                   )}
-                                  <Label required>판매 가격 (JPY)</Label>
+                                  <Label required>{t("platform.itemPriceLabel")}</Label>
                                   <Input
                                     size="sm"
                                     type="number"
@@ -1529,7 +1649,9 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     cursor="default"
                                   />
                                   <HelperText>
-                                    첫 번째 변형(Variant) 가격에서 자동 계산됩니다.{firstVariantPrice !== "" && ` (현재: ¥${firstVariantPrice})`}
+                                    {firstVariantPrice !== ""
+                                      ? t("platform.itemPriceHelperWithValue", { price: firstVariantPrice })
+                                      : t("platform.itemPriceHelper")}
                                   </HelperText>
                                 </Box>
                               );
@@ -1539,12 +1661,12 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                             if (field.key === "qoo10.ShippingNo") {
                               const selectedNo = platformValues["qoo10.ShippingNo"] ?? "";
                               const shippingTypeLabel: Record<string, string> = {
-                                X: "무료",
-                                F: "유료",
-                                M: "조건부무료",
-                                W: "방문수령",
-                                D: "착불(선결제불가)",
-                                R: "착불(선결제가능)",
+                                X: t("platform.shippingFreeLabel"),
+                                F: t("platform.shippingPaidLabel"),
+                                M: t("platform.shippingConditionalLabel"),
+                                W: t("platform.shippingPickupLabel"),
+                                D: t("platform.shippingCodNoPrepayLabel"),
+                                R: t("platform.shippingCodPrepayLabel"),
                               };
                               const selectedTemplate = shippingTemplates.find(
                                 (t) => String(t.ShippingNo) === selectedNo,
@@ -1566,18 +1688,18 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                       </Text>
                                     </Box>
                                   )}
-                                  <Label required>배송 템플릿</Label>
+                                  <Label required>{t("platform.shippingTemplate")}</Label>
                                   <Box position="relative">
                                     <Input
                                       size="sm"
                                       placeholder={
                                         shippingTemplateQuery.isLoading
-                                          ? "배송 템플릿 불러오는 중..."
+                                          ? t("platform.shippingTemplateLoading")
                                           : shippingTemplateQuery.isError
-                                            ? "배송 번호 직접 입력 (예: 12345)"
+                                            ? t("platform.shippingTemplateDirectInput")
                                             : shippingTemplates.length === 0
-                                              ? "배송 번호 직접 입력 (예: 12345)"
-                                              : "템플릿 번호 또는 배송사로 검색"
+                                              ? t("platform.shippingTemplateDirectInput")
+                                              : t("platform.shippingTemplateSearch")
                                       }
                                       value={
                                         shippingTemplates.length === 0
@@ -1587,9 +1709,9 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                             : selectedTemplate
                                               ? `No.${selectedTemplate.ShippingNo} · ${shippingTypeLabel[selectedTemplate.ShippingType] ?? selectedTemplate.ShippingType} · ${selectedTemplate.transcName}`
                                               : selectedNo === "0"
-                                                ? "0 — 무료배송"
+                                                ? t("platform.shippingFree")
                                                 : selectedNo
-                                                  ? `No. ${selectedNo}`
+                                                  ? t("platform.shippingNoPrefix", { no: selectedNo })
                                                   : ""
                                       }
                                       onFocus={() => {
@@ -1648,24 +1770,24 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                             setIsShippingDropdownOpen(false);
                                           }}
                                         >
-                                          <Text fontWeight="medium">0 — 무료배송</Text>
+                                          <Text fontWeight="medium">{t("platform.shippingFree")}</Text>
                                         </Box>
                                         {filteredTemplates.length === 0 && (
                                           <Box px={3} py={2} fontSize="sm" color="gray.400">
-                                            검색 결과 없음
+                                            {t("platform.shippingNoResult")}
                                           </Box>
                                         )}
-                                        {filteredTemplates.map((t) => (
+                                        {filteredTemplates.map((tpl) => (
                                           <Box
-                                            key={t.ShippingNo}
+                                            key={tpl.ShippingNo}
                                             px={3}
                                             py={2}
                                             cursor="pointer"
                                             fontSize="sm"
                                             _hover={{ bg: "gray.50" }}
-                                            bg={selectedNo === String(t.ShippingNo) ? "orange.50" : "white"}
+                                            bg={selectedNo === String(tpl.ShippingNo) ? "orange.50" : "white"}
                                             onMouseDown={() => {
-                                              setPlatformValue("qoo10.ShippingNo", String(t.ShippingNo));
+                                              setPlatformValue("qoo10.ShippingNo", String(tpl.ShippingNo));
                                               if (!platformValues["qoo10.AvailableDateType"]) {
                                                 setPlatformValue("qoo10.AvailableDateType", "0");
                                               }
@@ -1673,10 +1795,11 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                             }}
                                           >
                                             <Text fontWeight="medium">
-                                              No.{t.ShippingNo} · {shippingTypeLabel[t.ShippingType] ?? t.ShippingType} · {t.transcName}
+                                              {t("platform.shippingNoPrefix", { no: tpl.ShippingNo })} · {shippingTypeLabel[tpl.ShippingType] ?? tpl.ShippingType} · {tpl.transcName}
                                             </Text>
                                             <Text fontSize="xs" color="gray.500">
-                                              배송비 {t.ShippingFee}円 · {t.ShippingType === 'M' ? `${t.FreeCondition}円 이상 무료` : ''}
+                                              {t("platform.shippingFeeLine", { fee: tpl.ShippingFee })}
+                                              {tpl.ShippingType === 'M' && ` · ${t("platform.shippingConditional", { threshold: tpl.FreeCondition })}`}
                                             </Text>
                                           </Box>
                                         ))}
@@ -1684,10 +1807,10 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     )}
                                   </Box>
                                   {selectedNo === "0" && (
-                                    <HelperText>무료배송으로 처리됩니다.</HelperText>
+                                    <HelperText>{t("platform.shippingFreeHelper")}</HelperText>
                                   )}
                                   {shippingTemplateQuery.isError && (
-                                    <HelperText>템플릿 조회 실패. Qoo10 API 키를 확인하거나 직접 번호를 입력하세요.</HelperText>
+                                    <HelperText>{t("platform.shippingError")}</HelperText>
                                   )}
                                 </Box>
                               );
@@ -1712,7 +1835,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     value={platformValues[field.key] ?? ""}
                                     onChange={(e) => setPlatformValue(field.key, e.target.value)}
                                   >
-                                    <option value="">선택하세요</option>
+                                    <option value="">{t("platform.selectPlaceholder")}</option>
                                     {field.options.map((opt) => (
                                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
@@ -1725,7 +1848,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                                     value={platformValues[field.key] ?? ""}
                                     onChange={(e) => setPlatformValue(field.key, e.target.value)}
                                   >
-                                    <option value="">선택안함</option>
+                                    <option value="">{t("platform.conditionalSelectNone")}</option>
                                     {field.conditionalOptions.options.map((opt) => (
                                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                                     ))}
@@ -1789,7 +1912,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
 
         {/* ── 등록된 채널 (편집 모드) ── */}
         {isEdit && (detail?.listedProducts ?? []).length > 0 && (
-          <Section title="등록된 채널">
+          <Section title={t("listedChannels.section")}>
             <Stack gap={0} borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
               {detail!.listedProducts.map((lp) => (
                 <Flex
@@ -1812,15 +1935,15 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
                   <Flex align="center" gap={3}>
                     {lp.lastSyncedAt && (
                       <Text fontSize="xs" color="gray.400">
-                        {new Date(lp.lastSyncedAt).toLocaleDateString("ko-KR")}
+                        {new Date(lp.lastSyncedAt).toLocaleDateString(locale === "ja" ? "ja-JP" : "ko-KR")}
                       </Text>
                     )}
                     <Box
                       px={2.5} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium"
-                      bg={lp.syncStatus === "SYNCED" ? "green.100" : lp.syncStatus === "FAILED" ? "red.100" : "orange.100"}
-                      color={lp.syncStatus === "SYNCED" ? "green.700" : lp.syncStatus === "FAILED" ? "red.700" : "orange.700"}
+                      bg={lp.syncStatus === "SYNCED" ? "green.100" : lp.syncStatus === "ERROR" ? "red.100" : "orange.100"}
+                      color={lp.syncStatus === "SYNCED" ? "green.700" : lp.syncStatus === "ERROR" ? "red.700" : "orange.700"}
                     >
-                      {lp.syncStatus === "SYNCED" ? "동기화됨" : lp.syncStatus === "FAILED" ? "실패" : "대기중"}
+                      {lp.syncStatus === "SYNCED" ? t("listedChannels.statusSynced") : lp.syncStatus === "ERROR" ? t("listedChannels.statusError") : t("listedChannels.statusPending")}
                     </Box>
                   </Flex>
                 </Flex>
@@ -1832,7 +1955,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
         {/* ── 하단 버튼 ── */}
         <Flex justify="flex-end" gap={3} pb={8}>
           <Button size="sm" variant="ghost" onClick={() => router.push(ROUTES.masterProducts)}>
-            취소
+            {t("actions.cancel")}
           </Button>
           <Button
             type="submit"
@@ -1843,7 +1966,7 @@ export function MasterProductFormPage({ id }: Props): React.JSX.Element {
             loading={isSaving}
             disabled={isSaving}
           >
-            {isEdit ? "저장" : "등록"}
+            {isEdit ? t("actions.save") : t("actions.create")}
           </Button>
         </Flex>
       </Stack>

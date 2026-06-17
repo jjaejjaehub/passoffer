@@ -45,7 +45,14 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
 
   if (!open) return null;
 
-  const totalStock = variants.reduce((sum, v) => sum + (v.stock ?? 0), 0);
+  const totalStock = variants.reduce((sum, v) => {
+    const attached = v.attachedSkus ?? [];
+    const available =
+      attached.length === 0
+        ? 0
+        : Math.min(...attached.map((s) => Math.floor((s.stock ?? 0) / Math.max(1, s.qty))));
+    return sum + available;
+  }, 0);
   const firstPrice = variants[0]?.price ?? '';
   const listedChannelIds = new Set(listedProducts.map((lp) => lp.channelId));
 

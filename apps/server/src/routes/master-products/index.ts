@@ -30,10 +30,8 @@ const variantOptionValueSchema = z.object({
 });
 
 const variantBody = z.object({
-  sku: z.string().min(1, 'SKU를 입력해 주세요').max(128),
   optionValues: z.array(variantOptionValueSchema).optional(),
   price: z.string().optional(),
-  stock: z.number().int().min(0).optional(),
   extraAttributes: z.record(z.unknown()).optional(),
 });
 
@@ -58,6 +56,22 @@ const linkToChannelBody = z.object({
       }),
     )
     .default([]),
+});
+
+const skuMappingRowSchema = z.object({
+  channelVariantId: z.string().min(1, 'channelVariantId 를 입력해 주세요').max(128),
+  channelSellerCode: z.string().max(128).optional().nullable(),
+  skuId: z.string().uuid(),
+  qty: z.number().int().min(1).optional(),
+});
+
+const skuMappingReplaceBody = z.object({
+  rows: z.array(skuMappingRowSchema),
+});
+
+const skuMappingUpdateBody = z.object({
+  channelSellerCode: z.string().max(128).optional().nullable(),
+  qty: z.number().int().min(1).optional(),
 });
 
 export async function masterProductRoutes(app: FastifyInstance): Promise<void> {
@@ -302,6 +316,102 @@ export async function masterProductRoutes(app: FastifyInstance): Promise<void> {
     const { id } = request.params as { id: string };
     return getSvc(request.user.userId).getListedProduct(id);
   });
+
+  // ─── 판매상품 ↔ SKU 매핑 (listed_product_skus) ──────────────
+
+  app.get<{ Params: { id: string } }>(
+    '/listed-products/:id/sku-mappings',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      try {
+        return await getSvc(request.user.userId).listListedProductSkus(request.params.id);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'SKU 매핑 조회에 실패했습니다.';
+        return reply.status(404).send({ error: 'NOT_FOUND', message: msg });
+      }
+    },
+  );
+
+  app.put<{ Params: { id: string } }>(
+    '/listed-products/:id/sku-mappings',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = skuMappingReplaceBody.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+      }
+      try {
+        const result = await getSvc(request.user.userId).replaceListedProductSkus(
+          request.params.id,
+          parsed.data.rows,
+        );
+        return result;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'SKU 매핑 일괄 교체에 실패했습니다.';
+        return reply.status(400).send({ error: 'REPLACE_FAILED', message: msg });
+      }
+    },
+  );
+
+  app.post<{ Params: { id: string } }>(
+    '/listed-products/:id/sku-mappings',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = skuMappingRowSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+      }
+      try {
+        const created = await getSvc(request.user.userId).addListedProductSku(
+          request.params.id,
+          parsed.data,
+        );
+        return reply.status(201).send(created);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'SKU 매핑 추가에 실패했습니다.';
+        return reply.status(400).send({ error: 'ADD_FAILED', message: msg });
+      }
+    },
+  );
+
+  app.put<{ Params: { id: string; mappingId: string } }>(
+    '/listed-products/:id/sku-mappings/:mappingId',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = skuMappingUpdateBody.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+      }
+      try {
+        const updated = await getSvc(request.user.userId).updateListedProductSku(
+          request.params.id,
+          request.params.mappingId,
+          parsed.data,
+        );
+        return updated;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'SKU 매핑 수정에 실패했습니다.';
+        return reply.status(404).send({ error: 'NOT_FOUND', message: msg });
+      }
+    },
+  );
+
+  app.delete<{ Params: { id: string; mappingId: string } }>(
+    '/listed-products/:id/sku-mappings/:mappingId',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      try {
+        await getSvc(request.user.userId).removeListedProductSku(
+          request.params.id,
+          request.params.mappingId,
+        );
+        return reply.status(204).send();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'SKU 매핑 삭제에 실패했습니다.';
+        return reply.status(404).send({ error: 'NOT_FOUND', message: msg });
+      }
+    },
+  );
 
   // ─── 판매 동기화 ────────────────────────────────────────────
 

@@ -8,10 +8,17 @@ export const ROUTES = {
   masterProductNew: '/master-products/new',
   masterProductEdit: (id: string) => `/master-products/${id}/edit`,
   listedProductDetail: (id: string) => `/listed-products/${id}`,
+  skus: '/skus',
+  skuNew: '/skus/new',
+  skuEdit: (id: string) => `/skus/${id}/edit`,
   salesProducts: '/sales-products',
   items: '/items',
   itemEdit: (itemCode: string) => `/items/${itemCode}/edit`,
-  orders: '/orders',
+  payments: '/orders/payments',
+  newOrders: '/orders/new-orders',
+  dispatch: '/dispatch',
+  shipping: '/shipping',
+  allOrders: '/all-orders',
   claims: '/claims',
   inventory: '/inventory',
   adminWarehouses: {
@@ -26,6 +33,7 @@ export const ROUTES = {
   externalSellers: '/external-sellers',
   settings: {
     channels: '/settings/channels',
+    orders: '/settings/orders',
   },
   auth: {
     login: '/login',

@@ -2,6 +2,7 @@
 
 import { Box, Flex, Skeleton, Text } from "@chakra-ui/react";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { Order } from "@/entities/order";
 import { StatusBadge, useQoo10SetSendingInfo } from "@/entities/order";
 import { useSaveShipDate } from "@/features/save-ship-date";
@@ -49,6 +50,7 @@ export function OrderTable({
   showChannelColumn = true,
   onOrderIdClick,
 }: OrderTableProps): React.JSX.Element {
+  const tChannels = useTranslations("config.channels");
   const saveShipDate = useSaveShipDate();
   const setSendingInfo = useQoo10SetSendingInfo();
 
@@ -286,6 +288,12 @@ export function OrderTable({
           {orders.map((order) => {
             const isSelected = selectedIds.includes(order.id);
             const channel = CHANNEL_CONFIG[order.channelId];
+            let channelName: string = channel?.name ?? order.channelId;
+            try {
+              channelName = tChannels(`${order.channelId}.name`);
+            } catch {
+              channelName = channel?.name ?? order.channelId;
+            }
             const primaryItem = order.items[0];
             const orderIdValue = order.channelOrderId;
             // 수취인 관련 필드는 리스트 테이블에서 사용하지 않고 주문 상세 Drawer에서만 사용
@@ -424,7 +432,7 @@ export function OrderTable({
                         {channel?.initial ?? order.channelId[0]?.toUpperCase()}
                       </Box>
                       <Text fontSize="sm" color="gray.700">
-                        {channel?.name ?? order.channelId}
+                        {channelName}
                       </Text>
                     </Flex>
                   </Box>

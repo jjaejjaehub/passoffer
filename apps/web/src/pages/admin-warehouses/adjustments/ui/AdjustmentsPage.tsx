@@ -13,6 +13,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import {
@@ -50,26 +51,27 @@ import type {
   LocationNode,
 } from "@oms/types";
 
-const STEPS: { step: WizardStep; label: string; description: string }[] = [
-  { step: 1, label: "출발 선택", description: "로케이션과 SKU/LOT" },
-  { step: 2, label: "도착 입력", description: "도착 로케이션과 수량" },
-  { step: 3, label: "검토 및 확정", description: "Before/After 미리보기" },
-];
+const STEPS = [
+  { step: 1 as const, labelKey: "step1Label", descKey: "step1Description" },
+  { step: 2 as const, labelKey: "step2Label", descKey: "step2Description" },
+  { step: 3 as const, labelKey: "step3Label", descKey: "step3Description" },
+] as const;
 
 export function AdjustmentsPage(): React.JSX.Element {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   const { warehouseId } = useSelectedWarehouseId();
 
   return (
     <Box p={6}>
       <Flex align="center" justify="space-between" mb={6}>
-        <Heading size="lg">재고 이동/조정</Heading>
+        <Heading size="lg">{t("title")}</Heading>
         <WarehouseSelector />
       </Flex>
 
       {warehouseId === null ? (
         <EmptyState
-          title="창고를 선택해주세요"
-          description="우측 상단에서 창고를 선택하면 조정 마법사를 시작할 수 있습니다."
+          title={t("selectWarehouseTitle")}
+          description={t("selectWarehouseDescription")}
         />
       ) : (
         <AdjustmentWizard warehouseId={warehouseId} />
@@ -83,6 +85,7 @@ interface AdjustmentWizardProps {
 }
 
 function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   const [state, setState] = useState<WizardState>(INITIAL_WIZARD_STATE);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -98,7 +101,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
   if (capabilitiesQuery.isError) {
     return (
       <ErrorState
-        title="창고 정보를 불러오지 못했습니다"
+        title={t("errors.capabilitiesTitle")}
         description={(capabilitiesQuery.error as Error).message}
         onRetry={() => capabilitiesQuery.refetch()}
       />
@@ -107,7 +110,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
   if (locationsQuery.isError) {
     return (
       <ErrorState
-        title="로케이션을 불러오지 못했습니다"
+        title={t("errors.locationsTitle")}
         description={(locationsQuery.error as Error).message}
         onRetry={() => locationsQuery.refetch()}
       />
@@ -120,8 +123,8 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
   if (!capabilities) {
     return (
       <EmptyState
-        title="창고 능력 정보를 사용할 수 없습니다"
-        description="창고 데이터를 다시 불러와 주세요."
+        title={t("errors.noCapabilityTitle")}
+        description={t("errors.noCapabilityDescription")}
       />
     );
   }
@@ -204,15 +207,17 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
       if (anyPending) {
         appToaster.create({
           type: "info",
-          title: "외부 WMS 처리 대기",
-          description:
-            "벤더 시스템에서 처리 중입니다. 동기화 후 재고에 반영됩니다.",
+          title: t("toast.pendingTitle"),
+          description: t("toast.pendingDescription"),
         });
       } else {
         appToaster.create({
           type: "success",
-          title: "재고 이동 완료",
-          description: `${state.source.sku} ${state.destination.quantity}개를 이동했습니다.`,
+          title: t("toast.successTitle"),
+          description: t("toast.successDescription", {
+            sku: state.source.sku,
+            quantity: state.destination.quantity,
+          }),
         });
       }
       setConfirmOpen(false);
@@ -220,8 +225,8 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
     } catch (err) {
       appToaster.create({
         type: "error",
-        title: "재고 이동 실패",
-        description: (err as Error).message ?? "다시 시도해 주세요.",
+        title: t("toast.errorTitle"),
+        description: (err as Error).message ?? t("toast.errorFallback"),
       });
     } finally {
       setSubmitting(false);
@@ -268,11 +273,11 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
           onClick={goPrev}
           disabled={state.step === 1}
         >
-          <ArrowLeft size={14} /> 이전
+          <ArrowLeft size={14} /> {t("buttons.prev")}
         </Button>
         <Flex gap={2}>
           <Button variant="ghost" size="sm" onClick={reset}>
-            처음부터
+            {t("buttons.restart")}
           </Button>
           {state.step < 3 ? (
             <Button
@@ -286,7 +291,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
                   : !canStep2Continue
               }
             >
-              다음 <ArrowRight size={14} />
+              {t("buttons.next")} <ArrowRight size={14} />
             </Button>
           ) : (
             <Button
@@ -296,7 +301,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
               onClick={() => setConfirmOpen(true)}
               disabled={!canStep3Confirm || submitting}
             >
-              <CheckCircle2 size={14} /> 확정
+              <CheckCircle2 size={14} /> {t("buttons.confirm")}
             </Button>
           )}
         </Flex>
@@ -322,6 +327,7 @@ interface StepperHeaderProps {
 }
 
 function StepperHeader({ currentStep }: StepperHeaderProps): ReactElement {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   return (
     <Flex
       align="center"
@@ -356,10 +362,10 @@ function StepperHeader({ currentStep }: StepperHeaderProps): ReactElement {
                 fontWeight={isActive ? "bold" : "medium"}
                 color={isActive ? "blue.700" : "gray.700"}
               >
-                {s.label}
+                {t(`steps.${s.labelKey}` as "steps.step1Label")}
               </Text>
               <Text fontSize="xs" color="gray.500">
-                {s.description}
+                {t(`steps.${s.descKey}` as "steps.step1Description")}
               </Text>
             </Box>
             {idx < STEPS.length - 1 ? (
@@ -390,6 +396,7 @@ function Step1SourceSelect({
   source,
   onChangeSource,
 }: Step1Props): ReactElement {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   const selectedLocation = source?.locationCode ?? null;
 
   const inventoryQuery = useWarehouseInventory(
@@ -426,7 +433,7 @@ function Step1SourceSelect({
     <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
       <Stack gap={2}>
         <Text fontSize="sm" fontWeight="medium" color="gray.700">
-          1. 출발 로케이션
+          {t("step1.sourceLocationLabel")}
         </Text>
         <AdjustmentLocationPicker
           nodes={locationNodes}
@@ -436,7 +443,7 @@ function Step1SourceSelect({
       </Stack>
       <Stack gap={2}>
         <Text fontSize="sm" fontWeight="medium" color="gray.700">
-          2. SKU / LOT 선택
+          {t("step1.skuLotLabel")}
         </Text>
         {!selectedLocation ? (
           <Box
@@ -448,7 +455,7 @@ function Step1SourceSelect({
             textAlign="center"
           >
             <Text fontSize="sm" color="gray.500">
-              먼저 출발 로케이션을 선택해 주세요.
+              {t("step1.pickLocationFirst")}
             </Text>
           </Box>
         ) : (
@@ -481,11 +488,12 @@ function Step2Destination({
   destination,
   onChangeDestination,
 }: Step2Props): ReactElement {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   if (!source || !source.sku) {
     return (
       <EmptyState
-        title="출발 정보가 필요합니다"
-        description="이전 단계에서 출발 로케이션과 SKU/LOT을 선택해 주세요."
+        title={t("step2.sourceRequiredTitle")}
+        description={t("step2.sourceRequiredDescription")}
       />
     );
   }
@@ -518,38 +526,38 @@ function Step2Destination({
     <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
       <Stack gap={2}>
         <Text fontSize="sm" fontWeight="medium" color="gray.700">
-          도착 로케이션
+          {t("step2.destLocationLabel")}
         </Text>
         <AdjustmentLocationPicker
           nodes={locationNodes}
           value={destination?.locationCode ?? null}
           onChange={handleLocation}
           excludeCode={source.locationCode}
-          excludeReason="출발 로케이션과 동일할 수 없습니다"
+          excludeReason={t("step2.excludeReason")}
         />
       </Stack>
       <Stack gap={3}>
         <Box>
           <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={1}>
-            이동 수량
+            {t("step2.quantityLabel")}
           </Text>
           <Input
             type="number"
             size="sm"
             min={1}
             max={available}
-            placeholder="이동할 수량을 입력하세요"
+            placeholder={t("step2.quantityPlaceholder")}
             value={destination?.quantity ? String(destination.quantity) : ""}
             onChange={(e) => handleQuantity(e.target.value)}
           />
           <Text fontSize="xs" color="gray.500" mt={1}>
-            가용 수량 {available.toLocaleString()}
+            {t("step2.availableQty", { qty: available.toLocaleString() })}
           </Text>
           {tooMuch ? (
             <Flex align="center" gap={1} mt={1} color="red.600">
               <CircleAlert size={12} />
               <Text fontSize="xs">
-                가용 수량을 초과합니다.
+                {t("step2.tooMuch")}
               </Text>
             </Flex>
           ) : null}
@@ -557,7 +565,7 @@ function Step2Destination({
             <Flex align="center" gap={1} mt={1} color="red.600">
               <CircleAlert size={12} />
               <Text fontSize="xs">
-                도착 로케이션이 출발과 같습니다.
+                {t("step2.sameLocation")}
               </Text>
             </Flex>
           ) : null}
@@ -571,7 +579,7 @@ function Step2Destination({
           bg="gray.50"
         >
           <Text fontSize="xs" color="gray.500" mb={1}>
-            선택 요약
+            {t("step2.summaryLabel")}
           </Text>
           <Text fontSize="sm" fontFamily="mono">
             {source.locationCode} → {destination?.locationCode ?? "?"}
@@ -603,6 +611,7 @@ function Step3Review({
   locationNodes,
   onChangeReview,
 }: Step3Props): ReactElement {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   const sourceCode = source?.locationCode ?? "";
   const destCode = destination?.locationCode ?? "";
 
@@ -618,8 +627,8 @@ function Step3Review({
   if (!source || !source.sku || !destination) {
     return (
       <EmptyState
-        title="검토할 정보가 부족합니다"
-        description="이전 단계로 돌아가 주세요."
+        title={t("step3.insufficientTitle")}
+        description={t("step3.insufficientDescription")}
       />
     );
   }
@@ -635,7 +644,7 @@ function Step3Review({
       <AdjustmentBeforeAfterPanel
         delta={destination.quantity}
         source={{
-          label: "출발 (감소)",
+          label: t("step3.sourceLabel"),
           locationCode: source.locationCode,
           locationPath: sourcePath ?? undefined,
           sku: source.sku,
@@ -645,7 +654,7 @@ function Step3Review({
           tone: "decrease",
         }}
         destination={{
-          label: "도착 (증가)",
+          label: t("step3.destLabel"),
           locationCode: destination.locationCode,
           locationPath: destPath ?? undefined,
           sku: source.sku,
@@ -659,14 +668,14 @@ function Step3Review({
       <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
         <Box>
           <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={1}>
-            사유 코드
+            {t("step3.reasonCodeLabel")}
           </Text>
           <NativeSelect.Root size="sm">
             <NativeSelect.Field
               value={review.reasonCode}
               onChange={(e) => onChangeReview({ reasonCode: e.target.value })}
             >
-              <option value="">선택하세요</option>
+              <option value="">{t("step3.selectPlaceholder")}</option>
               {reasonOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -678,11 +687,11 @@ function Step3Review({
         </Box>
         <Box>
           <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={1}>
-            메모 (선택)
+            {t("step3.noteLabel")}
           </Text>
           <Textarea
             size="sm"
-            placeholder="조정 메모를 입력하세요"
+            placeholder={t("step3.notePlaceholder")}
             value={review.note}
             onChange={(e) => onChangeReview({ note: e.target.value })}
           />
@@ -722,6 +731,7 @@ function ConfirmDialog({
   submitting,
   onConfirm,
 }: ConfirmDialogProps): ReactElement | null {
+  const t = useTranslations("pages.adminWarehousesAdjustments");
   if (!source || !destination) return null;
   return (
     <Dialog.Root
@@ -732,12 +742,12 @@ function ConfirmDialog({
       <Dialog.Positioner>
         <Dialog.Content maxW="md" role="alertdialog">
           <Dialog.Header>
-            <Dialog.Title>재고 이동 확정</Dialog.Title>
+            <Dialog.Title>{t("confirmDialog.title")}</Dialog.Title>
           </Dialog.Header>
           <Dialog.Body>
             <Stack gap={2}>
               <Text fontSize="sm" color="gray.700">
-                아래 내용으로 재고 이동을 확정합니다.
+                {t("confirmDialog.description")}
               </Text>
               <Box
                 p={3}
@@ -754,16 +764,17 @@ function ConfirmDialog({
                   {source.lotCode ? ` · LOT ${source.lotCode}` : ""}
                 </Text>
                 <Text fontSize="sm" fontFamily="mono">
-                  수량 {destination.quantity.toLocaleString()}
+                  {t("confirmDialog.quantityLine", {
+                    qty: destination.quantity.toLocaleString(),
+                  })}
                 </Text>
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  사유 {review.reasonCode}
+                  {t("confirmDialog.reasonLine", { code: review.reasonCode })}
                   {review.note ? ` · ${review.note}` : ""}
                 </Text>
               </Box>
               <Text fontSize="xs" color="gray.500">
-                실행 시 출발 로케이션 -{destination.quantity}, 도착 로케이션 +
-                {destination.quantity} 두 번의 조정 요청이 전송됩니다.
+                {t("confirmDialog.warning", { qty: destination.quantity })}
               </Text>
             </Stack>
           </Dialog.Body>
@@ -775,7 +786,7 @@ function ConfirmDialog({
               onClick={() => onOpenChange(false)}
               disabled={submitting}
             >
-              취소
+              {t("buttons.cancel")}
             </Button>
             <Button
               type="button"
@@ -786,7 +797,7 @@ function ConfirmDialog({
               disabled={submitting}
               loading={submitting}
             >
-              확정
+              {t("buttons.confirm")}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

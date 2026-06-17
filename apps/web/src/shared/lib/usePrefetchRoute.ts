@@ -46,8 +46,8 @@ export function usePrefetchRoute(): {
 
       const dateFrom = format(startOfMonth(new Date()), 'yyyy-MM-dd');
 
-      // /orders 또는 /claims → 주문/클레임 목록 prefetch
-      if (route.startsWith(ROUTES.orders)) {
+      // /orders/* (결제관리·신규주문 등) → 주문 목록 prefetch
+      if (route.startsWith('/orders')) {
         if (activeChannel === 'shopify' && hasShopify && shopifyChannelUuid) {
           const listParams = {
             pageSize: 50,

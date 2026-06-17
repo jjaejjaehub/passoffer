@@ -9,21 +9,22 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
+import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useListedProduct } from "@/entities/master-product";
+import { useTranslations } from "next-intl";
+import {
+  usePushStockToChannel,
+  useListedProduct,
+  useSyncProductInfoToChannel,
+} from "@/entities/master-product";
 import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/shared/ui";
-
-const SYNC_STATUS_LABEL: Record<string, string> = {
-  SYNCED: "동기화됨",
-  PENDING: "대기중",
-  FAILED: "실패",
-};
+import { appToaster } from "@/shared/ui/app-toaster";
 
 const SYNC_STATUS_COLOR: Record<string, string> = {
   SYNCED: "green",
   PENDING: "orange",
-  FAILED: "red",
+  ERROR: "red",
 };
 
 interface Props {
@@ -31,8 +32,23 @@ interface Props {
 }
 
 export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
+  const t = useTranslations("pages.listedProductDetail");
   const router = useRouter();
   const { data: product, isLoading } = useListedProduct(id);
+  const { mutateAsync: syncInfo, isPending: isSyncingInfo } =
+    useSyncProductInfoToChannel();
+  const { mutateAsync: pushStock, isPending: isPushingStock } =
+    usePushStockToChannel();
+
+  async function handleSync() {
+    try {
+      await syncInfo(id);
+      await pushStock(id);
+      appToaster.success({ title: t("syncSuccess") });
+    } catch {
+      appToaster.error({ title: t("syncError") });
+    }
+  }
 
   if (isLoading) {
     return (
@@ -45,7 +61,7 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
   if (!product) {
     return (
       <Box py={10} textAlign="center">
-        <Text color="gray.500" fontSize="sm">판매상품을 찾을 수 없습니다.</Text>
+        <Text color="gray.500" fontSize="sm">{t("notFound")}</Text>
       </Box>
     );
   }
@@ -58,7 +74,7 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
     <Box display="flex" flexDirection="column" height="100%">
       <Flex align="flex-start" justify="space-between" mb={6}>
         <PageHeader
-          title={product.title ?? "판매상품 상세"}
+          title={product.title ?? t("fallbackTitle")}
           description={`${product.channelName} · ${product.channelType}`}
         />
         <Button
@@ -68,38 +84,40 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
           onClick={() => router.back()}
           mt={1}
         >
-          뒤로
+          {t("back")}
         </Button>
       </Flex>
 
       <Stack gap={6} maxW="640px">
         <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" p={5}>
-          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>기본 정보</Text>
+          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>{t("sections.basicInfo")}</Text>
           <Stack gap={2.5}>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">채널 상품 코드</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.channelItemCode")}</Text>
               <Text fontSize="sm" fontWeight="medium">{product.channelItemCode ?? "-"}</Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">판매자 코드</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.channelSellerCode")}</Text>
               <Text fontSize="sm" fontWeight="medium">{product.channelSellerCode ?? "-"}</Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">채널</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.channel")}</Text>
               <Text fontSize="sm" fontWeight="medium">{product.channelName}</Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">상태</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.status")}</Text>
               <Text fontSize="sm" fontWeight="medium">{product.status ?? "-"}</Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">동기화 상태</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.syncStatus")}</Text>
               <Badge colorPalette={SYNC_STATUS_COLOR[product.syncStatus] ?? "gray"} size="sm">
-                {SYNC_STATUS_LABEL[product.syncStatus] ?? product.syncStatus}
+                {t.has(`syncStatus.${product.syncStatus}`)
+                  ? t(`syncStatus.${product.syncStatus}` as "syncStatus.SYNCED")
+                  : product.syncStatus}
               </Badge>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">마지막 동기화</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.lastSyncedAt")}</Text>
               <Text fontSize="sm" fontWeight="medium">
                 {product.lastSyncedAt
                   ? new Date(product.lastSyncedAt).toLocaleString("ko-KR")
@@ -107,7 +125,7 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
               </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">등록일</Text>
+              <Text fontSize="sm" color="gray.600">{t("labels.createdAt")}</Text>
               <Text fontSize="sm" fontWeight="medium">
                 {new Date(product.createdAt).toLocaleDateString("ko-KR")}
               </Text>
@@ -117,7 +135,7 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
 
         {channelDataEntries.length > 0 && (
           <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" p={5}>
-            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>채널 등록 데이터</Text>
+            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>{t("sections.channelData")}</Text>
             <Stack gap={2}>
               {channelDataEntries.map(([key, value]) => (
                 <Flex key={key} justify="space-between" align="flex-start" gap={4}>
@@ -140,14 +158,25 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
         )}
 
         {product.masterProductId && (
-          <Flex justify="flex-end">
+          <Flex justify="flex-end" gap={2}>
+            {product.syncStatus === "PENDING" && (
+              <Button
+                size="sm"
+                colorPalette="orange"
+                onClick={handleSync}
+                loading={isSyncingInfo || isPushingStock}
+              >
+                <RefreshCw size={14} />
+                {t("actions.sync")}
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
               borderColor="gray.300"
               onClick={() => router.push(ROUTES.masterProductEdit(product.masterProductId!))}
             >
-              마스터 상품 편집
+              {t("actions.editMaster")}
             </Button>
           </Flex>
         )}

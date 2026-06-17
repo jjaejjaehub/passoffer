@@ -52,19 +52,21 @@ async function seed() {
       userId: USER_ID,
       code: 'MP-001',
       title: '유니섹스 베이직 코튼 티셔츠',
-      descriptionHtml: '<p>고품질 100% 순면 소재의 베이직 티셔츠입니다. 남녀 공용으로 편안한 핏을 제공합니다.</p>',
-      brand: 'BASIC LABEL',
-      hsCode: '6109.10',
-      countryOfOrigin: '대한민국',
-      material: '면 100%',
-      weightG: 250,
-      retailPrice: '29000',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800', altText: '화이트 티셔츠 정면', order: 0 },
-        { url: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800', altText: '화이트 티셔츠 후면', order: 1 },
-      ],
-      tags: ['티셔츠', '베이직', '유니섹스', '면'],
       attributes: {
+        common: {
+          descriptionHtml: '<p>고품질 100% 순면 소재의 베이직 티셔츠입니다. 남녀 공용으로 편안한 핏을 제공합니다.</p>',
+          brand: 'BASIC LABEL',
+          hsCode: '6109.10',
+          countryOfOrigin: '대한민국',
+          material: '면 100%',
+          weightG: 250,
+          retailPrice: '29000',
+          images: [
+            { url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800', altText: '화이트 티셔츠 정면', order: 0 },
+            { url: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800', altText: '화이트 티셔츠 후면', order: 1 },
+          ],
+          tags: ['티셔츠', '베이직', '유니섹스', '면'],
+        },
         qoo10: {
           SecondSubCat: '300003249', // メンズファッション > トップス > Tシャツ
           BrandNo: QOO10_DEFAULTS.BrandNo,
@@ -101,19 +103,21 @@ async function seed() {
       userId: USER_ID,
       code: 'MP-002',
       title: '오버사이즈 후드 스웨트셔츠',
-      descriptionHtml: '<p>두툼한 기모 안감으로 겨울에도 따뜻한 오버사이즈 후드티입니다. 세 가지 색상으로 구성되어 있습니다.</p>',
-      brand: 'COZY FIT',
-      hsCode: '6110.20',
-      countryOfOrigin: '대한민국',
-      material: '면 80%, 폴리에스터 20%',
-      weightG: 600,
-      retailPrice: '59000',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=800', altText: '후드티 블랙', order: 0 },
-        { url: 'https://images.unsplash.com/photo-1509942774463-acf339cf87d5?w=800', altText: '후드티 그레이', order: 1 },
-      ],
-      tags: ['후드티', '오버사이즈', '기모', '겨울'],
       attributes: {
+        common: {
+          descriptionHtml: '<p>두툼한 기모 안감으로 겨울에도 따뜻한 오버사이즈 후드티입니다. 세 가지 색상으로 구성되어 있습니다.</p>',
+          brand: 'COZY FIT',
+          hsCode: '6110.20',
+          countryOfOrigin: '대한민국',
+          material: '면 80%, 폴리에스터 20%',
+          weightG: 600,
+          retailPrice: '59000',
+          images: [
+            { url: 'https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=800', altText: '후드티 블랙', order: 0 },
+            { url: 'https://images.unsplash.com/photo-1509942774463-acf339cf87d5?w=800', altText: '후드티 그레이', order: 1 },
+          ],
+          tags: ['후드티', '오버사이즈', '기모', '겨울'],
+        },
         qoo10: {
           SecondSubCat: '300002279', // メンズファッション > アウター > パーカー・トレーナー
           BrandNo: QOO10_DEFAULTS.BrandNo,
@@ -215,18 +219,19 @@ async function seed() {
       userId: USER_ID,
       code: 'MP-003',
       title: '히알루론산 수분 앰플 50ml',
-      descriptionHtml: '<p>고농도 히알루론산 성분으로 피부 깊숙이 수분을 공급하는 앰플입니다. 자극 없는 순한 포뮬라.</p>',
-      brand: 'PURE SKIN LAB',
-      hsCode: '3304.99',
-      countryOfOrigin: '대한민국',
-      material: null,
-      weightG: 120,
-      retailPrice: '45000',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800', altText: '히알루론산 앰플', order: 0 },
-      ],
-      tags: ['스킨케어', '앰플', '수분', '히알루론산', '민감성'],
       attributes: {
+        common: {
+          descriptionHtml: '<p>고농도 히알루론산 성분으로 피부 깊숙이 수분을 공급하는 앰플입니다. 자극 없는 순한 포뮬라.</p>',
+          brand: 'PURE SKIN LAB',
+          hsCode: '3304.99',
+          countryOfOrigin: '대한민국',
+          weightG: 120,
+          retailPrice: '45000',
+          images: [
+            { url: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800', altText: '히알루론산 앰플', order: 0 },
+          ],
+          tags: ['스킨케어', '앰플', '수분', '히알루론산', '민감성'],
+        },
         qoo10: {
           SecondSubCat: '320001623', // スキンケア > 基礎化粧品 > 美容液
           BrandNo: QOO10_DEFAULTS.BrandNo,
@@ -261,19 +266,20 @@ async function seed() {
       userId: USER_ID,
       code: 'MP-004',
       title: '완전 무선 블루투스 이어폰 TWS-Pro',
-      descriptionHtml: '<p>액티브 노이즈 캔슬링(ANC) 탑재, 최대 28시간 연속 사용 가능한 프리미엄 TWS 이어폰입니다.</p>',
-      brand: 'SONIQ',
-      hsCode: '8518.30',
-      countryOfOrigin: '중국',
-      material: null,
-      weightG: 58,
-      retailPrice: '89000',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800', altText: '무선 이어폰', order: 0 },
-        { url: 'https://images.unsplash.com/photo-1605464315542-bda3e2f4e605?w=800', altText: '이어폰 케이스', order: 1 },
-      ],
-      tags: ['이어폰', '블루투스', 'ANC', '무선', 'TWS'],
       attributes: {
+        common: {
+          descriptionHtml: '<p>액티브 노이즈 캔슬링(ANC) 탑재, 최대 28시간 연속 사용 가능한 프리미엄 TWS 이어폰입니다.</p>',
+          brand: 'SONIQ',
+          hsCode: '8518.30',
+          countryOfOrigin: '중국',
+          weightG: 58,
+          retailPrice: '89000',
+          images: [
+            { url: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800', altText: '무선 이어폰', order: 0 },
+            { url: 'https://images.unsplash.com/photo-1605464315542-bda3e2f4e605?w=800', altText: '이어폰 케이스', order: 1 },
+          ],
+          tags: ['이어폰', '블루투스', 'ANC', '무선', 'TWS'],
+        },
         qoo10: {
           SecondSubCat: '320002463', // イヤホン・ヘッドホン > イヤホン > ワイヤレスイヤホン
           BrandNo: QOO10_DEFAULTS.BrandNo,
@@ -309,18 +315,20 @@ async function seed() {
       userId: USER_ID,
       code: 'MP-005',
       title: '스테인리스 진공 보온 텀블러',
-      descriptionHtml: '<p>이중 진공 단열 구조로 12시간 보온·보냉이 가능한 스테인리스 텀블러입니다. 리크프루프 뚜껑 적용.</p>',
-      brand: 'KEEPWARM',
-      hsCode: '7323.93',
-      countryOfOrigin: '중국',
-      material: '스테인리스 304',
-      weightG: 340,
-      retailPrice: '35000',
-      images: [
-        { url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800', altText: '스테인리스 텀블러', order: 0 },
-      ],
-      tags: ['텀블러', '보온', '보냉', '스테인리스', '친환경'],
       attributes: {
+        common: {
+          descriptionHtml: '<p>이중 진공 단열 구조로 12시간 보온·보냉이 가능한 스테인리스 텀블러입니다. 리크프루프 뚜껑 적용.</p>',
+          brand: 'KEEPWARM',
+          hsCode: '7323.93',
+          countryOfOrigin: '중국',
+          material: '스테인리스 304',
+          weightG: 340,
+          retailPrice: '35000',
+          images: [
+            { url: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800', altText: '스테인리스 텀블러', order: 0 },
+          ],
+          tags: ['텀블러', '보온', '보냉', '스테인리스', '친환경'],
+        },
         qoo10: {
           SecondSubCat: '320000794', // キッチン用品 > キッチン雑貨 > 水筒・マグボトル
           BrandNo: QOO10_DEFAULTS.BrandNo,
