@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { dispatchQueries } from './dispatchQueries';
-import { shippingQueries } from './shippingQueries';
-import { ordersQueries } from './ordersQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { dispatchQueries } from "./dispatchQueries";
+import { shippingQueries } from "./shippingQueries";
+import { ordersQueries } from "./ordersQueries";
 
 export interface BarcodeVerifyInput {
   scannedCode: string;
@@ -12,10 +12,10 @@ export interface BarcodeVerifyInput {
 }
 
 export type BarcodeVerifyReason =
-  | 'not_found'
-  | 'ineligible_status'
-  | 'expected_mismatch'
-  | 'multiple_matches';
+  | "not_found"
+  | "ineligible_status"
+  | "expected_mismatch"
+  | "multiple_matches";
 
 export interface BarcodeVerifyOrderSummary {
   id: string;
@@ -41,8 +41,13 @@ export function useBarcodeVerify() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: BarcodeVerifyInput): Promise<BarcodeVerifyResult> => {
-      return await http.post<BarcodeVerifyResult>('/api/barcode-dispatch/verify', input);
+    mutationFn: async (
+      input: BarcodeVerifyInput,
+    ): Promise<BarcodeVerifyResult> => {
+      return await http.post<BarcodeVerifyResult>(
+        "/api/barcode-dispatch/verify",
+        input,
+      );
     },
     onSuccess: (result) => {
       if (result.matched) {

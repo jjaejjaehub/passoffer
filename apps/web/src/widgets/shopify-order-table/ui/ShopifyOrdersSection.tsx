@@ -11,7 +11,15 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { AlertTriangle, CheckCircle, Download, KeyIcon, Package, Search, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  KeyIcon,
+  Package,
+  Search,
+  X,
+} from "lucide-react";
 import { isAxiosError } from "axios";
 
 import {
@@ -75,7 +83,15 @@ function escapeCsv(value: string | null | undefined): string {
 
 function exportOrdersCsv(orders: ShopifyOrderItem[]): void {
   const headers = [
-    "주문번호", "주문일시", "구매자", "이메일", "배송지", "상품", "상태", "금액", "통화",
+    "주문번호",
+    "주문일시",
+    "구매자",
+    "이메일",
+    "배송지",
+    "상품",
+    "상태",
+    "금액",
+    "통화",
   ];
   const rows = orders.map((o) => [
     escapeCsv(o.channelOrderId),
@@ -83,14 +99,20 @@ function exportOrdersCsv(orders: ShopifyOrderItem[]): void {
     escapeCsv(o.buyer.name),
     escapeCsv(o.buyer.email),
     escapeCsv(o.shipping.shippingAddress),
-    escapeCsv(o.items.map((li) => `${li.productName} x${li.quantity}`).join(" | ")),
+    escapeCsv(
+      o.items.map((li) => `${li.productName} x${li.quantity}`).join(" | "),
+    ),
     escapeCsv(o.status),
     escapeCsv(String(o.payment.totalAmount)),
     escapeCsv(o.payment.currency),
   ]);
-  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join(
+    "\n",
+  );
   const bom = "\uFEFF";
-  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([bom + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -105,7 +127,10 @@ function exportOrdersCsv(orders: ShopifyOrderItem[]): void {
 
 function StatusBadge({ status }: { status: string }): React.JSX.Element {
   const label = STATUS_LABEL[status] ?? status;
-  const style = STATUS_COLOR_MAP[status] ?? { bg: "gray.100", color: "gray.600" };
+  const style = STATUS_COLOR_MAP[status] ?? {
+    bg: "gray.100",
+    color: "gray.600",
+  };
   return (
     <Box
       display="inline-block"
@@ -166,7 +191,13 @@ function ShopifyQuickFulfillModal({
 
   return (
     <>
-      <Box position="fixed" inset={0} bg="blackAlpha.500" zIndex={1000} onClick={onClose} />
+      <Box
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.500"
+        zIndex={1000}
+        onClick={onClose}
+      />
       <Box
         position="fixed"
         top="50%"
@@ -180,40 +211,99 @@ function ShopifyQuickFulfillModal({
         borderRadius="xl"
         boxShadow="0 20px 60px rgba(0,0,0,0.18)"
       >
-        <Flex align="center" justify="space-between" px={5} py={4} borderBottomWidth="1px" borderColor="gray.200">
-          <Text fontWeight="semibold" fontSize="md">배송 처리</Text>
-          <Box as="button" onClick={onClose} color="gray.500" _hover={{ color: "gray.800" }} display="flex" alignItems="center">
+        <Flex
+          align="center"
+          justify="space-between"
+          px={5}
+          py={4}
+          borderBottomWidth="1px"
+          borderColor="gray.200"
+        >
+          <Text fontWeight="semibold" fontSize="md">
+            배송 처리
+          </Text>
+          <Box
+            as="button"
+            onClick={onClose}
+            color="gray.500"
+            _hover={{ color: "gray.800" }}
+            display="flex"
+            alignItems="center"
+          >
             <X size={20} />
           </Box>
         </Flex>
         <VStack gap={4} align="stretch" px={5} py={4}>
           {successMsg && (
-            <Flex align="center" gap={2} p={3} bg="green.50" borderRadius="md" borderWidth="1px" borderColor="green.200">
+            <Flex
+              align="center"
+              gap={2}
+              p={3}
+              bg="green.50"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="green.200"
+            >
               <CheckCircle size={16} color="var(--chakra-colors-green-600)" />
-              <Text fontSize="sm" color="green.700">{successMsg}</Text>
+              <Text fontSize="sm" color="green.700">
+                {successMsg}
+              </Text>
             </Flex>
           )}
           {errorMsg && (
-            <Flex align="center" gap={2} p={3} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
+            <Flex
+              align="center"
+              gap={2}
+              p={3}
+              bg="red.50"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="red.200"
+            >
               <AlertTriangle size={16} color="var(--chakra-colors-red-600)" />
-              <Text fontSize="sm" color="red.700">{errorMsg}</Text>
+              <Text fontSize="sm" color="red.700">
+                {errorMsg}
+              </Text>
             </Flex>
           )}
           <Box>
-            <Text fontSize="xs" color="gray.500" mb={1}>운송장 번호 (선택)</Text>
-            <Input size="sm" placeholder="예: 1234567890" value={trackingNumber} onChange={(e) => setTrackingNumber(e.target.value)} />
+            <Text fontSize="xs" color="gray.500" mb={1}>
+              운송장 번호 (선택)
+            </Text>
+            <Input
+              size="sm"
+              placeholder="예: 1234567890"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
           </Box>
           <Box>
-            <Text fontSize="xs" color="gray.500" mb={1}>택배사 ID (선택)</Text>
-            <Input size="sm" placeholder="예: cj, yamato" value={carrierId} onChange={(e) => setCarrierId(e.target.value)} />
+            <Text fontSize="xs" color="gray.500" mb={1}>
+              택배사 ID (선택)
+            </Text>
+            <Input
+              size="sm"
+              placeholder="예: cj, yamato"
+              value={carrierId}
+              onChange={(e) => setCarrierId(e.target.value)}
+            />
           </Box>
           <HStack gap={2} justify="flex-end" pt={1}>
-            <Button size="sm" variant="ghost" onClick={onClose} disabled={fulfill.isPending}>닫기</Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              disabled={fulfill.isPending}
+            >
+              닫기
+            </Button>
             <Button
               size="sm"
               colorScheme="blue"
               loading={fulfill.isPending}
-              onClick={() => { void handleFulfill(); }}
+              onClick={() => {
+                void handleFulfill();
+              }}
             >
               <Package size={14} />
               배송 완료 처리
@@ -240,8 +330,10 @@ export function ShopifyOrderTable({
   onRowClick?: (order: ShopifyOrderItem) => void;
   onFulfillClick?: (order: ShopifyOrderItem) => void;
 }): React.JSX.Element {
-  const allSelected = orders.length > 0 && selectedOrderIds.length === orders.length;
-  const someSelected = selectedOrderIds.length > 0 && selectedOrderIds.length < orders.length;
+  const allSelected =
+    orders.length > 0 && selectedOrderIds.length === orders.length;
+  const someSelected =
+    selectedOrderIds.length > 0 && selectedOrderIds.length < orders.length;
 
   const toggleAll = (): void => {
     if (!onSelectionChange) return;
@@ -273,7 +365,13 @@ export function ShopifyOrderTable({
   ];
 
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" overflow="hidden">
+    <Box
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="lg"
+      bg="white"
+      overflow="hidden"
+    >
       <Box overflowX="auto">
         <Box
           as="table"
@@ -340,19 +438,44 @@ export function ShopifyOrderTable({
                     py={3}
                     w="40px"
                     minW="40px"
-                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); toggleOne(order.id); }}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      toggleOne(order.id);
+                    }}
                   >
                     <input
                       type="checkbox"
                       checked={isSelected}
-                      onChange={() => { /* handled by onClick */ }}
-                      style={{ cursor: "pointer", width: "14px", height: "14px" }}
+                      onChange={() => {
+                        /* handled by onClick */
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        width: "14px",
+                        height: "14px",
+                      }}
                     />
                   </Box>
-                  <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="100px" fontWeight="medium" color="gray.900">
+                  <Box
+                    as="td"
+                    px={4}
+                    py={3}
+                    whiteSpace="nowrap"
+                    minW="100px"
+                    fontWeight="medium"
+                    color="gray.900"
+                  >
                     {order.channelOrderId}
                   </Box>
-                  <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="160px" color="gray.600" fontSize="xs">
+                  <Box
+                    as="td"
+                    px={4}
+                    py={3}
+                    whiteSpace="nowrap"
+                    minW="160px"
+                    color="gray.600"
+                    fontSize="xs"
+                  >
                     {new Date(order.orderedAt).toLocaleString("ko-KR", {
                       year: "numeric",
                       month: "2-digit",
@@ -361,7 +484,14 @@ export function ShopifyOrderTable({
                       minute: "2-digit",
                     })}
                   </Box>
-                  <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="140px" color="gray.800">
+                  <Box
+                    as="td"
+                    px={4}
+                    py={3}
+                    whiteSpace="nowrap"
+                    minW="140px"
+                    color="gray.800"
+                  >
                     {order.buyer.name || order.buyer.email || "-"}
                   </Box>
                   <Box
@@ -375,12 +505,22 @@ export function ShopifyOrderTable({
                     whiteSpace="nowrap"
                     color="gray.700"
                   >
-                    {order.items.map((li) => `${li.productName} x${li.quantity}`).join(", ")}
+                    {order.items
+                      .map((li) => `${li.productName} x${li.quantity}`)
+                      .join(", ")}
                   </Box>
                   <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="110px">
                     <StatusBadge status={order.status} />
                   </Box>
-                  <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="120px" fontWeight="medium" color="gray.900">
+                  <Box
+                    as="td"
+                    px={4}
+                    py={3}
+                    whiteSpace="nowrap"
+                    minW="120px"
+                    fontWeight="medium"
+                    color="gray.900"
+                  >
                     {order.payment.currency}{" "}
                     {order.payment.totalAmount.toLocaleString()}
                   </Box>
@@ -392,17 +532,18 @@ export function ShopifyOrderTable({
                     minW="110px"
                     onClick={(e: React.MouseEvent) => e.stopPropagation()}
                   >
-                    {FULFILLABLE_STATUSES.has(order.status) && onFulfillClick && (
-                      <Button
-                        size="xs"
-                        colorScheme="blue"
-                        variant="outline"
-                        onClick={() => onFulfillClick(order)}
-                      >
-                        <Package size={12} />
-                        배송 처리
-                      </Button>
-                    )}
+                    {FULFILLABLE_STATUSES.has(order.status) &&
+                      onFulfillClick && (
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="outline"
+                          onClick={() => onFulfillClick(order)}
+                        >
+                          <Package size={12} />
+                          배송 처리
+                        </Button>
+                      )}
                   </Box>
                 </Box>
               );
@@ -481,14 +622,24 @@ export function ShopifyOrdersSection(): React.JSX.Element {
         borderColor="red.200"
         bg="red.50"
       >
-        <Box mt={1} color="red.500"><AlertTriangle size={18} /></Box>
+        <Box mt={1} color="red.500">
+          <AlertTriangle size={18} />
+        </Box>
         <Box flex="1">
-          <Text fontWeight="semibold" mb={1}>API 키 인증 실패</Text>
+          <Text fontWeight="semibold" mb={1}>
+            API 키 인증 실패
+          </Text>
           <Text fontSize="sm" color="gray.700">
-            Shopify API 키 인증에 실패했습니다. 채널 설정에서 키를 확인해 주세요.
+            Shopify API 키 인증에 실패했습니다. 채널 설정에서 키를 확인해
+            주세요.
           </Text>
         </Box>
-        <Button ml={4} colorScheme="blue" onClick={() => router.push(ROUTES.settings.channels)} size="sm">
+        <Button
+          ml={4}
+          colorScheme="blue"
+          onClick={() => router.push(ROUTES.settings.channels)}
+          size="sm"
+        >
           채널 설정으로 이동
         </Button>
       </Box>
@@ -508,12 +659,20 @@ export function ShopifyOrdersSection(): React.JSX.Element {
         borderColor="red.200"
         bg="red.50"
       >
-        <Box mt={1} color="red.500"><AlertTriangle size={18} /></Box>
-        <Box flex="1">
-          <Text fontWeight="semibold" mb={1}>주문 조회 중 오류 발생</Text>
-          <Text fontSize="sm" color="gray.700">{error.message}</Text>
+        <Box mt={1} color="red.500">
+          <AlertTriangle size={18} />
         </Box>
-        <Button ml={4} variant="outline" onClick={() => refetch()} size="sm">다시 시도</Button>
+        <Box flex="1">
+          <Text fontWeight="semibold" mb={1}>
+            주문 조회 중 오류 발생
+          </Text>
+          <Text fontSize="sm" color="gray.700">
+            {error.message}
+          </Text>
+        </Box>
+        <Button ml={4} variant="outline" onClick={() => refetch()} size="sm">
+          다시 시도
+        </Button>
       </Box>
     );
   }
@@ -640,8 +799,13 @@ export function ShopifyOrdersSection(): React.JSX.Element {
                     void (async () => {
                       const selectedOrders = orders
                         .filter((o) => selectedOrderIds.includes(o.id))
-                        .map((o) => ({ orderId: o.id, carrierId: o.carrierId ?? "", trackingNumber: o.trackingNumber ?? "" }));
-                      const result = await bulkFulfill.mutateAsync(selectedOrders);
+                        .map((o) => ({
+                          orderId: o.id,
+                          carrierId: o.carrierId ?? "",
+                          trackingNumber: o.trackingNumber ?? "",
+                        }));
+                      const result =
+                        await bulkFulfill.mutateAsync(selectedOrders);
                       setSelectedOrderIds([]);
                       appToaster.create({
                         title: `배송 처리 완료: 성공 ${result.succeeded}건 / 실패 ${result.failed}건`,

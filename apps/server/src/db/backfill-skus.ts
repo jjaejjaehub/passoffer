@@ -18,10 +18,10 @@
  * master_stock_ledger.variant_id → sku_id 컬럼 변환은 0006 마이그레이션에서 수행.
  */
 
-import 'dotenv/config';
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { and, eq, sql } from 'drizzle-orm';
+import "dotenv/config";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { and, eq, sql } from "drizzle-orm";
 import {
   listedProductSkus,
   listedProductVariantLinks,
@@ -29,18 +29,19 @@ import {
   masterProductVariants,
   masterVariantSkus,
   skus,
-} from './schema';
+} from "./schema";
 
-const DRY_RUN = process.env.DRY_RUN === '1';
+const DRY_RUN = process.env.DRY_RUN === "1";
 
 const pool = new Pool({
   connectionString:
-    process.env.DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432/oms',
+    process.env.DATABASE_URL ??
+    "postgresql://postgres:postgres@localhost:5432/oms",
 });
 const db = drizzle(pool);
 
 async function main() {
-  console.log(`[backfill-skus] start${DRY_RUN ? ' (DRY RUN)' : ''}`);
+  console.log(`[backfill-skus] start${DRY_RUN ? " (DRY RUN)" : ""}`);
 
   // Step 1: 모든 variant 와 owner userId 조인해서 가져오기
   const variants = await db
@@ -62,10 +63,23 @@ async function main() {
   const skuKey = (userId: string, code: string) => `${userId}::${code}`;
   const skuByKey = new Map<string, { skuId: string; stock: number }>();
   const variantToSku = new Map<string, string>(); // variantId → skuId
-  const conflicts: Array<{ userId: string; code: string; existingStock: number; ignoredStock: number; variantId: string }> = [];
+  const conflicts: Array<{
+    userId: string;
+    code: string;
+    existingStock: number;
+    ignoredStock: number;
+    variantId: string;
+  }> = [];
 
   // 기존 skus 도 미리 적재 (재실행 안전)
-  const existing = await db.select({ id: skus.id, userId: skus.userId, code: skus.code, stock: skus.stock }).from(skus);
+  const existing = await db
+    .select({
+      id: skus.id,
+      userId: skus.userId,
+      code: skus.code,
+      stock: skus.stock,
+    })
+    .from(skus);
   for (const s of existing) {
     skuByKey.set(skuKey(s.userId, s.code), { skuId: s.id, stock: s.stock });
   }
@@ -106,18 +120,25 @@ async function main() {
     }
     createdSkus++;
   }
-  console.log(`[step1] created skus = ${createdSkus}, stock conflicts = ${conflicts.length}`);
+  console.log(
+    `[step1] created skus = ${createdSkus}, stock conflicts = ${conflicts.length}`,
+  );
   if (conflicts.length > 0) {
-    console.log('[step1] conflict samples (first 10):');
-    for (const c of conflicts.slice(0, 10)) console.log('  ', c);
+    console.log("[step1] conflict samples (first 10):");
+    for (const c of conflicts.slice(0, 10)) console.log("  ", c);
   }
 
   // Step 2: master_variant_skus 백필
   let createdMvs = 0;
   const existingMvs = await db
-    .select({ masterVariantId: masterVariantSkus.masterVariantId, skuId: masterVariantSkus.skuId })
+    .select({
+      masterVariantId: masterVariantSkus.masterVariantId,
+      skuId: masterVariantSkus.skuId,
+    })
     .from(masterVariantSkus);
-  const mvsKey = new Set(existingMvs.map((r) => `${r.masterVariantId}::${r.skuId}`));
+  const mvsKey = new Set(
+    existingMvs.map((r) => `${r.masterVariantId}::${r.skuId}`),
+  );
   console.log(`[step2] existing master_variant_skus = ${existingMvs.length}`);
 
   for (const [variantId, skuId] of variantToSku.entries()) {
@@ -151,7 +172,9 @@ async function main() {
     })
     .from(listedProductSkus);
   const lpsKey = new Set(
-    existingLps.map((r) => `${r.listedProductId}::${r.channelVariantId}::${r.skuId}`),
+    existingLps.map(
+      (r) => `${r.listedProductId}::${r.channelVariantId}::${r.skuId}`,
+    ),
   );
 
   let createdLps = 0;
@@ -178,14 +201,18 @@ async function main() {
     }
     createdLps++;
   }
-  console.log(`[step3] created listed_product_skus = ${createdLps}, unmapped variant links = ${unmappedLinks}`);
+  console.log(
+    `[step3] created listed_product_skus = ${createdLps}, unmapped variant links = ${unmappedLinks}`,
+  );
 
   // Step 4: 검증
   const [{ skuStockSum }] = await db
     .select({ skuStockSum: sql<number>`COALESCE(SUM(${skus.stock}), 0)::int` })
     .from(skus);
   const [{ variantStockSum }] = await db
-    .select({ variantStockSum: sql<number>`COALESCE(SUM(${masterProductVariants.stock}), 0)::int` })
+    .select({
+      variantStockSum: sql<number>`COALESCE(SUM(${masterProductVariants.stock}), 0)::int`,
+    })
     .from(masterProductVariants);
   const [{ lpsCount }] = await db
     .select({ lpsCount: sql<number>`COUNT(*)::int` })
@@ -194,17 +221,31 @@ async function main() {
     .select({ linksCount: sql<number>`COUNT(*)::int` })
     .from(listedProductVariantLinks);
 
-  console.log('[verify] sum(skus.stock) =', skuStockSum, ' sum(master_product_variants.stock) =', variantStockSum);
-  console.log('[verify] listed_product_skus =', lpsCount, ' listed_product_variant_links =', linksCount);
+  console.log(
+    "[verify] sum(skus.stock) =",
+    skuStockSum,
+    " sum(master_product_variants.stock) =",
+    variantStockSum,
+  );
+  console.log(
+    "[verify] listed_product_skus =",
+    lpsCount,
+    " listed_product_variant_links =",
+    linksCount,
+  );
 
   if (!DRY_RUN && variantStockSum !== skuStockSum && conflicts.length === 0) {
-    console.warn('[verify] stock sums diverge without conflicts — investigate before proceeding to 0006');
+    console.warn(
+      "[verify] stock sums diverge without conflicts — investigate before proceeding to 0006",
+    );
   }
   if (!DRY_RUN && lpsCount < linksCount - unmappedLinks) {
-    console.warn('[verify] listed_product_skus count is lower than expected — check unique conflicts');
+    console.warn(
+      "[verify] listed_product_skus count is lower than expected — check unique conflicts",
+    );
   }
 
-  console.log('[backfill-skus] done');
+  console.log("[backfill-skus] done");
   await pool.end();
 }
 

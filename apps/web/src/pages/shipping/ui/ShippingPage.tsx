@@ -19,11 +19,7 @@ import { OrderSyncButtons } from "@/features/sync-orders";
 import { BulkShippingModal } from "@/features/bulk-shipping";
 import { PageHeader } from "@/shared/ui";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
-import {
-  DEFAULT_PAGE_SIZE,
-  LS_KEYS,
-  type PageSize,
-} from "@/shared/config";
+import { DEFAULT_PAGE_SIZE, LS_KEYS, type PageSize } from "@/shared/config";
 
 const SHIPPING_PRESET_RANKS = [50, 60, 70];
 
@@ -124,11 +120,7 @@ export function ShippingPage(): React.JSX.Element {
                   {t("summary.byCarrierLabel")}
                 </Text>
                 {shippingSummary.byCarrier.map((c) => (
-                  <Badge
-                    key={c.carrier}
-                    colorPalette="gray"
-                    variant="outline"
-                  >
+                  <Badge key={c.carrier} colorPalette="gray" variant="outline">
                     {c.carrier} {c.count}
                   </Badge>
                 ))}

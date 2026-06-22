@@ -16,26 +16,51 @@ export function SpecPriceSection({ state, update }: Props) {
         <SubHeading>{t("form.spec.headingSpec")}</SubHeading>
         <TwoCol>
           <Field label={t("form.spec.widthCm")}>
-            <Input size="sm" value={state.widthCm} onChange={(e) => update("widthCm", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.widthCm}
+              onChange={(e) => update("widthCm", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.heightCm")}>
-            <Input size="sm" value={state.heightCm} onChange={(e) => update("heightCm", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.heightCm}
+              onChange={(e) => update("heightCm", e.target.value)}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.spec.depthCm")}>
-            <Input size="sm" value={state.depthCm} onChange={(e) => update("depthCm", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.depthCm}
+              onChange={(e) => update("depthCm", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.weightKg")}>
-            <Input size="sm" value={state.weightKg} onChange={(e) => update("weightKg", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.weightKg}
+              onChange={(e) => update("weightKg", e.target.value)}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.spec.inboundUnit")}>
-            <Input size="sm" value={state.inboundUnit} onChange={(e) => update("inboundUnit", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.inboundUnit}
+              onChange={(e) => update("inboundUnit", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.inboundUnitType")}>
-            <Input size="sm" value={state.inboundUnitType} onChange={(e) => update("inboundUnitType", e.target.value)} placeholder={t("form.spec.inboundUnitTypePlaceholder")} />
+            <Input
+              size="sm"
+              value={state.inboundUnitType}
+              onChange={(e) => update("inboundUnitType", e.target.value)}
+              placeholder={t("form.spec.inboundUnitTypePlaceholder")}
+            />
           </Field>
         </TwoCol>
         <Field label={t("form.spec.isBundlable")}>
@@ -45,41 +70,76 @@ export function SpecPriceSection({ state, update }: Props) {
               checked={state.isBundlable}
               onChange={(e) => update("isBundlable", e.target.checked)}
             />
-            <Text fontSize="sm" color="gray.600">{t("form.spec.isBundlableHint")}</Text>
+            <Text fontSize="sm" color="gray.600">
+              {t("form.spec.isBundlableHint")}
+            </Text>
           </Flex>
         </Field>
 
         <SubHeading>{t("form.spec.headingPrice")}</SubHeading>
         <TwoCol>
           <Field label={t("form.spec.purchaseCost")}>
-            <Input size="sm" value={state.purchaseCost} onChange={(e) => update("purchaseCost", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.purchaseCost}
+              onChange={(e) => update("purchaseCost", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.purchaseFreight")}>
-            <Input size="sm" value={state.purchaseFreight} onChange={(e) => update("purchaseFreight", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.purchaseFreight}
+              onChange={(e) => update("purchaseFreight", e.target.value)}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.spec.deliveryFee")}>
-            <Input size="sm" value={state.deliveryFee} onChange={(e) => update("deliveryFee", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.deliveryFee}
+              onChange={(e) => update("deliveryFee", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.adCost")}>
-            <Input size="sm" value={state.adCost} onChange={(e) => update("adCost", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.adCost}
+              onChange={(e) => update("adCost", e.target.value)}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.spec.etcCost")}>
-            <Input size="sm" value={state.etcCost} onChange={(e) => update("etcCost", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.etcCost}
+              onChange={(e) => update("etcCost", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.currency")}>
-            <Input size="sm" value={state.currency} onChange={(e) => update("currency", e.target.value)} placeholder={t("form.spec.currencyPlaceholder")} />
+            <Input
+              size="sm"
+              value={state.currency}
+              onChange={(e) => update("currency", e.target.value)}
+              placeholder={t("form.spec.currencyPlaceholder")}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.spec.supplyPrice")}>
-            <Input size="sm" value={state.supplyPrice} onChange={(e) => update("supplyPrice", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.supplyPrice}
+              onChange={(e) => update("supplyPrice", e.target.value)}
+            />
           </Field>
           <Field label={t("form.spec.salePrice")}>
-            <Input size="sm" value={state.salePrice} onChange={(e) => update("salePrice", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.salePrice}
+              onChange={(e) => update("salePrice", e.target.value)}
+            />
           </Field>
         </TwoCol>
       </Stack>

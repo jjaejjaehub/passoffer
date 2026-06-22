@@ -1,1 +1,4 @@
-export { ShopifyOrdersSection, ShopifyOrderTable } from './ui/ShopifyOrdersSection';
+export {
+  ShopifyOrdersSection,
+  ShopifyOrderTable,
+} from "./ui/ShopifyOrdersSection";

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
+import { useQuery } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 
-import { useChannelApiKey, useChannelUuid } from '@/entities/channel';
-import { http } from '@/shared/api';
+import { useChannelApiKey, useChannelUuid } from "@/entities/channel";
+import { http } from "@/shared/api";
 
 // ─── 타입 ────────────────────────────────────────────────────────
 
@@ -64,12 +64,12 @@ export interface ShopeeProductDetailApiResponse {
 // ─── 에러 타입 ───────────────────────────────────────────────────
 
 export type ShopeeDetailQueryErrorType =
-  | 'NO_API_KEY'
-  | 'NOT_FOUND'
-  | 'AUTH_ERROR'
-  | 'API_ERROR'
-  | 'NETWORK_ERROR'
-  | 'UNKNOWN';
+  | "NO_API_KEY"
+  | "NOT_FOUND"
+  | "AUTH_ERROR"
+  | "API_ERROR"
+  | "NETWORK_ERROR"
+  | "UNKNOWN";
 
 export interface ShopeeDetailQueryError {
   type: ShopeeDetailQueryErrorType;
@@ -90,17 +90,17 @@ function parseShopeeDetailError(error: unknown): ShopeeDetailQueryError {
     const data = error.response?.data as
       | { error?: string; message?: string }
       | undefined;
-    const code = data?.error ?? '';
-    const message = data?.message ?? '알 수 없는 오류';
+    const code = data?.error ?? "";
+    const message = data?.message ?? "알 수 없는 오류";
 
-    if (code === 'NO_API_KEY') return { type: 'NO_API_KEY', message };
-    if (code === 'error_item_not_found') return { type: 'NOT_FOUND', message };
-    if (code === 'error_auth' || error.response?.status === 401)
-      return { type: 'AUTH_ERROR', message };
-    if (code === 'NETWORK_ERROR') return { type: 'NETWORK_ERROR', message };
-    return { type: 'API_ERROR', message };
+    if (code === "NO_API_KEY") return { type: "NO_API_KEY", message };
+    if (code === "error_item_not_found") return { type: "NOT_FOUND", message };
+    if (code === "error_auth" || error.response?.status === 401)
+      return { type: "AUTH_ERROR", message };
+    if (code === "NETWORK_ERROR") return { type: "NETWORK_ERROR", message };
+    return { type: "API_ERROR", message };
   }
-  return { type: 'UNKNOWN', message: '알 수 없는 오류가 발생했습니다.' };
+  return { type: "UNKNOWN", message: "알 수 없는 오류가 발생했습니다." };
 }
 
 // ─── 훅 ─────────────────────────────────────────────────────────
@@ -108,13 +108,13 @@ function parseShopeeDetailError(error: unknown): ShopeeDetailQueryError {
 export function useShopeeProductDetail(
   itemId: number | null,
 ): ShopeeProductDetailQueryResult {
-  const { hasKey } = useChannelApiKey('shopee');
-  const channelUuid = useChannelUuid('shopee');
+  const { hasKey } = useChannelApiKey("shopee");
+  const channelUuid = useChannelUuid("shopee");
 
   const query = useQuery({
-    queryKey: ['shopee', 'products', 'detail', itemId] as const,
+    queryKey: ["shopee", "products", "detail", itemId] as const,
     queryFn: async (): Promise<ShopeeProductDetailApiResponse> => {
-      if (!channelUuid) throw new Error('Shopee 채널이 연결되지 않았습니다.');
+      if (!channelUuid) throw new Error("Shopee 채널이 연결되지 않았습니다.");
 
       return http.get<ShopeeProductDetailApiResponse>(
         `/api/products/${channelUuid}/${encodeURIComponent(String(itemId))}`,
@@ -125,9 +125,9 @@ export function useShopeeProductDetail(
     retry: (failureCount, error) => {
       const parsed = parseShopeeDetailError(error);
       if (
-        parsed.type === 'NO_API_KEY' ||
-        parsed.type === 'AUTH_ERROR' ||
-        parsed.type === 'NOT_FOUND'
+        parsed.type === "NO_API_KEY" ||
+        parsed.type === "AUTH_ERROR" ||
+        parsed.type === "NOT_FOUND"
       )
         return false;
       return failureCount < 2;

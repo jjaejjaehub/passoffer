@@ -1,24 +1,14 @@
-'use client';
+"use client";
 
-import { useMemo, useRef, useState } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  HStack,
-  Text,
-  VStack,
-} from '@chakra-ui/react';
-import { Download, FileSpreadsheet, Upload, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { useMemo, useRef, useState } from "react";
+import { Box, Button, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { Download, FileSpreadsheet, Upload, X } from "lucide-react";
+import * as XLSX from "xlsx";
 
-import {
-  useBulkSetSendingInfo,
-  type OrderListItem,
-} from '@/entities/order';
-import { appToaster } from '@/shared/ui/app-toaster';
+import { useBulkSetSendingInfo, type OrderListItem } from "@/entities/order";
+import { appToaster } from "@/shared/ui/app-toaster";
 
-import { CARRIER_OPTIONS } from '../model/schema';
+import { CARRIER_OPTIONS } from "../model/schema";
 
 export interface ExcelUploadTrackingModalProps {
   open: boolean;
@@ -54,13 +44,13 @@ function resolveCarrier(raw: string): string | null {
 
 function downloadTemplate(): void {
   const ws = XLSX.utils.aoa_to_sheet([
-    ['주문번호', '택배사', '송장번호'],
-    ['예: ABC-12345', 'CJ대한통운', '1234567890'],
+    ["주문번호", "택배사", "송장번호"],
+    ["예: ABC-12345", "CJ대한통운", "1234567890"],
   ]);
-  ws['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 18 }];
+  ws["!cols"] = [{ wch: 22 }, { wch: 14 }, { wch: 18 }];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, '운송장양식');
-  XLSX.writeFile(wb, 'tracking_template.xlsx');
+  XLSX.utils.book_append_sheet(wb, ws, "운송장양식");
+  XLSX.writeFile(wb, "tracking_template.xlsx");
 }
 
 function parseFile(
@@ -72,10 +62,10 @@ function parseFile(
     reader.onload = (ev) => {
       try {
         const data = new Uint8Array(ev.target?.result as ArrayBuffer);
-        const wb = XLSX.read(data, { type: 'array' });
+        const wb = XLSX.read(data, { type: "array" });
         const sheet = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-          defval: '',
+          defval: "",
           raw: false,
         });
         const orderByChannelId = new Map<string, OrderListItem>();
@@ -84,27 +74,26 @@ function parseFile(
         });
         const rows: ParsedRow[] = raw.map((row, idx) => {
           const channelOrderId = String(
-            row['주문번호'] ?? row['orderId'] ?? '',
+            row["주문번호"] ?? row["orderId"] ?? "",
           ).trim();
           const carrierRaw = String(
-            row['택배사'] ?? row['carrier'] ?? '',
+            row["택배사"] ?? row["carrier"] ?? "",
           ).trim();
           const trackingRaw = String(
-            row['송장번호'] ?? row['trackingNo'] ?? '',
+            row["송장번호"] ?? row["trackingNo"] ?? "",
           ).trim();
           const errors: string[] = [];
           const matched = channelOrderId
             ? (orderByChannelId.get(channelOrderId) ?? null)
             : null;
           const resolvedCarrier = resolveCarrier(carrierRaw);
-          const trackingDigits = trackingRaw.replace(/[^\d]/g, '');
-          if (!channelOrderId) errors.push('주문번호 누락');
-          else if (!matched) errors.push('일치하는 주문 없음');
-          if (!carrierRaw) errors.push('택배사 누락');
-          else if (!resolvedCarrier) errors.push('알 수 없는 택배사');
-          if (!trackingRaw) errors.push('송장번호 누락');
-          else if (trackingDigits.length < 6)
-            errors.push('송장번호 형식 오류');
+          const trackingDigits = trackingRaw.replace(/[^\d]/g, "");
+          if (!channelOrderId) errors.push("주문번호 누락");
+          else if (!matched) errors.push("일치하는 주문 없음");
+          if (!carrierRaw) errors.push("택배사 누락");
+          else if (!resolvedCarrier) errors.push("알 수 없는 택배사");
+          if (!trackingRaw) errors.push("송장번호 누락");
+          else if (trackingDigits.length < 6) errors.push("송장번호 형식 오류");
           return {
             rowIndex: idx + 2,
             channelOrderId,
@@ -151,7 +140,7 @@ export function ExcelUploadTrackingModal({
     setFileName(null);
     setRows([]);
     setParseError(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFile = async (
@@ -180,18 +169,18 @@ export function ExcelUploadTrackingModal({
     try {
       const res = await bulkMut.mutateAsync({ items });
       appToaster.create({
-        title: '운송장 전송 완료',
+        title: "운송장 전송 완료",
         description: `요청 ${res.totalRequested}건 / 성공 ${res.totalSent}건 / 실패 ${res.totalFailed}건`,
-        type: res.totalFailed > 0 ? 'warning' : 'success',
+        type: res.totalFailed > 0 ? "warning" : "success",
       });
       onCompleted?.();
       reset();
       onClose();
     } catch (err) {
       appToaster.create({
-        title: '운송장 전송 실패',
+        title: "운송장 전송 실패",
         description: err instanceof Error ? err.message : String(err),
-        type: 'error',
+        type: "error",
       });
     }
   };
@@ -215,7 +204,7 @@ export function ExcelUploadTrackingModal({
         top="50%"
         left="50%"
         transform="translate(-50%, -50%)"
-        w={{ base: 'calc(100% - 32px)', md: '900px' }}
+        w={{ base: "calc(100% - 32px)", md: "900px" }}
         bg="white"
         zIndex={1001}
         borderRadius="xl"
@@ -253,12 +242,12 @@ export function ExcelUploadTrackingModal({
             }}
             disabled={bulkMut.isPending}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#718096',
-              background: 'transparent',
-              border: 'none',
-              cursor: bulkMut.isPending ? 'not-allowed' : 'pointer',
+              display: "flex",
+              alignItems: "center",
+              color: "#718096",
+              background: "transparent",
+              border: "none",
+              cursor: bulkMut.isPending ? "not-allowed" : "pointer",
               padding: 0,
             }}
             aria-label="닫기"
@@ -269,11 +258,7 @@ export function ExcelUploadTrackingModal({
 
         <Box px={5} py={3} borderBottomWidth="1px" borderColor="gray.100">
           <HStack gap={3}>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={downloadTemplate}
-            >
+            <Button size="sm" variant="outline" onClick={downloadTemplate}>
               <Download size={14} style={{ marginRight: 6 }} />
               양식 다운로드
             </Button>
@@ -281,7 +266,7 @@ export function ExcelUploadTrackingModal({
               ref={fileInputRef}
               type="file"
               accept=".xlsx,.xls,.csv"
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
               onChange={(e) => {
                 void handleFile(e);
               }}
@@ -360,21 +345,21 @@ export function ExcelUploadTrackingModal({
               >
                 <Box
                   as="table"
-                  style={{ width: '100%', borderCollapse: 'collapse' }}
+                  style={{ width: "100%", borderCollapse: "collapse" }}
                 >
                   <Box as="thead" bg="gray.50">
                     <Box as="tr">
-                      {['행', '주문번호', '택배사', '송장번호', '상태'].map(
+                      {["행", "주문번호", "택배사", "송장번호", "상태"].map(
                         (h) => (
                           <Box
                             as="th"
                             key={h}
                             style={{
-                              padding: '8px 10px',
-                              textAlign: 'left',
+                              padding: "8px 10px",
+                              textAlign: "left",
                               fontSize: 12,
                               fontWeight: 600,
-                              color: '#4a5568',
+                              color: "#4a5568",
                             }}
                           >
                             {h}
@@ -391,59 +376,55 @@ export function ExcelUploadTrackingModal({
                           as="tr"
                           key={r.rowIndex}
                           style={{
-                            borderTop: '1px solid #edf2f7',
-                            background: isOk ? 'white' : '#fff5f5',
+                            borderTop: "1px solid #edf2f7",
+                            background: isOk ? "white" : "#fff5f5",
                           }}
                         >
                           <Box
                             as="td"
                             style={{
-                              padding: '6px 10px',
+                              padding: "6px 10px",
                               fontSize: 12,
-                              color: '#718096',
+                              color: "#718096",
                             }}
                           >
                             {r.rowIndex}
                           </Box>
                           <Box
                             as="td"
-                            style={{ padding: '6px 10px', fontSize: 13 }}
+                            style={{ padding: "6px 10px", fontSize: 13 }}
                           >
-                            {r.channelOrderId || '-'}
+                            {r.channelOrderId || "-"}
                           </Box>
                           <Box
                             as="td"
-                            style={{ padding: '6px 10px', fontSize: 13 }}
+                            style={{ padding: "6px 10px", fontSize: 13 }}
                           >
                             {r.resolvedCarrier ?? (
-                              <Text
-                                as="span"
-                                fontSize="13px"
-                                color="red.600"
-                              >
-                                {r.carrierRaw || '-'}
+                              <Text as="span" fontSize="13px" color="red.600">
+                                {r.carrierRaw || "-"}
                               </Text>
                             )}
                           </Box>
                           <Box
                             as="td"
                             style={{
-                              padding: '6px 10px',
+                              padding: "6px 10px",
                               fontSize: 13,
-                              fontFamily: 'monospace',
+                              fontFamily: "monospace",
                             }}
                           >
-                            {r.trackingDigits || '-'}
+                            {r.trackingDigits || "-"}
                           </Box>
                           <Box
                             as="td"
                             style={{
-                              padding: '6px 10px',
+                              padding: "6px 10px",
                               fontSize: 12,
-                              color: isOk ? '#22543d' : '#742a2a',
+                              color: isOk ? "#22543d" : "#742a2a",
                             }}
                           >
-                            {isOk ? '✓ 유효' : `✗ ${r.errors.join(', ')}`}
+                            {isOk ? "✓ 유효" : `✗ ${r.errors.join(", ")}`}
                           </Box>
                         </Box>
                       );
@@ -466,7 +447,7 @@ export function ExcelUploadTrackingModal({
           <Text fontSize="xs" color="gray.600">
             {validRows.length > 0
               ? `${validRows.length}건이 전송됩니다`
-              : '유효한 행이 없습니다'}
+              : "유효한 행이 없습니다"}
           </Text>
           <HStack gap={2}>
             <Button

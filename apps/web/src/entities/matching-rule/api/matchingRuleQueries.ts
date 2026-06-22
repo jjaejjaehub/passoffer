@@ -58,7 +58,8 @@ export function useMatchingRules(
       const params = new URLSearchParams();
       if (channelId) params.set("channelId", channelId);
       if (search) params.set("search", search);
-      if (typeof isActive === "boolean") params.set("isActive", String(isActive));
+      if (typeof isActive === "boolean")
+        params.set("isActive", String(isActive));
       if (typeof autoLearned === "boolean")
         params.set("autoLearned", String(autoLearned));
       params.set("page", String(page));

@@ -29,16 +29,15 @@ import { OrderTableV2 } from "@/widgets/order-table-v2";
 import { OrdersAuxPanel } from "@/widgets/orders-aux-panel";
 import { OrderDetailModal } from "@/features/order-detail-modal";
 import { OrderSyncButtons } from "@/features/sync-orders";
-import { SplitOrderModal, BundleOrdersModal } from "@/features/new-orders-actions";
+import {
+  SplitOrderModal,
+  BundleOrdersModal,
+} from "@/features/new-orders-actions";
 import { DispatchDelayModal } from "@/features/dispatch-delay";
 import { PageHeader } from "@/shared/ui";
 import { appToaster } from "@/shared/ui/app-toaster";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
-import {
-  DEFAULT_PAGE_SIZE,
-  LS_KEYS,
-  type PageSize,
-} from "@/shared/config";
+import { DEFAULT_PAGE_SIZE, LS_KEYS, type PageSize } from "@/shared/config";
 
 const NEW_ORDERS_PRESET_RANKS = [20];
 
@@ -63,7 +62,9 @@ export function NewOrdersPage(): React.JSX.Element {
     buildInitialParams(pageSize),
   );
   const [searchInput, setSearchInput] = useState<string>("");
-  const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(
+    null,
+  );
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -210,7 +211,11 @@ export function NewOrdersPage(): React.JSX.Element {
             </Button>
             <Menu.Root>
               <Menu.Trigger asChild>
-                <Button size="sm" variant="outline" disabled={selectedCount === 0}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={selectedCount === 0}
+                >
                   작업 <ChevronDown size={14} style={{ marginLeft: 4 }} />
                 </Button>
               </Menu.Trigger>
@@ -258,7 +263,11 @@ export function NewOrdersPage(): React.JSX.Element {
                       배송지연
                     </Menu.Item>
                     <Menu.Separator />
-                    <Menu.Item value="delete" color="red.600" onClick={handleDelete}>
+                    <Menu.Item
+                      value="delete"
+                      color="red.600"
+                      onClick={handleDelete}
+                    >
                       삭제
                     </Menu.Item>
                   </Menu.Content>
@@ -339,9 +348,7 @@ export function NewOrdersPage(): React.JSX.Element {
       <SplitOrderModal
         open={splitOpen}
         onClose={() => setSplitOpen(false)}
-        orderId={
-          selectedCount === 1 ? Array.from(selectedOrderIds)[0] : null
-        }
+        orderId={selectedCount === 1 ? Array.from(selectedOrderIds)[0] : null}
         onCompleted={() => setSelectedOrderIds(new Set())}
       />
 

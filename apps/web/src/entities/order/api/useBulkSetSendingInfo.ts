@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { shippingQueries } from './shippingQueries';
-import { dispatchQueries } from './dispatchQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { shippingQueries } from "./shippingQueries";
+import { dispatchQueries } from "./dispatchQueries";
 
 export interface BulkSetSendingInfoItem {
   orderId: string;
@@ -37,7 +37,7 @@ export function useBulkSetSendingInfo() {
       input: BulkSetSendingInfoInput,
     ): Promise<BulkSetSendingInfoResult> => {
       return await http.post<BulkSetSendingInfoResult>(
-        '/api/shipping/send-bulk',
+        "/api/shipping/send-bulk",
         input,
       );
     },

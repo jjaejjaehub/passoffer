@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { useServerInsertedHTML } from 'next/navigation';
-import createCache from '@emotion/cache';
-import { CacheProvider } from '@emotion/react';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/shared/lib/chakra-theme';
+import type React from "react";
+import type { ReactNode } from "react";
+import { useState } from "react";
+import { useServerInsertedHTML } from "next/navigation";
+import createCache from "@emotion/cache";
+import { CacheProvider } from "@emotion/react";
+import { ChakraProvider } from "@chakra-ui/react";
+import { system } from "@/shared/lib/chakra-theme";
 
 interface ChakraClientProviderProps {
   children: ReactNode;
@@ -17,7 +17,7 @@ export function ChakraClientProvider({
   children,
 }: ChakraClientProviderProps): React.JSX.Element {
   const [{ cache, flush }] = useState(() => {
-    const cache = createCache({ key: 'css' });
+    const cache = createCache({ key: "css" });
     cache.compat = true;
     const prevInsert = cache.insert;
     let inserted: string[] = [];
@@ -39,14 +39,14 @@ export function ChakraClientProvider({
   useServerInsertedHTML(() => {
     const names = flush();
     if (names.length === 0) return null;
-    let styles = '';
+    let styles = "";
     for (const name of names) {
       styles += cache.inserted[name];
     }
     return (
       <style
         key={cache.key}
-        data-emotion={`${cache.key} ${names.join(' ')}`}
+        data-emotion={`${cache.key} ${names.join(" ")}`}
         dangerouslySetInnerHTML={{ __html: styles }}
       />
     );
@@ -58,5 +58,3 @@ export function ChakraClientProvider({
     </CacheProvider>
   );
 }
-
-

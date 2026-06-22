@@ -16,18 +16,19 @@ import type {
   StandardClaim,
   StandardOrder,
   StandardOrderItem,
-} from '@oms/types';
-import { StatusRuleEngine } from '../../services/StatusRuleEngine';
+} from "@oms/types";
+import { StatusRuleEngine } from "../../services/StatusRuleEngine";
 import {
   QOO10_BULK_MAX,
   QOO10_CLAIM_STATUS_RANGES,
   QOO10_MAX_DISPATCH_DELAY_DAYS_DEFAULT,
-} from './constants';
+} from "./constants";
 
 // ── Qoo10 호스트 (api.qoo10.jp 고정, www는 404) ────────────────────────────
-const BASE_URL = 'https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ebayjapan.qapi';
+const BASE_URL =
+  "https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ebayjapan.qapi";
 const CLAIM_URL =
-  'https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ShippingBasic.qapi/GetClaimInfo_V3';
+  "https://api.qoo10.jp/GMKT.INC.Front.QAPIService/ShippingBasic.qapi/GetClaimInfo_V3";
 const DETAIL_URL = `${BASE_URL}/ShippingBasic.GetShippingAndClaimInfoByOrderNo_V2`;
 
 interface Qoo10ApiResponse<T> {
@@ -156,7 +157,7 @@ interface Qoo10ClaimItem {
 
 const digitsOnly = (s: string | null | undefined): string | null => {
   if (s == null) return null;
-  const t = s.replace(/[^0-9]/g, '');
+  const t = s.replace(/[^0-9]/g, "");
   return t.length > 0 ? t : null;
 };
 
@@ -189,38 +190,48 @@ function parseQoo10Date(s: string | null | undefined): string | null {
   const t = s.trim();
   if (t.length === 0) return null;
   // 형식: 'YYYY-MM-DD' or 'YYYY-MM-DD HH:mm:ss'
-  const m = t.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+  const m = t.match(
+    /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/,
+  );
   if (!m) return null;
-  const [, y, mo, d, hh = '00', mm = '00', ss = '00'] = m;
+  const [, y, mo, d, hh = "00", mm = "00", ss = "00"] = m;
   // ISO with explicit JST offset
   return `${y}-${mo}-${d}T${hh}:${mm}:${ss}+09:00`;
 }
 
 // ShippingRateType enum 정규화 (Free / Charge / Free on condition).
-function normalizeShippingRateType(s: string | null | undefined): string | null {
+function normalizeShippingRateType(
+  s: string | null | undefined,
+): string | null {
   const t = trimOrNull(s);
   if (!t) return null;
   const low = t.toLowerCase();
-  if (low.includes('condition')) return 'Free on condition';
-  if (low.includes('free')) return 'Free';
-  if (low.includes('charge') || low.includes('paid')) return 'Charge';
+  if (low.includes("condition")) return "Free on condition";
+  if (low.includes("free")) return "Free";
+  if (low.includes("charge") || low.includes("paid")) return "Charge";
   return t;
 }
 
 // Qoo10 DeliveryCompany 문자열 → 어댑터 내부 carrier 키 (단순 키워드 매칭).
-function mapQoo10Carrier(deliveryCompany: string | null | undefined): string | null {
+function mapQoo10Carrier(
+  deliveryCompany: string | null | undefined,
+): string | null {
   if (!deliveryCompany) return null;
   const name = deliveryCompany.toLowerCase();
-  if (name.includes('yamato') || name.includes('ヤマト')) return 'yamato';
-  if (name.includes('sagawa') || name.includes('佐川')) return 'sagawa';
-  if (name.includes('japan post') || name.includes('郵便') || name.includes('yupack'))
-    return 'japanpost';
-  if (name.includes('seino') || name.includes('西濃')) return 'seino';
-  if (name.includes('cj') || name.includes('대한통운')) return 'cj';
-  if (name.includes('lotte') || name.includes('롯데')) return 'lotte';
-  if (name.includes('hanjin') || name.includes('한진')) return 'hanjin';
-  if (name.includes('epost') || name.includes('우체국')) return 'epost';
-  return 'etc';
+  if (name.includes("yamato") || name.includes("ヤマト")) return "yamato";
+  if (name.includes("sagawa") || name.includes("佐川")) return "sagawa";
+  if (
+    name.includes("japan post") ||
+    name.includes("郵便") ||
+    name.includes("yupack")
+  )
+    return "japanpost";
+  if (name.includes("seino") || name.includes("西濃")) return "seino";
+  if (name.includes("cj") || name.includes("대한통운")) return "cj";
+  if (name.includes("lotte") || name.includes("롯데")) return "lotte";
+  if (name.includes("hanjin") || name.includes("한진")) return "hanjin";
+  if (name.includes("epost") || name.includes("우체국")) return "epost";
+  return "etc";
 }
 
 // Qoo10 claimStatus 문자열 → 정수 코드. "14" → 14. 불명/빈값 → null.
@@ -238,9 +249,12 @@ function parseClaimStatusCode(s: string | null | undefined): number | null {
 function mapQoo10ClaimType(s: string | null | undefined): ClaimType | null {
   const code = parseClaimStatusCode(s);
   if (code == null) return null;
-  if ((QOO10_CLAIM_STATUS_RANGES.cancel as readonly number[]).includes(code)) return 'cancel';
-  if ((QOO10_CLAIM_STATUS_RANGES.return as readonly number[]).includes(code)) return 'return';
-  if ((QOO10_CLAIM_STATUS_RANGES.exchange as readonly number[]).includes(code)) return 'exchange';
+  if ((QOO10_CLAIM_STATUS_RANGES.cancel as readonly number[]).includes(code))
+    return "cancel";
+  if ((QOO10_CLAIM_STATUS_RANGES.return as readonly number[]).includes(code))
+    return "return";
+  if ((QOO10_CLAIM_STATUS_RANGES.exchange as readonly number[]).includes(code))
+    return "exchange";
   return null;
 }
 
@@ -253,32 +267,32 @@ function mapQoo10ClaimType(s: string | null | undefined): ClaimType | null {
 //   그 외 → requires_recheck
 function mapQoo10ClaimStatus(s: string | null | undefined): ClaimStatus {
   const code = parseClaimStatusCode(s);
-  if (code == null) return 'requires_recheck';
+  if (code == null) return "requires_recheck";
   switch (code) {
     case 1:
-      return 'cancel_requested';
+      return "cancel_requested";
     case 2:
     case 3:
-      return 'cancel_done';
+      return "cancel_done";
     case 4:
-      return 'return_requested';
+      return "return_requested";
     case 5:
-      return 'return_collected';
+      return "return_collected";
     case 6:
-      return 'return_done';
+      return "return_done";
     case 11:
-      return 'exchange_requested';
+      return "exchange_requested";
     case 12:
-      return 'exchange_collected';
+      return "exchange_collected";
     case 13:
-      return 'exchange_done';
+      return "exchange_done";
     case 14:
     case 15:
-      return 'return_done';
+      return "return_done";
     case 16:
-      return 'requires_recheck';
+      return "requires_recheck";
     default:
-      return 'requires_recheck';
+      return "requires_recheck";
   }
 }
 
@@ -287,7 +301,7 @@ function mapQoo10ClaimStatus(s: string | null | undefined): ClaimStatus {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
-  readonly channelKey = 'qoo10' as const;
+  readonly channelKey = "qoo10" as const;
 
   constructor(
     private readonly channelId: string,
@@ -295,23 +309,28 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
   ) {}
 
   // ── 공통 HTTP — 일반 엔드포인트 (ebayjapan.qapi) ─────────────────────────
-  private async callQoo10<T>(method: string, params: Record<string, string>): Promise<T> {
-    const form = new URLSearchParams({ ...params, returnType: 'json' });
+  private async callQoo10<T>(
+    method: string,
+    params: Record<string, string>,
+  ): Promise<T> {
+    const form = new URLSearchParams({ ...params, returnType: "json" });
     const url = `${BASE_URL}/${method}`;
     const res = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         GiosisCertificationKey: this.certKey,
-        QAPIVersion: '1.0',
-        Accept: 'application/json',
+        QAPIVersion: "1.0",
+        Accept: "application/json",
       },
       body: form.toString(),
     });
     if (!res.ok) throw new Error(`Qoo10 HTTP error: ${res.status}`);
     const data = (await res.json()) as Qoo10ApiResponse<T>;
     if (data.ResultCode !== 0) {
-      throw new Error(`Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`);
+      throw new Error(
+        `Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`,
+      );
     }
     return data.ResultObject;
   }
@@ -339,8 +358,8 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     });
 
     // RelatedOrder "" → []
-    const relatedOrders = (payload.RelatedOrder ?? '')
-      .split(',')
+    const relatedOrders = (payload.RelatedOrder ?? "")
+      .split(",")
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
 
@@ -400,18 +419,24 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       orderedAt,
       paidAt,
       paymentMethod: trimOrNull(payload.PaymentMethod),
-      currency: upperOrNull(payload.Currency) ?? 'JPY',
-      orderPrice: payload.OrderPrice == null ? null : Number(payload.OrderPrice),
+      currency: upperOrNull(payload.Currency) ?? "JPY",
+      orderPrice:
+        payload.OrderPrice == null ? null : Number(payload.OrderPrice),
       discount: payload.Discount == null ? null : Number(payload.Discount),
       cartDiscountSeller:
-        payload.CartDiscountSeller == null ? null : Number(payload.CartDiscountSeller),
+        payload.CartDiscountSeller == null
+          ? null
+          : Number(payload.CartDiscountSeller),
       cartDiscountChannel:
-        payload.CartDiscountQoo10 == null ? null : Number(payload.CartDiscountQoo10),
+        payload.CartDiscountQoo10 == null
+          ? null
+          : Number(payload.CartDiscountQoo10),
       total: payload.Total == null ? null : Number(payload.Total),
       // Fulfillment
       shippingWay: trimOrNull(payload.ShippingWay),
       shippingMessage: trimKeepEmpty(payload.ShippingMessage),
-      shippingRate: payload.ShippingRate == null ? null : Number(payload.ShippingRate),
+      shippingRate:
+        payload.ShippingRate == null ? null : Number(payload.ShippingRate),
       shippingRateType: normalizeShippingRateType(payload.ShippingRateType),
       shippingDueDate,
       shippedAt,
@@ -422,7 +447,9 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       trackingConflictPayload: null,
       // Status
       fulfillmentStatus,
-      claimStatus: payload.claimStatus ? mapQoo10ClaimStatus(payload.claimStatus) : null,
+      claimStatus: payload.claimStatus
+        ? mapQoo10ClaimStatus(payload.claimStatus)
+        : null,
       displayStatus: trimOrNull(payload.ShippingStatus),
       isDispatchDelayed: false,
       dispatchHoldReason: null,
@@ -452,12 +479,12 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     const since = toYYYYMMDD(params.sinceDate);
     const until = toYYYYMMDD(params.untilDate ?? new Date().toISOString());
     const items = await this.callQoo10<Qoo10ShippingItem[]>(
-      'ShippingBasic.GetShippingInfo_v3',
+      "ShippingBasic.GetShippingInfo_v3",
       {
-        ShippingStatus: '',
+        ShippingStatus: "",
         SearchStartDate: since,
         SearchEndDate: until,
-        SearchCondition: '1',
+        SearchCondition: "1",
       },
     );
     return (items ?? []).map((it) => this.toStandard(it));
@@ -468,22 +495,24 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
   async pullOrderDetail(channelOrderId: string): Promise<StandardOrder> {
     const form = new URLSearchParams({
       OrderNo: channelOrderId,
-      returnType: 'json',
+      returnType: "json",
     });
     const res = await fetch(DETAIL_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         GiosisCertificationKey: this.certKey,
-        QAPIVersion: '1.0',
-        Accept: 'application/json',
+        QAPIVersion: "1.0",
+        Accept: "application/json",
       },
       body: form.toString(),
     });
     if (!res.ok) throw new Error(`Qoo10 HTTP error: ${res.status}`);
     const data = (await res.json()) as Qoo10ApiResponse<Qoo10ShippingItem[]>;
     if (data.ResultCode !== 0) {
-      throw new Error(`Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`);
+      throw new Error(
+        `Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`,
+      );
     }
     const first = (data.ResultObject ?? [])[0];
     if (!first) {
@@ -497,27 +526,29 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     const since = toYYYYMMDD(params.sinceDate);
     const until = toYYYYMMDD(params.untilDate ?? new Date().toISOString());
     const form = new URLSearchParams({
-      ClaimStat: 'A', // 전체 단계
+      ClaimStat: "A", // 전체 단계
       search_Sdate: since,
       search_Edate: until,
-      search_condition: '2', // 결제일자 기준
-      returnType: 'json',
+      search_condition: "2", // 결제일자 기준
+      returnType: "json",
     });
     const res = await fetch(CLAIM_URL, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         // claim 엔드포인트는 lowercase 헤더 명시 필요.
         giosiscertificationkey: this.certKey,
-        QAPIVersion: '1.0',
-        Accept: 'application/json',
+        QAPIVersion: "1.0",
+        Accept: "application/json",
       },
       body: form.toString(),
     });
     if (!res.ok) throw new Error(`Qoo10 HTTP error: ${res.status}`);
     const data = (await res.json()) as Qoo10ApiResponse<Qoo10ClaimItem[]>;
     if (data.ResultCode !== 0) {
-      throw new Error(`Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`);
+      throw new Error(
+        `Qoo10 API error [${data.ResultCode}]: ${data.ResultMsg}`,
+      );
     }
     const items = data.ResultObject ?? [];
     return items.map((c) => this.claimToStandard(c));
@@ -525,18 +556,18 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
 
   private claimToStandard(raw: Qoo10ClaimItem): StandardClaim {
     const code = parseClaimStatusCode(raw.claimStatus);
-    const claimType = mapQoo10ClaimType(raw.claimStatus) ?? 'cancel';
+    const claimType = mapQoo10ClaimType(raw.claimStatus) ?? "cancel";
     const claimStatus = mapQoo10ClaimStatus(raw.claimStatus);
 
     // incident 축 — claimType 과 독립. 14/15 미수취 환불에만 채워짐.
     // nrDutyTarget: SC=Seller Charge(전체 미수취) / SL=Seller Loss(일부 미수취).
     // 16(미납취소)은 nr* 빈값이며 incident 사고 아님 — null 유지.
     let incidentType: IncidentType | null = null;
-    let incidentSource: StandardClaim['incidentSource'] = null;
+    let incidentSource: StandardClaim["incidentSource"] = null;
     let incidentSkipCollection = false;
     if (code === 14 || code === 15) {
-      incidentType = 'undelivered';
-      incidentSource = 'channel_flag';
+      incidentType = "undelivered";
+      incidentSource = "channel_flag";
       // 미수취는 회수 자체가 성립 안 함 (배송 도달 X).
       incidentSkipCollection = true;
     }
@@ -573,7 +604,8 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       return {
         ok: false,
         channelOrderId,
-        message: 'Qoo10 SetSendingInfo: OrderNo/ShippingCorp/TrackingNo required',
+        message:
+          "Qoo10 SetSendingInfo: OrderNo/ShippingCorp/TrackingNo required",
       };
     }
 
@@ -581,17 +613,17 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       OrderNo: channelOrderId,
       ShippingCorp: shippingCorp,
       TrackingNo: trackingNo,
-      returnType: 'json',
+      returnType: "json",
     });
     const url = `${BASE_URL}/ShippingBasic.SetSendingInfo`;
     try {
       const res = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           GiosisCertificationKey: this.certKey,
-          QAPIVersion: '1.0',
-          Accept: 'application/json',
+          QAPIVersion: "1.0",
+          Accept: "application/json",
         },
         body: form.toString(),
       });
@@ -634,8 +666,8 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
 
     const sanitized = payload.items.map((item) => ({
       channelOrderId: item.channelOrderId,
-      shippingCorp: (item.trackingCarrier ?? '').slice(0, 200),
-      trackingNo: (item.trackingNo ?? '').slice(0, 50),
+      shippingCorp: (item.trackingCarrier ?? "").slice(0, 200),
+      trackingNo: (item.trackingNo ?? "").slice(0, 50),
     }));
 
     // 필수 필드 누락 항목은 호출 전 단계에서 즉시 실패 표시.
@@ -647,7 +679,7 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
         ok: false,
         channelOrderId: s.channelOrderId,
         message:
-          'Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required',
+          "Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required",
       }));
     }
 
@@ -659,7 +691,7 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
 
     const form = new URLSearchParams({
       ShippingInfoJson: JSON.stringify(shippingInfo),
-      returnType: 'json',
+      returnType: "json",
     });
     const url = `${BASE_URL}/ShippingBasic.SetSendingInfoBulk`;
 
@@ -672,16 +704,16 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     };
 
     let rows: BulkRow[] = [];
-    let topMsg = '';
+    let topMsg = "";
     let topCode = 0;
     try {
       const res = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           GiosisCertificationKey: this.certKey,
-          QAPIVersion: '1.0',
-          Accept: 'application/json',
+          QAPIVersion: "1.0",
+          Accept: "application/json",
         },
         body: form.toString(),
       });
@@ -721,11 +753,11 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       const row =
         rows.find((r) => Number(r.contr_no) === idx + 1) ?? rows[idx] ?? {};
       const ok = Number(row.result_cd) === 0;
-      const carrier = row.transc_nm ? ` (${row.transc_nm})` : '';
+      const carrier = row.transc_nm ? ` (${row.transc_nm})` : "";
       return {
         ok,
         channelOrderId: s.channelOrderId,
-        message: (row.ResultMsg ?? (ok ? topMsg : 'unknown')) + carrier,
+        message: (row.ResultMsg ?? (ok ? topMsg : "unknown")) + carrier,
         raw: row,
       };
     });
@@ -739,7 +771,7 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
         ok: false,
         channelOrderId: s.channelOrderId,
         message:
-          'Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required',
+          "Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required",
       };
     });
   }
@@ -749,7 +781,9 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
   //   Input  : SendPlanDtInfoJson = JSON.stringify(Array<{OrderNo, EstShipDt(YYYYMMDD), DelayType, DelayMemo}>)
   //   Output : ResultObject = Array<{cont_no, result_cd, ResultCode, ResultMsg}> — 개별 결과
   //   제약   : 1회 최대 500건, EstShipDt 오늘 이후, 채널 허용 최대 일자(기본 30일) 이내, DelayType 1~4.
-  async pushDispatchDelay(payload: PushDispatchDelayPayload): Promise<PushResult[]> {
+  async pushDispatchDelay(
+    payload: PushDispatchDelayPayload,
+  ): Promise<PushResult[]> {
     if (payload.channelOrderIds.length === 0) return [];
     if (payload.channelOrderIds.length > QOO10_BULK_MAX) {
       throw new Error(
@@ -767,14 +801,17 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
 
     // JST 기준 today+1 ~ today+QOO10_MAX_DISPATCH_DELAY_DAYS_DEFAULT 검증.
     // (channelCapabilities.metadata.maxDispatchDelayDays override 는 호출자가 사전 적용 — 어댑터는 기본값만)
-    const estYmd = payload.estimatedShippingDate.replace(/-/g, '');
+    const estYmd = payload.estimatedShippingDate.replace(/-/g, "");
     const todayJstYmd = todayYYYYMMDDJst();
     if (estYmd <= todayJstYmd) {
       throw new Error(
         `Qoo10 estimatedShippingDate must be after today (JST), got ${payload.estimatedShippingDate}`,
       );
     }
-    const maxYmd = ymdPlusDays(todayJstYmd, QOO10_MAX_DISPATCH_DELAY_DAYS_DEFAULT);
+    const maxYmd = ymdPlusDays(
+      todayJstYmd,
+      QOO10_MAX_DISPATCH_DELAY_DAYS_DEFAULT,
+    );
     if (estYmd > maxYmd) {
       throw new Error(
         `Qoo10 estimatedShippingDate exceeds max ${QOO10_MAX_DISPATCH_DELAY_DAYS_DEFAULT} days (max=${maxYmd}), got ${payload.estimatedShippingDate}`,
@@ -785,12 +822,12 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       OrderNo: orderNo,
       EstShipDt: estYmd,
       DelayType: String(payload.delayType),
-      DelayMemo: '',
+      DelayMemo: "",
     }));
 
     const form = new URLSearchParams({
       SendPlanDtInfoJson: JSON.stringify(planInfo),
-      returnType: 'json',
+      returnType: "json",
     });
     const url = `${BASE_URL}/ShippingBasic.SetSellerCheckYNBulk`;
 
@@ -802,16 +839,16 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     };
 
     let rows: BulkRow[] = [];
-    let topMsg = '';
+    let topMsg = "";
     let topCode = 0;
     try {
       const res = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           GiosisCertificationKey: this.certKey,
-          QAPIVersion: '1.0',
-          Accept: 'application/json',
+          QAPIVersion: "1.0",
+          Accept: "application/json",
         },
         body: form.toString(),
       });
@@ -853,7 +890,7 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
       return {
         ok,
         channelOrderId: id,
-        message: row.ResultMsg ?? (ok ? topMsg : 'unknown'),
+        message: row.ResultMsg ?? (ok ? topMsg : "unknown"),
         raw: row,
       };
     });
@@ -883,7 +920,7 @@ function toYYYYMMDD(input: string): string {
   const m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[1]}${m[2]}${m[3]}`;
   // fallback: 숫자만 추출 후 첫 8자
-  const digits = t.replace(/[^0-9]/g, '');
+  const digits = t.replace(/[^0-9]/g, "");
   if (digits.length >= 8) return digits.slice(0, 8);
   throw new Error(`Invalid date string for Qoo10 search: ${input}`);
 }
@@ -892,8 +929,8 @@ function toYYYYMMDD(input: string): string {
 function todayYYYYMMDDJst(): string {
   const now = new Date(Date.now() + 9 * 3600 * 1000);
   const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
+  const m = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(now.getUTCDate()).padStart(2, "0");
   return `${y}${m}${d}`;
 }
 
@@ -904,7 +941,7 @@ function ymdPlusDays(ymd: string, days: number): string {
   const d = Number(ymd.slice(6, 8));
   const dt = new Date(Date.UTC(y, m, d + days));
   const yy = dt.getUTCFullYear();
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
   return `${yy}${mm}${dd}`;
 }

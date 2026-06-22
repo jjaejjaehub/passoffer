@@ -96,8 +96,7 @@ export function giftRuleToDraft(rule: GiftRule): GiftRuleDraft {
     giftSkuCode: rule.giftSkuCode ?? "",
     giftSkuName: rule.giftSkuName ?? "",
     giftQty: rule.giftQty,
-    maxApplyCount:
-      rule.maxApplyCount == null ? "" : String(rule.maxApplyCount),
+    maxApplyCount: rule.maxApplyCount == null ? "" : String(rule.maxApplyCount),
     priority: rule.priority,
     isActive: rule.isActive,
     activeFrom: rule.activeFrom ? rule.activeFrom.slice(0, 10) : "",
@@ -328,12 +327,7 @@ export function GiftRuleFormModal({
 
         <Box px={6} py={5}>
           <Stack gap={5}>
-            <Box
-              borderWidth={1}
-              borderColor="gray.200"
-              borderRadius="md"
-              p={4}
-            >
+            <Box borderWidth={1} borderColor="gray.200" borderRadius="md" p={4}>
               <Text fontSize="sm" fontWeight="700" color="gray.800" mb={3}>
                 ① 기본설정
               </Text>
@@ -345,7 +339,9 @@ export function GiftRuleFormModal({
                   <Input
                     size="sm"
                     value={draft.name}
-                    onChange={(e) => onChange({ ...draft, name: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...draft, name: e.target.value })
+                    }
                     placeholder="예: 1만엔 이상 구매 시 사은품"
                   />
                 </Box>
@@ -499,12 +495,7 @@ export function GiftRuleFormModal({
               </Stack>
             </Box>
 
-            <Box
-              borderWidth={1}
-              borderColor="gray.200"
-              borderRadius="md"
-              p={4}
-            >
+            <Box borderWidth={1} borderColor="gray.200" borderRadius="md" p={4}>
               <Text fontSize="sm" fontWeight="700" color="gray.800" mb={3}>
                 ② 조건
               </Text>
@@ -515,12 +506,20 @@ export function GiftRuleFormModal({
                   </Text>
                   <HStack gap={1} wrap="wrap">
                     {(
-                      ["all", "sku", "category", "amount", "qty"] as GiftConditionType[]
+                      [
+                        "all",
+                        "sku",
+                        "category",
+                        "amount",
+                        "qty",
+                      ] as GiftConditionType[]
                     ).map((t) => (
                       <Button
                         key={t}
                         size="sm"
-                        variant={draft.conditionType === t ? "solid" : "outline"}
+                        variant={
+                          draft.conditionType === t ? "solid" : "outline"
+                        }
                         colorPalette={
                           draft.conditionType === t ? "purple" : "gray"
                         }
@@ -700,7 +699,9 @@ export function GiftRuleFormModal({
                             size="xs"
                             variant="ghost"
                             onClick={() => {
-                              const nextLabels = { ...draft.conditionSkuLabels };
+                              const nextLabels = {
+                                ...draft.conditionSkuLabels,
+                              };
                               delete nextLabels[id];
                               onChange({
                                 ...draft,
@@ -747,12 +748,7 @@ export function GiftRuleFormModal({
               </Box>
             )}
 
-            <Box
-              borderWidth={1}
-              borderColor="gray.200"
-              borderRadius="md"
-              p={4}
-            >
+            <Box borderWidth={1} borderColor="gray.200" borderRadius="md" p={4}>
               <Text fontSize="sm" fontWeight="700" color="gray.800" mb={3}>
                 {draft.conditionType === "sku" ? "④" : "③"} 사은품
               </Text>
@@ -853,7 +849,9 @@ export function GiftRuleFormModal({
                     size="sm"
                     rows={2}
                     value={draft.note}
-                    onChange={(e) => onChange({ ...draft, note: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...draft, note: e.target.value })
+                    }
                   />
                 </Box>
               </Stack>

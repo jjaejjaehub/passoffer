@@ -1,4 +1,4 @@
-export type ChannelConnectionStatus = 'connected' | 'disconnected';
+export type ChannelConnectionStatus = "connected" | "disconnected";
 
 export interface ChannelStats {
   todayCount: number;
@@ -6,4 +6,3 @@ export interface ChannelStats {
   lastSyncedAt: string;
   nextSyncIn: string;
 }
-

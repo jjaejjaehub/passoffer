@@ -1,31 +1,31 @@
-import Fastify from 'fastify';
-import { envPlugin } from './plugins/env';
-import { dbPlugin } from './plugins/db';
-import { corsPlugin } from './plugins/cors';
-import { jwtPlugin } from './plugins/jwt';
-import { authRoutes } from './routes/auth/index';
-import { channelRoutes } from './routes/channels/index';
-import { orderRoutes } from './routes/orders/index';
-import { paymentsRoutes } from './routes/payments/index';
-import { newOrdersRoutes } from './routes/new-orders/index';
-import { dispatchRoutes } from './routes/dispatch/index';
-import { shippingRoutes } from './routes/shipping/index';
-import { barcodeDispatchRoutes } from './routes/barcode-dispatch/index';
-import { allOrdersRoutes } from './routes/all-orders/index';
-import { productRoutes } from './routes/products/index';
-import { claimRoutes } from './routes/claims/index';
-import { inventoryRoutes } from './routes/inventory/index';
-import { qoo10Routes } from './routes/qoo10/index';
-import { masterProductRoutes } from './routes/master-products/index';
-import { skuRoutes } from './routes/skus/index';
-import { warehouseRoutes } from './routes/warehouses/index';
-import { userSettingsRoutes } from './routes/user-settings/index';
-import { orderEventLogRoutes } from './routes/order-event-logs/index';
-import { matchingRuleRoutes } from './routes/matching-rules/index';
-import { giftRuleRoutes } from './routes/gift-rules/index';
-import { notificationRoutes } from './routes/notifications/index';
+import Fastify from "fastify";
+import { envPlugin } from "./plugins/env";
+import { dbPlugin } from "./plugins/db";
+import { corsPlugin } from "./plugins/cors";
+import { jwtPlugin } from "./plugins/jwt";
+import { authRoutes } from "./routes/auth/index";
+import { channelRoutes } from "./routes/channels/index";
+import { orderRoutes } from "./routes/orders/index";
+import { paymentsRoutes } from "./routes/payments/index";
+import { newOrdersRoutes } from "./routes/new-orders/index";
+import { dispatchRoutes } from "./routes/dispatch/index";
+import { shippingRoutes } from "./routes/shipping/index";
+import { barcodeDispatchRoutes } from "./routes/barcode-dispatch/index";
+import { allOrdersRoutes } from "./routes/all-orders/index";
+import { productRoutes } from "./routes/products/index";
+import { claimRoutes } from "./routes/claims/index";
+import { inventoryRoutes } from "./routes/inventory/index";
+import { qoo10Routes } from "./routes/qoo10/index";
+import { masterProductRoutes } from "./routes/master-products/index";
+import { skuRoutes } from "./routes/skus/index";
+import { warehouseRoutes } from "./routes/warehouses/index";
+import { userSettingsRoutes } from "./routes/user-settings/index";
+import { orderEventLogRoutes } from "./routes/order-event-logs/index";
+import { matchingRuleRoutes } from "./routes/matching-rules/index";
+import { giftRuleRoutes } from "./routes/gift-rules/index";
+import { notificationRoutes } from "./routes/notifications/index";
 
-const app = Fastify({ logger: { level: 'info' } });
+const app = Fastify({ logger: { level: "info" } });
 
 async function main() {
   // 플러그인 등록 순서: env → cors → db → jwt
@@ -35,35 +35,35 @@ async function main() {
   await app.register(jwtPlugin);
 
   // 헬스체크
-  app.get('/health', async () => {
-    return { status: 'ok', ts: new Date().toISOString() };
+  app.get("/health", async () => {
+    return { status: "ok", ts: new Date().toISOString() };
   });
 
   // API 라우트
-  await app.register(authRoutes, { prefix: '/api' });
-  await app.register(channelRoutes, { prefix: '/api' });
-  await app.register(orderRoutes, { prefix: '/api' });
-  await app.register(paymentsRoutes, { prefix: '/api' });
-  await app.register(newOrdersRoutes, { prefix: '/api' });
-  await app.register(dispatchRoutes, { prefix: '/api' });
-  await app.register(shippingRoutes, { prefix: '/api' });
-  await app.register(barcodeDispatchRoutes, { prefix: '/api' });
-  await app.register(allOrdersRoutes, { prefix: '/api' });
-  await app.register(productRoutes, { prefix: '/api' });
-  await app.register(claimRoutes, { prefix: '/api' });
-  await app.register(inventoryRoutes, { prefix: '/api' });
-  await app.register(qoo10Routes, { prefix: '/api' });
-  await app.register(masterProductRoutes, { prefix: '/api' });
-  await app.register(skuRoutes, { prefix: '/api' });
-  await app.register(warehouseRoutes, { prefix: '/api' });
-  await app.register(userSettingsRoutes, { prefix: '/api' });
-  await app.register(orderEventLogRoutes, { prefix: '/api' });
-  await app.register(matchingRuleRoutes, { prefix: '/api' });
-  await app.register(giftRuleRoutes, { prefix: '/api' });
-  await app.register(notificationRoutes, { prefix: '/api' });
+  await app.register(authRoutes, { prefix: "/api" });
+  await app.register(channelRoutes, { prefix: "/api" });
+  await app.register(orderRoutes, { prefix: "/api" });
+  await app.register(paymentsRoutes, { prefix: "/api" });
+  await app.register(newOrdersRoutes, { prefix: "/api" });
+  await app.register(dispatchRoutes, { prefix: "/api" });
+  await app.register(shippingRoutes, { prefix: "/api" });
+  await app.register(barcodeDispatchRoutes, { prefix: "/api" });
+  await app.register(allOrdersRoutes, { prefix: "/api" });
+  await app.register(productRoutes, { prefix: "/api" });
+  await app.register(claimRoutes, { prefix: "/api" });
+  await app.register(inventoryRoutes, { prefix: "/api" });
+  await app.register(qoo10Routes, { prefix: "/api" });
+  await app.register(masterProductRoutes, { prefix: "/api" });
+  await app.register(skuRoutes, { prefix: "/api" });
+  await app.register(warehouseRoutes, { prefix: "/api" });
+  await app.register(userSettingsRoutes, { prefix: "/api" });
+  await app.register(orderEventLogRoutes, { prefix: "/api" });
+  await app.register(matchingRuleRoutes, { prefix: "/api" });
+  await app.register(giftRuleRoutes, { prefix: "/api" });
+  await app.register(notificationRoutes, { prefix: "/api" });
 
   const port = app.config.PORT ?? 4000;
-  await app.listen({ port, host: '0.0.0.0' });
+  await app.listen({ port, host: "0.0.0.0" });
 }
 
 main().catch((err) => {

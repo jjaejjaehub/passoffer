@@ -26,7 +26,9 @@ export function useShopifyDeleteProduct(channelIdOverride?: string) {
     },
     onSuccess: () => {
       appToaster.create({ title: "상품이 삭제되었습니다", type: "success" });
-      void queryClient.invalidateQueries({ queryKey: shopifyProductsQueryRoot });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyProductsQueryRoot,
+      });
     },
     onError: (error) => {
       let message = "상품 삭제에 실패했습니다.";
@@ -36,7 +38,11 @@ export function useShopifyDeleteProduct(channelIdOverride?: string) {
       } else if (error instanceof Error) {
         message = error.message;
       }
-      appToaster.create({ title: "삭제 실패", description: message, type: "error" });
+      appToaster.create({
+        title: "삭제 실패",
+        description: message,
+        type: "error",
+      });
     },
   });
 }
@@ -67,7 +73,9 @@ export function useShopifyUpdateProductStatus(channelIdOverride?: string) {
     onSuccess: (_, { status }) => {
       appToaster.create({
         title:
-          status === "ACTIVE" ? "판매로 변경되었습니다" : "판매중지로 변경되었습니다",
+          status === "ACTIVE"
+            ? "판매로 변경되었습니다"
+            : "판매중지로 변경되었습니다",
         type: "success",
       });
       void queryClient.invalidateQueries({
@@ -144,7 +152,8 @@ export function useShopifyUpdateProduct() {
     mutationFn: async (
       input: ShopifyUpdateProductInput,
     ): Promise<UpdateProductResponse> => {
-      if (!hasKey || !channelUuid) throw new Error("Shopify 채널이 연결되지 않았습니다.");
+      if (!hasKey || !channelUuid)
+        throw new Error("Shopify 채널이 연결되지 않았습니다.");
 
       return http.put<UpdateProductResponse>(
         `/api/products/${channelUuid}/${encodeURIComponent(input.productId)}`,
@@ -152,7 +161,8 @@ export function useShopifyUpdateProduct() {
       );
     },
     onSuccess: (data) => {
-      const hasVariantErrors = data.variantErrors && data.variantErrors.length > 0;
+      const hasVariantErrors =
+        data.variantErrors && data.variantErrors.length > 0;
 
       appToaster.create({
         title: "상품이 수정되었습니다",
@@ -162,7 +172,9 @@ export function useShopifyUpdateProduct() {
         type: hasVariantErrors ? "warning" : "success",
       });
 
-      void queryClient.invalidateQueries({ queryKey: shopifyProductsQueryRoot });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyProductsQueryRoot,
+      });
       void queryClient.invalidateQueries({
         queryKey: shopifyProductDetailQueries.detail(data.product.id),
       });

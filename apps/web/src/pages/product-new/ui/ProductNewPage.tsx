@@ -41,7 +41,12 @@ import {
   RegisterInventoryOptionsField,
   RegisterSimpleOptionsField,
 } from "@/features/product-edit";
-import { EmptyState, PageHeader, RichHtmlEditor, ShipDateCell } from "@/shared/ui";
+import {
+  EmptyState,
+  PageHeader,
+  RichHtmlEditor,
+  ShipDateCell,
+} from "@/shared/ui";
 
 const TAX_RATE_OPTIONS: Array<{
   id: RegisterProductFormValues["TaxRate"];
@@ -429,9 +434,7 @@ function Qoo10ProductNewForm(): React.JSX.Element {
 
   const categoryQuery = useQuery(categoryQueries.all());
 
-  const brandQuery = useQuery(
-    brandQueries.search(debouncedBrandKeyword),
-  );
+  const brandQuery = useQuery(brandQueries.search(debouncedBrandKeyword));
 
   const categories = categoryQuery.data?.ResultObject ?? [];
   const brandResults = brandQuery.data?.ResultObject ?? [];
@@ -1230,7 +1233,13 @@ function Qoo10ProductNewForm(): React.JSX.Element {
                 <Heading as="h2" size="md">
                   상품상세정보
                 </Heading>
-                <Box w={1.5} h={1.5} borderRadius="full" bg="red.500" mb={0.5} />
+                <Box
+                  w={1.5}
+                  h={1.5}
+                  borderRadius="full"
+                  bg="red.500"
+                  mb={0.5}
+                />
               </Flex>
             </Flex>
 
@@ -1397,7 +1406,9 @@ function Qoo10ProductNewForm(): React.JSX.Element {
                               : "1";
                           field.onChange(next);
                           // 타입 변경 시 원산지 값 초기화
-                          setValue("ProductionPlace", "", { shouldValidate: false });
+                          setValue("ProductionPlace", "", {
+                            shouldValidate: false,
+                          });
                         }}
                       >
                         {PRODUCTION_PLACE_TYPE_OPTIONS.map((opt) => (
@@ -1428,7 +1439,9 @@ function Qoo10ProductNewForm(): React.JSX.Element {
                     value={watch("ProductionPlace")}
                     onChange={(e) => {
                       const val = e.target.value === "0" ? "" : e.target.value;
-                      setValue("ProductionPlace", val, { shouldValidate: true });
+                      setValue("ProductionPlace", val, {
+                        shouldValidate: true,
+                      });
                     }}
                   >
                     {JAPAN_PREFECTURE_OPTIONS.map((opt) => (
@@ -1746,7 +1759,9 @@ export function ProductNewPage(): React.JSX.Element {
                 key={channel.id}
                 variant="ghost"
                 size="sm"
-                onClick={isDisabled ? undefined : () => setActiveChannel(channel.id)}
+                onClick={
+                  isDisabled ? undefined : () => setActiveChannel(channel.id)
+                }
                 fontWeight={isSelected ? "semibold" : "normal"}
                 color={isSelected ? "gray.900" : "gray.500"}
                 borderRadius={0}

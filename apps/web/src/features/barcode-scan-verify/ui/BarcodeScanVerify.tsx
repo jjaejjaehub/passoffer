@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Box, Button, Flex, Input, Stack, Text } from '@chakra-ui/react';
+import { useEffect, useRef, useState } from "react";
+import { Box, Button, Flex, Input, Stack, Text } from "@chakra-ui/react";
 import {
   useBarcodeVerify,
   type BarcodeVerifyResult,
   type BarcodeVerifyReason,
-} from '@/entities/order';
-import { appToaster } from '@/shared/ui/app-toaster';
+} from "@/entities/order";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export interface BarcodeScanRecord {
   id: string;
@@ -22,10 +22,10 @@ export interface BarcodeScanVerifyProps {
 }
 
 const REASON_MESSAGE: Record<BarcodeVerifyReason, string> = {
-  not_found: '일치하는 주문을 찾을 수 없습니다.',
-  ineligible_status: '출고 가능한 상태(배송준비/송장입력)가 아닙니다.',
-  expected_mismatch: '선택한 주문과 다른 주문입니다.',
-  multiple_matches: '동일 코드로 매칭되는 주문이 여러 건입니다.',
+  not_found: "일치하는 주문을 찾을 수 없습니다.",
+  ineligible_status: "출고 가능한 상태(배송준비/송장입력)가 아닙니다.",
+  expected_mismatch: "선택한 주문과 다른 주문입니다.",
+  multiple_matches: "동일 코드로 매칭되는 주문이 여러 건입니다.",
 };
 
 function makeRecordId(): string {
@@ -37,7 +37,7 @@ export function BarcodeScanVerify({
   onScanResult,
 }: BarcodeScanVerifyProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState("");
   const mutation = useBarcodeVerify();
 
   useEffect(() => {
@@ -68,29 +68,29 @@ export function BarcodeScanVerify({
             const label =
               result.order.trackingNo ?? result.order.channelOrderId ?? code;
             appToaster.create({
-              type: 'success',
-              title: '출고완료 전환됨',
+              type: "success",
+              title: "출고완료 전환됨",
               description: `${label} → 50(출고완료)`,
             });
           } else {
             const reasonMsg = result.reason
               ? REASON_MESSAGE[result.reason]
-              : '검증에 실패했습니다.';
+              : "검증에 실패했습니다.";
             appToaster.create({
-              type: 'error',
-              title: '매칭 실패',
+              type: "error",
+              title: "매칭 실패",
               description: `${code} — ${reasonMsg}`,
             });
           }
 
-          setValue('');
+          setValue("");
           focusInput();
         },
         onError: (err) => {
           appToaster.create({
-            type: 'error',
-            title: '요청 실패',
-            description: err instanceof Error ? err.message : '네트워크 오류',
+            type: "error",
+            title: "요청 실패",
+            description: err instanceof Error ? err.message : "네트워크 오류",
           });
           focusInput();
         },
@@ -114,7 +114,7 @@ export function BarcodeScanVerify({
             placeholder="스캐너 입력 대기 중..."
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 e.preventDefault();
                 submit();
               }

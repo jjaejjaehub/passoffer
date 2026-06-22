@@ -15,12 +15,18 @@ export function ExtraInfoSection({ state, update }: Props) {
       <Stack gap={4}>
         <TwoCol>
           <Field label={t("form.extra.originCountry")}>
-            <Input size="sm" value={state.originCountry} onChange={(e) => update("originCountry", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.originCountry}
+              onChange={(e) => update("originCountry", e.target.value)}
+            />
           </Field>
           <Field label={t("form.extra.taxType")}>
             <select
               value={state.taxType}
-              onChange={(e) => update("taxType", e.target.value as FormState["taxType"])}
+              onChange={(e) =>
+                update("taxType", e.target.value as FormState["taxType"])
+              }
               style={{
                 width: "100%",
                 height: "32px",
@@ -44,29 +50,54 @@ export function ExtraInfoSection({ state, update }: Props) {
               checked={state.requiresCaution}
               onChange={(e) => update("requiresCaution", e.target.checked)}
             />
-            <Text fontSize="sm" color="gray.600">{t("form.extra.requiresCautionHint")}</Text>
+            <Text fontSize="sm" color="gray.600">
+              {t("form.extra.requiresCautionHint")}
+            </Text>
           </Flex>
         </Field>
 
         <TwoCol>
           <Field label={t("form.extra.brand")}>
-            <Input size="sm" value={state.brand} onChange={(e) => update("brand", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.brand}
+              onChange={(e) => update("brand", e.target.value)}
+            />
           </Field>
           <Field label={t("form.extra.manufacturer")}>
-            <Input size="sm" value={state.manufacturer} onChange={(e) => update("manufacturer", e.target.value)} />
+            <Input
+              size="sm"
+              value={state.manufacturer}
+              onChange={(e) => update("manufacturer", e.target.value)}
+            />
           </Field>
         </TwoCol>
         <TwoCol>
           <Field label={t("form.extra.manufacturerEn")}>
-            <Input size="sm" value={state.manufacturerEn} onChange={(e) => update("manufacturerEn", e.target.value)} maxLength={40} />
+            <Input
+              size="sm"
+              value={state.manufacturerEn}
+              onChange={(e) => update("manufacturerEn", e.target.value)}
+              maxLength={40}
+            />
           </Field>
           <Field label={t("form.extra.ageGroup")}>
-            <Input size="sm" value={state.ageGroup} onChange={(e) => update("ageGroup", e.target.value)} placeholder={t("form.extra.ageGroupPlaceholder")} />
+            <Input
+              size="sm"
+              value={state.ageGroup}
+              onChange={(e) => update("ageGroup", e.target.value)}
+              placeholder={t("form.extra.ageGroupPlaceholder")}
+            />
           </Field>
         </TwoCol>
 
         <Field label={t("form.extra.mainImage")}>
-          <Input size="sm" value={state.mainImage} onChange={(e) => update("mainImage", e.target.value)} placeholder="https://..." />
+          <Input
+            size="sm"
+            value={state.mainImage}
+            onChange={(e) => update("mainImage", e.target.value)}
+            placeholder="https://..."
+          />
         </Field>
         <Field label={t("form.extra.descriptionHtml")}>
           <Textarea

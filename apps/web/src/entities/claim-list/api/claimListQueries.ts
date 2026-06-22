@@ -3,7 +3,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { http } from "@/shared/api";
-import type { OrderListItem, OrderDateField } from "@/entities/order/model/types";
+import type {
+  OrderListItem,
+  OrderDateField,
+} from "@/entities/order/model/types";
 
 export type ClaimSortField =
   | "orderedAt"
@@ -35,7 +38,8 @@ export interface ClaimListResponse {
 
 export const claimListQueries = {
   all: () => ["claim-list"] as const,
-  list: (params: ClaimListParams) => [...claimListQueries.all(), "list", params] as const,
+  list: (params: ClaimListParams) =>
+    [...claimListQueries.all(), "list", params] as const,
 };
 
 function buildParams(params: ClaimListParams): Record<string, string> {
@@ -57,7 +61,9 @@ export function useClaimList(params: ClaimListParams) {
   const query = useQuery({
     queryKey: claimListQueries.list(params),
     queryFn: () =>
-      http.get<ClaimListResponse>("/api/claims/list", { params: buildParams(params) }),
+      http.get<ClaimListResponse>("/api/claims/list", {
+        params: buildParams(params),
+      }),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });

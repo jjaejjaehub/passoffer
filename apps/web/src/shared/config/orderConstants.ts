@@ -1,7 +1,9 @@
 // 주문 fulfillment rank 라벨/색상 + 페이지·카운터 상수.
 // rank 체계는 서버 RANK_TO_SEMANTIC 와 1:1 매칭 (apps/server/src/routes/orders/index.ts).
 
-export const FULFILLMENT_RANKS = [10, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90] as const;
+export const FULFILLMENT_RANKS = [
+  10, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90,
+] as const;
 export type FulfillmentRank = (typeof FULFILLMENT_RANKS)[number];
 
 export const FULFILLMENT_RANK_LABEL: Record<FulfillmentRank, string> = {
@@ -69,7 +71,12 @@ export const COUNTER_LINES: CounterLine[] = [
       { key: "all", label: "전체", tone: "neutral" },
       { key: "paid", label: "결제완료", statusRanks: [10], tone: "blue" },
       { key: "new", label: "신규주문", statusRanks: [20], tone: "blue" },
-      { key: "hold_order", label: "주문보류", statusRanks: [25], tone: "amber" },
+      {
+        key: "hold_order",
+        label: "주문보류",
+        statusRanks: [25],
+        tone: "amber",
+      },
     ],
   },
   {
@@ -77,8 +84,18 @@ export const COUNTER_LINES: CounterLine[] = [
     title: "출고",
     chips: [
       { key: "ready", label: "발송준비", statusRanks: [30], tone: "violet" },
-      { key: "hold_dispatch", label: "발송보류", statusRanks: [35], tone: "amber" },
-      { key: "label_printed", label: "송장출력", statusRanks: [40], tone: "violet" },
+      {
+        key: "hold_dispatch",
+        label: "발송보류",
+        statusRanks: [35],
+        tone: "amber",
+      },
+      {
+        key: "label_printed",
+        label: "송장출력",
+        statusRanks: [40],
+        tone: "violet",
+      },
       { key: "shipped", label: "발송완료", statusRanks: [50], tone: "green" },
     ],
   },

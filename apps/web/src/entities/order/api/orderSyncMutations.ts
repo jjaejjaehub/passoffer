@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
 
 // ─── 서버 응답 타입 ──────────────────────────────────────────────
 
-export type ChannelKey = 'qoo10' | 'shopify' | 'shopee' | 'rakuten';
+export type ChannelKey = "qoo10" | "shopify" | "shopee" | "rakuten";
 
 export interface ChannelOpResult {
   channelId: string;
@@ -57,14 +57,16 @@ export interface QuickCollectInput {
 // ─── 공통 invalidation ──────────────────────────────────────────
 
 /** 주문 관련 쿼리 전반 invalidate — 페이지별 쿼리 키 prefix 일괄 무효화 */
-function invalidateAllOrderQueries(qc: ReturnType<typeof useQueryClient>): void {
-  void qc.invalidateQueries({ queryKey: ['orders'] });
-  void qc.invalidateQueries({ queryKey: ['payments'] });
-  void qc.invalidateQueries({ queryKey: ['new-orders'] });
-  void qc.invalidateQueries({ queryKey: ['dispatch'] });
-  void qc.invalidateQueries({ queryKey: ['shipping'] });
-  void qc.invalidateQueries({ queryKey: ['all-orders'] });
-  void qc.invalidateQueries({ queryKey: ['claims'] });
+function invalidateAllOrderQueries(
+  qc: ReturnType<typeof useQueryClient>,
+): void {
+  void qc.invalidateQueries({ queryKey: ["orders"] });
+  void qc.invalidateQueries({ queryKey: ["payments"] });
+  void qc.invalidateQueries({ queryKey: ["new-orders"] });
+  void qc.invalidateQueries({ queryKey: ["dispatch"] });
+  void qc.invalidateQueries({ queryKey: ["shipping"] });
+  void qc.invalidateQueries({ queryKey: ["all-orders"] });
+  void qc.invalidateQueries({ queryKey: ["claims"] });
 }
 
 // ─── Mutations ──────────────────────────────────────────────────
@@ -75,7 +77,7 @@ export function useCollectOrders() {
 
   return useMutation({
     mutationFn: async (input: CollectOrdersInput): Promise<CollectResult> => {
-      return await http.post<CollectResult>('/api/orders/collect', input);
+      return await http.post<CollectResult>("/api/orders/collect", input);
     },
     onSuccess: () => {
       invalidateAllOrderQueries(queryClient);
@@ -89,7 +91,7 @@ export function useSyncOrders() {
 
   return useMutation({
     mutationFn: async (input: SyncOrdersInput): Promise<SyncResult> => {
-      return await http.post<SyncResult>('/api/orders/sync', input);
+      return await http.post<SyncResult>("/api/orders/sync", input);
     },
     onSuccess: () => {
       invalidateAllOrderQueries(queryClient);
@@ -102,8 +104,13 @@ export function useQuickCollect() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input?: QuickCollectInput): Promise<QuickCollectResult> => {
-      return await http.post<QuickCollectResult>('/api/orders/quick-collect', input ?? {});
+    mutationFn: async (
+      input?: QuickCollectInput,
+    ): Promise<QuickCollectResult> => {
+      return await http.post<QuickCollectResult>(
+        "/api/orders/quick-collect",
+        input ?? {},
+      );
     },
     onSuccess: () => {
       invalidateAllOrderQueries(queryClient);

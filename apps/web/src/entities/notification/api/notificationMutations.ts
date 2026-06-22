@@ -8,7 +8,9 @@ import { notificationsQueryRoot } from "./notificationQueries";
 export function useSendNotification() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: SendNotificationInput): Promise<NotificationEvent> =>
+    mutationFn: async (
+      input: SendNotificationInput,
+    ): Promise<NotificationEvent> =>
       http.post<NotificationEvent>("/api/notifications/send", input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationsQueryRoot });

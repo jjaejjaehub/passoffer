@@ -1,1 +1,1 @@
-export * from './ui/BarcodeDispatchPage';
+export * from "./ui/BarcodeDispatchPage";

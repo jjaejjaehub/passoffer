@@ -4,7 +4,7 @@ export interface Qoo10RegisterProductParams {
   ItemTitle: string; // 상품명 최대 100자 [필수]
   ItemPrice: number; // 판매가격 (円) [필수]
   ItemQty: number; // 재고수량 [필수]
-  AvailableDateType: '0' | '1' | '2' | '3'; // 발송가능일 타입 [필수]
+  AvailableDateType: "0" | "1" | "2" | "3"; // 발송가능일 타입 [필수]
   AvailableDateValue: string; // 발송가능일 값 [필수]
 
   // 선택 필드
@@ -17,11 +17,11 @@ export interface Qoo10RegisterProductParams {
   IndustrialCode?: string;
   ModelNM?: string;
   ManufactureDate?: string;
-  ProductionPlaceType?: '1' | '2' | '3'; // 원산지 타입 (국내/해외/기타)
+  ProductionPlaceType?: "1" | "2" | "3"; // 원산지 타입 (국내/해외/기타)
   ProductionPlace?: string; // 원산지
   Weight?: string;
   Material?: string;
-  AdultYN?: 'Y' | 'N';
+  AdultYN?: "Y" | "N";
   ContactInfo?: string;
   StandardImage?: string; // 대표이미지 URL
   VideoURL?: string;
@@ -29,7 +29,7 @@ export interface Qoo10RegisterProductParams {
   AdditionalOption?: string;
   ItemType?: string;
   RetailPrice?: number;
-  TaxRate?: '10' | '8' | '0' | 'S';
+  TaxRate?: "10" | "8" | "0" | "S";
   ExpireDate?: string; // 판매종료일 yyyy-mm-dd
   ShippingNo?: number; // 배송비코드
   Keyword?: string;
@@ -59,8 +59,8 @@ export interface Qoo10ShippingTemplate {
   ShippingFee: number;
   ShippingType: string;
   FreeCondition: number;
-  Region: string;   // Y=지역별 배송비 설정, N=미설정
-  Oversea: string;  // Y=해외배송비 설정, N=미설정
+  Region: string; // Y=지역별 배송비 설정, N=미설정
+  Oversea: string; // Y=해외배송비 설정, N=미설정
   transcName: string; // 배송사명
 }
 
@@ -69,4 +69,3 @@ export interface Qoo10RegisterProductResult {
   GdNo: string;
   delivery_group_no: number;
 }
-

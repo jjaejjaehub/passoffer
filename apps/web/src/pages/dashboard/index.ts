@@ -1,2 +1,1 @@
-export * from './ui/DashboardPage';
-
+export * from "./ui/DashboardPage";

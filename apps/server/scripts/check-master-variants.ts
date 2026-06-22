@@ -1,20 +1,27 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import { eq, inArray, asc } from 'drizzle-orm';
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { eq, inArray, asc } from "drizzle-orm";
 import {
   masterProducts,
   masterProductVariants,
   masterProductOptionGroups,
   masterProductOptionValues,
   masterProductVariantOptionValues,
-} from '../src/db/schema';
+} from "../src/db/schema";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
 
-const code = process.argv[2] ?? 'Q10-TEST-01';
-const [mp] = await db.select().from(masterProducts).where(eq(masterProducts.code, code));
-console.log('master:', { id: mp?.id, code: mp?.code, retailPrice: mp?.retailPrice });
+const code = process.argv[2] ?? "Q10-TEST-01";
+const [mp] = await db
+  .select()
+  .from(masterProducts)
+  .where(eq(masterProducts.code, code));
+console.log("master:", {
+  id: mp?.id,
+  code: mp?.code,
+  retailPrice: mp?.retailPrice,
+});
 
 if (mp) {
   const groups = await db
@@ -22,13 +29,16 @@ if (mp) {
     .from(masterProductOptionGroups)
     .where(eq(masterProductOptionGroups.masterProductId, mp.id))
     .orderBy(asc(masterProductOptionGroups.position));
-  console.log('option groups:', groups.map((g) => ({ name: g.name, position: g.position })));
+  console.log(
+    "option groups:",
+    groups.map((g) => ({ name: g.name, position: g.position })),
+  );
 
   const vs = await db
     .select()
     .from(masterProductVariants)
     .where(eq(masterProductVariants.masterProductId, mp.id));
-  console.log('variants count:', vs.length);
+  console.log("variants count:", vs.length);
 
   if (vs.length > 0) {
     const optsRows = await db
@@ -41,7 +51,10 @@ if (mp) {
       .from(masterProductVariantOptionValues)
       .innerJoin(
         masterProductOptionValues,
-        eq(masterProductVariantOptionValues.optionValueId, masterProductOptionValues.id),
+        eq(
+          masterProductVariantOptionValues.optionValueId,
+          masterProductOptionValues.id,
+        ),
       )
       .innerJoin(
         masterProductOptionGroups,
@@ -65,7 +78,7 @@ if (mp) {
       console.log({
         id: v.id,
         sku: v.sku,
-        options: labelByVariant.get(v.id) ?? '(none)',
+        options: labelByVariant.get(v.id) ?? "(none)",
         price: v.price,
         stock: v.stock,
       });

@@ -27,7 +27,11 @@ import type { Sku } from "@/entities/sku/model/types";
 
 type TabKey = "all" | "unmatched" | "partial" | "fully";
 
-const TABS: Array<{ key: TabKey; label: string; matchState?: OrderMatchState }> = [
+const TABS: Array<{
+  key: TabKey;
+  label: string;
+  matchState?: OrderMatchState;
+}> = [
   { key: "all", label: "전체" },
   { key: "unmatched", label: "미매칭", matchState: "unmatched" },
   { key: "partial", label: "부분매칭", matchState: "partial" },
@@ -35,7 +39,12 @@ const TABS: Array<{ key: TabKey; label: string; matchState?: OrderMatchState }> 
 ];
 
 interface DraftMap {
-  [itemId: string]: { skuId: string | null; skuCode: string | null; skuName: string | null; outputQty: number };
+  [itemId: string]: {
+    skuId: string | null;
+    skuCode: string | null;
+    skuName: string | null;
+    outputQty: number;
+  };
 }
 
 function OrderRow({
@@ -73,17 +82,35 @@ function OrderRow({
       </Text>
       <Flex mt={1} gap={2}>
         {order.autoMatched === true && (
-          <Box bg="green.100" color="green.700" px={1.5} fontSize="2xs" borderRadius="sm">
+          <Box
+            bg="green.100"
+            color="green.700"
+            px={1.5}
+            fontSize="2xs"
+            borderRadius="sm"
+          >
             자동매칭
           </Box>
         )}
         {order.autoMatched === false && (
-          <Box bg="orange.100" color="orange.700" px={1.5} fontSize="2xs" borderRadius="sm">
+          <Box
+            bg="orange.100"
+            color="orange.700"
+            px={1.5}
+            fontSize="2xs"
+            borderRadius="sm"
+          >
             수동필요
           </Box>
         )}
         {order.matchedBy && (
-          <Box bg="gray.100" color="gray.700" px={1.5} fontSize="2xs" borderRadius="sm">
+          <Box
+            bg="gray.100"
+            color="gray.700"
+            px={1.5}
+            fontSize="2xs"
+            borderRadius="sm"
+          >
             {order.matchedBy}
           </Box>
         )}
@@ -100,7 +127,10 @@ function InlineSkuPicker({
   onClose: () => void;
 }) {
   const [search, setSearch] = useState("");
-  const { data, isLoading } = useSkus({ search: search.trim() || undefined, pageSize: 15 });
+  const { data, isLoading } = useSkus({
+    search: search.trim() || undefined,
+    pageSize: 15,
+  });
   const items = data?.items ?? [];
 
   return (
@@ -155,7 +185,12 @@ function InlineSkuPicker({
                 gap={2}
               >
                 <Box flex={1} minW={0}>
-                  <Text fontSize="xs" fontWeight="600" color="gray.800" lineClamp={1}>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="600"
+                    color="gray.800"
+                    lineClamp={1}
+                  >
                     {sku.code}
                   </Text>
                   <Text fontSize="2xs" color="gray.600" lineClamp={1}>
@@ -184,7 +219,12 @@ function ItemRow({
 }: {
   item: OrderItemForMatching;
   draft: DraftMap[string] | undefined;
-  onSetDraft: (skuId: string | null, skuCode: string | null, skuName: string | null, outputQty: number) => void;
+  onSetDraft: (
+    skuId: string | null,
+    skuCode: string | null,
+    skuName: string | null,
+    outputQty: number,
+  ) => void;
   onClearDraft: () => void;
   onSaveOne: () => void;
   savingOne: boolean;
@@ -196,7 +236,13 @@ function ItemRow({
   const currentOutputQty = draft ? draft.outputQty : item.outputQty;
 
   return (
-    <Box borderWidth={1} borderColor={draft ? "blue.300" : "gray.200"} borderRadius="md" p={3} bg="white">
+    <Box
+      borderWidth={1}
+      borderColor={draft ? "blue.300" : "gray.200"}
+      borderRadius="md"
+      p={3}
+      bg="white"
+    >
       <Flex justify="space-between" align="flex-start" gap={3}>
         <Box flex={1} minW={0}>
           <Text fontSize="sm" fontWeight="600" color="gray.800" lineClamp={2}>
@@ -219,7 +265,13 @@ function ItemRow({
             매칭된 SKU
           </Text>
           {draft && (
-            <Box bg="blue.100" color="blue.700" px={1.5} fontSize="2xs" borderRadius="sm">
+            <Box
+              bg="blue.100"
+              color="blue.700"
+              px={1.5}
+              fontSize="2xs"
+              borderRadius="sm"
+            >
               변경됨
             </Box>
           )}
@@ -235,7 +287,12 @@ function ItemRow({
             py={1.5}
           >
             <Box flex={1} minW={0}>
-              <Text fontSize="xs" fontWeight="600" color="gray.800" lineClamp={1}>
+              <Text
+                fontSize="xs"
+                fontWeight="600"
+                color="gray.800"
+                lineClamp={1}
+              >
                 {currentSkuCode ?? "-"}
               </Text>
               <Text fontSize="2xs" color="gray.600" lineClamp={1}>
@@ -278,16 +335,30 @@ function ItemRow({
         )}
 
         <Flex mt={2} gap={2}>
-          <Button size="xs" variant="outline" onClick={() => setPickerOpen((v) => !v)}>
+          <Button
+            size="xs"
+            variant="outline"
+            onClick={() => setPickerOpen((v) => !v)}
+          >
             <Search size={12} />
             <Box ml={1}>SKU 선택</Box>
           </Button>
           {draft && (
             <>
-              <Button size="xs" variant="ghost" onClick={onClearDraft} disabled={savingOne}>
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={onClearDraft}
+                disabled={savingOne}
+              >
                 되돌리기
               </Button>
-              <Button size="xs" colorPalette="blue" onClick={onSaveOne} loading={savingOne}>
+              <Button
+                size="xs"
+                colorPalette="blue"
+                onClick={onSaveOne}
+                loading={savingOne}
+              >
                 <Check size={12} />
                 <Box ml={1}>저장</Box>
               </Button>
@@ -315,7 +386,11 @@ export default function SkuMatchingPage() {
   const [draftMap, setDraftMap] = useState<DraftMap>({});
 
   const matchState = TABS.find((t) => t.key === tab)?.matchState;
-  const { items: orders, total, isLoading: ordersLoading } = useOrders({
+  const {
+    items: orders,
+    total,
+    isLoading: ordersLoading,
+  } = useOrders({
     matchState,
     page: 1,
     pageSize: 100,
@@ -323,14 +398,16 @@ export default function SkuMatchingPage() {
     sortDir: "desc",
   });
 
-  const { data: itemsData, isLoading: itemsLoading } = useOrderItemsForMatching(selectedOrderId);
+  const { data: itemsData, isLoading: itemsLoading } =
+    useOrderItemsForMatching(selectedOrderId);
   const items = itemsData?.items ?? [];
 
   const matchOne = useMatchOrderItemSku();
   const matchBulk = useBulkMatchOrderItemSku();
 
   const draftCount = useMemo(
-    () => Object.keys(draftMap).filter((k) => items.some((i) => i.id === k)).length,
+    () =>
+      Object.keys(draftMap).filter((k) => items.some((i) => i.id === k)).length,
     [draftMap, items],
   );
 
@@ -370,7 +447,9 @@ export default function SkuMatchingPage() {
 
   async function saveAll() {
     if (!selectedOrderId) return;
-    const drafts = Object.entries(draftMap).filter(([k]) => items.some((i) => i.id === k));
+    const drafts = Object.entries(draftMap).filter(([k]) =>
+      items.some((i) => i.id === k),
+    );
     if (drafts.length === 0) return;
     await matchBulk.mutateAsync({
       items: drafts.map(([itemId, d]) => ({
@@ -390,7 +469,15 @@ export default function SkuMatchingPage() {
   return (
     <Flex direction="column" h="calc(100vh - 64px)" bg="gray.50">
       {/* Top tabs */}
-      <Flex bg="white" borderBottomWidth={1} borderBottomColor="gray.200" px={6} py={3} align="center" gap={6}>
+      <Flex
+        bg="white"
+        borderBottomWidth={1}
+        borderBottomColor="gray.200"
+        px={6}
+        py={3}
+        align="center"
+        gap={6}
+      >
         <Text fontSize="lg" fontWeight="700" color="gray.800">
           SKU 매칭
         </Text>
@@ -421,8 +508,21 @@ export default function SkuMatchingPage() {
       {/* Workspace */}
       <Flex flex={1} minH={0}>
         {/* Left: orders list */}
-        <Flex direction="column" w="380px" borderRightWidth={1} borderRightColor="gray.200" bg="white" minH={0}>
-          <Box px={3} py={2} borderBottomWidth={1} borderBottomColor="gray.100" bg="gray.50">
+        <Flex
+          direction="column"
+          w="380px"
+          borderRightWidth={1}
+          borderRightColor="gray.200"
+          bg="white"
+          minH={0}
+        >
+          <Box
+            px={3}
+            py={2}
+            borderBottomWidth={1}
+            borderBottomColor="gray.100"
+            bg="gray.50"
+          >
             <Text fontSize="xs" color="gray.600" fontWeight="600">
               주문 목록 ({orders.length})
             </Text>
@@ -455,19 +555,38 @@ export default function SkuMatchingPage() {
         {/* Right: items + sku picker */}
         <Flex direction="column" flex={1} minH={0}>
           {!selectedOrderId ? (
-            <Flex flex={1} align="center" justify="center" color="gray.500" gap={2}>
+            <Flex
+              flex={1}
+              align="center"
+              justify="center"
+              color="gray.500"
+              gap={2}
+            >
               <Package size={18} />
               <Text fontSize="sm">왼쪽에서 주문을 선택하세요</Text>
             </Flex>
           ) : (
             <>
-              <Flex px={6} py={3} borderBottomWidth={1} borderBottomColor="gray.200" bg="white" align="center" gap={3}>
+              <Flex
+                px={6}
+                py={3}
+                borderBottomWidth={1}
+                borderBottomColor="gray.200"
+                bg="white"
+                align="center"
+                gap={3}
+              >
                 <Text fontSize="sm" fontWeight="600" color="gray.800">
                   라인아이템 {items.length}건
                 </Text>
                 <Box ml="auto">
                   {draftCount > 0 && (
-                    <Button size="sm" colorPalette="blue" onClick={saveAll} loading={matchBulk.isPending}>
+                    <Button
+                      size="sm"
+                      colorPalette="blue"
+                      onClick={saveAll}
+                      loading={matchBulk.isPending}
+                    >
                       <Check size={14} />
                       <Box ml={1}>변경된 {draftCount}건 일괄 저장</Box>
                     </Button>
@@ -480,7 +599,12 @@ export default function SkuMatchingPage() {
                     <Spinner />
                   </Flex>
                 ) : items.length === 0 ? (
-                  <Text fontSize="sm" color="gray.500" textAlign="center" py={8}>
+                  <Text
+                    fontSize="sm"
+                    color="gray.500"
+                    textAlign="center"
+                    py={8}
+                  >
                     라인아이템 없음
                   </Text>
                 ) : (

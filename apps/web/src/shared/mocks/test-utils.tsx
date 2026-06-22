@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import type { ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ChakraProvider } from '@chakra-ui/react';
-import { system } from '@/shared/lib/chakra-theme';
+import * as React from "react";
+import type { ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ChakraProvider } from "@chakra-ui/react";
+import { system } from "@/shared/lib/chakra-theme";
 
 export function createTestQueryClient(): QueryClient {
   return new QueryClient({
@@ -22,10 +22,18 @@ export function createTestQueryClient(): QueryClient {
   });
 }
 
-export function createWrapper(): ({ children }: { children: ReactNode }) => React.JSX.Element {
+export function createWrapper(): ({
+  children,
+}: {
+  children: ReactNode;
+}) => React.JSX.Element {
   const queryClient = createTestQueryClient();
 
-  return function Wrapper({ children }: { children: ReactNode }): React.JSX.Element {
+  return function Wrapper({
+    children,
+  }: {
+    children: ReactNode;
+  }): React.JSX.Element {
     return (
       <QueryClientProvider client={queryClient}>
         <ChakraProvider value={system}>{children}</ChakraProvider>
@@ -34,6 +42,10 @@ export function createWrapper(): ({ children }: { children: ReactNode }) => Reac
   };
 }
 
-export function ChakraTestProvider({ children }: { children: ReactNode }): React.JSX.Element {
+export function ChakraTestProvider({
+  children,
+}: {
+  children: ReactNode;
+}): React.JSX.Element {
   return <ChakraProvider value={system}>{children}</ChakraProvider>;
 }

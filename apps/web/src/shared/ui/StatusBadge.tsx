@@ -1,7 +1,12 @@
 import { Badge, Icon } from "@chakra-ui/react";
 import type { LucideIcon } from "lucide-react";
 
-export type StatusBadgeTone = "success" | "warning" | "danger" | "neutral" | "info";
+export type StatusBadgeTone =
+  | "success"
+  | "warning"
+  | "danger"
+  | "neutral"
+  | "info";
 
 interface StatusBadgeProps {
   tone: StatusBadgeTone;
@@ -17,7 +22,11 @@ const toneStyles: Record<StatusBadgeTone, { bg: string; color: string }> = {
   info: { bg: "blue.50", color: "blue.700" },
 };
 
-export function StatusBadge({ tone, label, icon }: StatusBadgeProps): React.JSX.Element {
+export function StatusBadge({
+  tone,
+  label,
+  icon,
+}: StatusBadgeProps): React.JSX.Element {
   const style = toneStyles[tone];
   return (
     <Badge

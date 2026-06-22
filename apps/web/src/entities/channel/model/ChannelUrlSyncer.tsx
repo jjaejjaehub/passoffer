@@ -1,11 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { ChannelId } from '@/shared/config';
-import { useActiveChannel } from './ActiveChannelContext';
+import { useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { ChannelId } from "@/shared/config";
+import { useActiveChannel } from "./ActiveChannelContext";
 
-const VALID_CHANNELS: ChannelId[] = ['qoo10', 'rakuten', 'shopee', 'amazon', 'shopify'];
+const VALID_CHANNELS: ChannelId[] = [
+  "qoo10",
+  "rakuten",
+  "shopee",
+  "amazon",
+  "shopify",
+];
 
 function isValidChannel(value: string): value is ChannelId {
   return VALID_CHANNELS.includes(value as ChannelId);
@@ -26,25 +32,25 @@ export function ChannelUrlSyncer(): null {
 
   // URL → Context
   useEffect(() => {
-    const param = searchParams?.get('channel');
+    const param = searchParams?.get("channel");
     if (param && isValidChannel(param) && param !== activeChannel) {
       setActiveChannel(param);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Context → URL
   // URL에 ?channel= 파라미터가 이미 있을 때만 동기화한다.
   // 없으면 추가하지 않는다 — 불필요한 router.replace와 재렌더링을 방지한다.
   useEffect(() => {
-    const current = searchParams?.get('channel');
+    const current = searchParams?.get("channel");
     if (!current) return; // ?channel= 없으면 URL에 추가하지 않음
     if (current === activeChannel) return;
 
-    const params = new URLSearchParams(searchParams?.toString() ?? '');
-    params.set('channel', activeChannel);
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("channel", activeChannel);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChannel]);
 
   return null;

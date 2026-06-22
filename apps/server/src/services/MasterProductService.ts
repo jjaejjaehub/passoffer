@@ -1,5 +1,5 @@
-import type { FastifyInstance } from 'fastify';
-import { and, eq, ilike, desc, count, sql, inArray, asc } from 'drizzle-orm';
+import type { FastifyInstance } from "fastify";
+import { and, eq, ilike, desc, count, sql, inArray, asc } from "drizzle-orm";
 import {
   masterProducts,
   masterProductVariants,
@@ -12,8 +12,8 @@ import {
   masterVariantSkus,
   skus,
   channels,
-} from '../db/schema';
-import { StockService } from './StockService';
+} from "../db/schema";
+import { StockService } from "./StockService";
 
 type MasterProductInsert = typeof masterProducts.$inferInsert;
 type MasterProductVariantInsert = typeof masterProductVariants.$inferInsert;
@@ -57,7 +57,11 @@ export class MasterProductService {
 
   // ─── 마스터 상품 목록 ─────────────────────────────────────────
 
-  async listMasterProducts(opts: { search?: string; page?: number; pageSize?: number }) {
+  async listMasterProducts(opts: {
+    search?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
     const page = Math.max(1, opts.page ?? 1);
     const pageSize = Math.min(100, opts.pageSize ?? 20);
     const offset = (page - 1) * pageSize;
@@ -77,10 +81,7 @@ export class MasterProductService {
         .orderBy(desc(masterProducts.updatedAt))
         .limit(pageSize)
         .offset(offset),
-      this.app.db
-        .select({ total: count() })
-        .from(masterProducts)
-        .where(where),
+      this.app.db.select({ total: count() }).from(masterProducts).where(where),
     ]);
 
     const ids = items.map((p) => p.id);
@@ -108,8 +109,12 @@ export class MasterProductService {
             .groupBy(listedProducts.masterProductId)
         : [];
 
-    const variantMap = new Map(variantCounts.map((r) => [r.masterProductId, r.cnt]));
-    const listedMap = new Map(listedCounts.map((r) => [r.masterProductId, r.cnt]));
+    const variantMap = new Map(
+      variantCounts.map((r) => [r.masterProductId, r.cnt]),
+    );
+    const listedMap = new Map(
+      listedCounts.map((r) => [r.masterProductId, r.cnt]),
+    );
 
     return {
       items: items.map((p) => ({
@@ -130,7 +135,9 @@ export class MasterProductService {
     const [product] = await this.app.db
       .select()
       .from(masterProducts)
-      .where(and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)));
+      .where(
+        and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)),
+      );
 
     if (!product) return null;
 
@@ -174,7 +181,7 @@ export class MasterProductService {
           .slice()
           .sort((a, b) => a.groupPosition - b.groupPosition)
           .map((o) => `${o.groupName}=${o.value}`)
-          .join(' / '),
+          .join(" / "),
         attachedSkus: attached,
       };
     });
@@ -192,17 +199,25 @@ export class MasterProductService {
       attributes: input.attributes ?? {},
     };
 
-    const [created] = await this.app.db.insert(masterProducts).values(row).returning();
+    const [created] = await this.app.db
+      .insert(masterProducts)
+      .values(row)
+      .returning();
     return created;
   }
 
   // ─── 마스터 상품 수정 ─────────────────────────────────────────
 
-  async updateMasterProduct(id: string, input: Partial<MasterProductCreateInput>) {
+  async updateMasterProduct(
+    id: string,
+    input: Partial<MasterProductCreateInput>,
+  ) {
     const [existing] = await this.app.db
       .select({ id: masterProducts.id })
       .from(masterProducts)
-      .where(and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)));
+      .where(
+        and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)),
+      );
 
     if (!existing) return null;
 
@@ -220,7 +235,7 @@ export class MasterProductService {
     if (linked.length > 0) {
       await this.app.db
         .update(listedProducts)
-        .set({ syncStatus: 'PENDING', updatedAt: new Date() })
+        .set({ syncStatus: "PENDING", updatedAt: new Date() })
         .where(eq(listedProducts.masterProductId, id));
     }
 
@@ -233,7 +248,9 @@ export class MasterProductService {
     const [existing] = await this.app.db
       .select({ id: masterProducts.id })
       .from(masterProducts)
-      .where(and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)));
+      .where(
+        and(eq(masterProducts.id, id), eq(masterProducts.userId, this.userId)),
+      );
 
     if (!existing) return false;
 
@@ -278,12 +295,14 @@ export class MasterProductService {
     const seenGroupNames = new Set<string>();
     for (const g of groups) {
       const name = g.name.trim();
-      if (!name) throw new Error('옵션 그룹 이름은 비워둘 수 없습니다.');
-      if (seenGroupNames.has(name)) throw new Error(`옵션 그룹 이름이 중복됩니다: ${name}`);
+      if (!name) throw new Error("옵션 그룹 이름은 비워둘 수 없습니다.");
+      if (seenGroupNames.has(name))
+        throw new Error(`옵션 그룹 이름이 중복됩니다: ${name}`);
       seenGroupNames.add(name);
     }
 
-    const insertedGroups: Array<typeof masterProductOptionGroups.$inferSelect> = [];
+    const insertedGroups: Array<typeof masterProductOptionGroups.$inferSelect> =
+      [];
     for (let i = 0; i < groups.length; i++) {
       const g = groups[i]!;
       const [created] = await this.app.db
@@ -300,7 +319,8 @@ export class MasterProductService {
       for (let j = 0; j < g.values.length; j++) {
         const v = g.values[j]!.trim();
         if (!v) continue;
-        if (seenValues.has(v)) throw new Error(`옵션 값이 중복됩니다: ${g.name}=${v}`);
+        if (seenValues.has(v))
+          throw new Error(`옵션 값이 중복됩니다: ${g.name}=${v}`);
         seenValues.add(v);
         await this.app.db.insert(masterProductOptionValues).values({
           groupId: created.id,
@@ -318,23 +338,34 @@ export class MasterProductService {
   async addVariant(masterProductId: string, input: MasterProductVariantInput) {
     await this.assertOwnership(masterProductId);
 
-    const optionValueIds = await this.resolveOptionValueIds(masterProductId, input.optionValues ?? []);
+    const optionValueIds = await this.resolveOptionValueIds(
+      masterProductId,
+      input.optionValues ?? [],
+    );
     await this.assertNoVariantWithSameOptions(masterProductId, optionValueIds);
 
     const row: MasterProductVariantInsert = {
       masterProductId,
-      sku: '',
+      sku: "",
       price: input.price,
       stock: 0,
       extraAttributes: input.extraAttributes ?? {},
     };
 
-    const [created] = await this.app.db.insert(masterProductVariants).values(row).returning();
+    const [created] = await this.app.db
+      .insert(masterProductVariants)
+      .values(row)
+      .returning();
 
     if (optionValueIds.length > 0) {
       await this.app.db
         .insert(masterProductVariantOptionValues)
-        .values(optionValueIds.map((ovId) => ({ variantId: created.id, optionValueId: ovId })));
+        .values(
+          optionValueIds.map((ovId) => ({
+            variantId: created.id,
+            optionValueId: ovId,
+          })),
+        );
     }
 
     return this.getVariantWithOptions(created.id);
@@ -380,8 +411,15 @@ export class MasterProductService {
       .returning();
 
     if (optionValues !== undefined) {
-      const optionValueIds = await this.resolveOptionValueIds(masterProductId, optionValues);
-      await this.assertNoVariantWithSameOptions(masterProductId, optionValueIds, variantId);
+      const optionValueIds = await this.resolveOptionValueIds(
+        masterProductId,
+        optionValues,
+      );
+      await this.assertNoVariantWithSameOptions(
+        masterProductId,
+        optionValueIds,
+        variantId,
+      );
 
       await this.app.db
         .delete(masterProductVariantOptionValues)
@@ -390,7 +428,9 @@ export class MasterProductService {
       if (optionValueIds.length > 0) {
         await this.app.db
           .insert(masterProductVariantOptionValues)
-          .values(optionValueIds.map((ovId) => ({ variantId, optionValueId: ovId })));
+          .values(
+            optionValueIds.map((ovId) => ({ variantId, optionValueId: ovId })),
+          );
       }
     }
 
@@ -438,7 +478,7 @@ export class MasterProductService {
         .slice()
         .sort((a, b) => a.groupPosition - b.groupPosition)
         .map((o) => `${o.groupName}=${o.value}`)
-        .join(' / '),
+        .join(" / "),
       attachedSkus: attached,
     };
   }
@@ -473,7 +513,7 @@ export class MasterProductService {
           .slice()
           .sort((a, b) => a.groupPosition - b.groupPosition)
           .map((o) => `${o.groupName}=${o.value}`)
-          .join(' / '),
+          .join(" / "),
         attachedSkus: attached,
       };
     });
@@ -497,20 +537,29 @@ export class MasterProductService {
       })
       .from(listedProducts)
       .innerJoin(channels, eq(listedProducts.channelId, channels.id))
-      .where(and(eq(listedProducts.id, id), eq(listedProducts.userId, this.userId)));
+      .where(
+        and(eq(listedProducts.id, id), eq(listedProducts.userId, this.userId)),
+      );
 
-    if (!item) throw new Error('판매상품을 찾을 수 없습니다.');
+    if (!item) throw new Error("판매상품을 찾을 수 없습니다.");
     return item;
   }
 
-  async listListedProducts(opts: { channelId?: string; masterProductId?: string; page?: number; pageSize?: number }) {
+  async listListedProducts(opts: {
+    channelId?: string;
+    masterProductId?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
     const page = Math.max(1, opts.page ?? 1);
     const pageSize = Math.min(100, opts.pageSize ?? 20);
     const offset = (page - 1) * pageSize;
 
     const conditions = [eq(listedProducts.userId, this.userId)];
-    if (opts.channelId) conditions.push(eq(listedProducts.channelId, opts.channelId));
-    if (opts.masterProductId) conditions.push(eq(listedProducts.masterProductId, opts.masterProductId));
+    if (opts.channelId)
+      conditions.push(eq(listedProducts.channelId, opts.channelId));
+    if (opts.masterProductId)
+      conditions.push(eq(listedProducts.masterProductId, opts.masterProductId));
 
     const where = and(...conditions);
 
@@ -535,7 +584,13 @@ export class MasterProductService {
       this.app.db.select({ total: count() }).from(listedProducts).where(where),
     ]);
 
-    return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
   }
 
   // ─── 마스터 ↔ 채널 연결 ──────────────────────────────────────
@@ -544,7 +599,11 @@ export class MasterProductService {
     masterProductId: string,
     channelId: string,
     channelItemId: string,
-    variantLinks: Array<{ masterVariantId: string; channelVariantId: string; channelSellerCode?: string }>,
+    variantLinks: Array<{
+      masterVariantId: string;
+      channelVariantId: string;
+      channelSellerCode?: string;
+    }>,
   ) {
     await this.assertOwnership(masterProductId);
 
@@ -552,7 +611,7 @@ export class MasterProductService {
       .select()
       .from(channels)
       .where(and(eq(channels.id, channelId), eq(channels.userId, this.userId)));
-    if (!channel) throw new Error('채널을 찾을 수 없습니다.');
+    if (!channel) throw new Error("채널을 찾을 수 없습니다.");
 
     // 이미 같은 channelItemId로 링크된 항목이 있으면 반환
     const [existing] = await this.app.db
@@ -578,7 +637,7 @@ export class MasterProductService {
           channelId,
           channelItemId,
           linkedAt: new Date(),
-          syncStatus: 'PENDING',
+          syncStatus: "PENDING",
         })
         .returning();
       listedProduct = created;
@@ -608,11 +667,18 @@ export class MasterProductService {
     const [item] = await this.app.db
       .select({ id: listedProducts.id })
       .from(listedProducts)
-      .where(and(eq(listedProducts.id, listedProductId), eq(listedProducts.userId, this.userId)));
+      .where(
+        and(
+          eq(listedProducts.id, listedProductId),
+          eq(listedProducts.userId, this.userId),
+        ),
+      );
 
-    if (!item) throw new Error('판매상품을 찾을 수 없습니다.');
+    if (!item) throw new Error("판매상품을 찾을 수 없습니다.");
 
-    await this.app.db.delete(listedProducts).where(eq(listedProducts.id, listedProductId));
+    await this.app.db
+      .delete(listedProducts)
+      .where(eq(listedProducts.id, listedProductId));
     return true;
   }
 
@@ -637,7 +703,10 @@ export class MasterProductService {
       .from(listedProductSkus)
       .innerJoin(skus, eq(listedProductSkus.skuId, skus.id))
       .where(eq(listedProductSkus.listedProductId, listedProductId))
-      .orderBy(asc(listedProductSkus.channelVariantId), asc(listedProductSkus.createdAt));
+      .orderBy(
+        asc(listedProductSkus.channelVariantId),
+        asc(listedProductSkus.createdAt),
+      );
     return rows;
   }
 
@@ -647,7 +716,12 @@ export class MasterProductService {
    */
   async replaceListedProductSkus(
     listedProductId: string,
-    rows: Array<{ channelVariantId: string; channelSellerCode?: string | null; skuId: string; qty?: number }>,
+    rows: Array<{
+      channelVariantId: string;
+      channelSellerCode?: string | null;
+      skuId: string;
+      qty?: number;
+    }>,
   ) {
     await this.getListedProduct(listedProductId);
     for (const r of rows) {
@@ -657,13 +731,18 @@ export class MasterProductService {
     for (const r of rows) {
       const key = `${r.channelVariantId}::${r.skuId}`;
       if (seen.has(key)) {
-        throw new Error(`중복된 매핑입니다: channelVariantId=${r.channelVariantId}, skuId=${r.skuId}`);
+        throw new Error(
+          `중복된 매핑입니다: channelVariantId=${r.channelVariantId}, skuId=${r.skuId}`,
+        );
       }
       seen.add(key);
     }
     return this.app.db.transaction(async (tx) => {
-      await tx.delete(listedProductSkus).where(eq(listedProductSkus.listedProductId, listedProductId));
-      if (rows.length === 0) return [] as Array<typeof listedProductSkus.$inferSelect>;
+      await tx
+        .delete(listedProductSkus)
+        .where(eq(listedProductSkus.listedProductId, listedProductId));
+      if (rows.length === 0)
+        return [] as Array<typeof listedProductSkus.$inferSelect>;
       const inserted = await tx
         .insert(listedProductSkus)
         .values(
@@ -682,7 +761,12 @@ export class MasterProductService {
 
   async addListedProductSku(
     listedProductId: string,
-    input: { channelVariantId: string; channelSellerCode?: string | null; skuId: string; qty?: number },
+    input: {
+      channelVariantId: string;
+      channelSellerCode?: string | null;
+      skuId: string;
+      qty?: number;
+    },
   ) {
     await this.getListedProduct(listedProductId);
     await this.assertSkuOwnership(input.skuId);
@@ -700,7 +784,9 @@ export class MasterProductService {
       return row;
     } catch (err) {
       if (this.isUniqueViolation(err)) {
-        throw new Error(`이미 존재하는 매핑입니다: channelVariantId=${input.channelVariantId}, skuId=${input.skuId}`);
+        throw new Error(
+          `이미 존재하는 매핑입니다: channelVariantId=${input.channelVariantId}, skuId=${input.skuId}`,
+        );
       }
       throw err;
     }
@@ -713,15 +799,21 @@ export class MasterProductService {
   ) {
     await this.getListedProduct(listedProductId);
     const setPatch: Partial<typeof listedProductSkus.$inferInsert> = {};
-    if (patch.channelSellerCode !== undefined) setPatch.channelSellerCode = patch.channelSellerCode;
+    if (patch.channelSellerCode !== undefined)
+      setPatch.channelSellerCode = patch.channelSellerCode;
     if (patch.qty !== undefined) setPatch.qty = Math.max(1, patch.qty);
     if (Object.keys(setPatch).length === 0) return null;
     const [row] = await this.app.db
       .update(listedProductSkus)
       .set(setPatch)
-      .where(and(eq(listedProductSkus.id, mappingId), eq(listedProductSkus.listedProductId, listedProductId)))
+      .where(
+        and(
+          eq(listedProductSkus.id, mappingId),
+          eq(listedProductSkus.listedProductId, listedProductId),
+        ),
+      )
       .returning();
-    if (!row) throw new Error('매핑을 찾을 수 없습니다.');
+    if (!row) throw new Error("매핑을 찾을 수 없습니다.");
     return row;
   }
 
@@ -729,9 +821,14 @@ export class MasterProductService {
     await this.getListedProduct(listedProductId);
     const result = await this.app.db
       .delete(listedProductSkus)
-      .where(and(eq(listedProductSkus.id, mappingId), eq(listedProductSkus.listedProductId, listedProductId)))
+      .where(
+        and(
+          eq(listedProductSkus.id, mappingId),
+          eq(listedProductSkus.listedProductId, listedProductId),
+        ),
+      )
       .returning({ id: listedProductSkus.id });
-    if (result.length === 0) throw new Error('매핑을 찾을 수 없습니다.');
+    if (result.length === 0) throw new Error("매핑을 찾을 수 없습니다.");
   }
 
   private async assertSkuOwnership(skuId: string) {
@@ -745,9 +842,9 @@ export class MasterProductService {
   private isUniqueViolation(err: unknown): boolean {
     return (
       !!err &&
-      typeof err === 'object' &&
-      'code' in err &&
-      (err as { code: string }).code === '23505'
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: string }).code === "23505"
     );
   }
 
@@ -756,12 +853,15 @@ export class MasterProductService {
   async pullSalesFromChannel(listedProductId: string) {
     const item = await this.getListedProduct(listedProductId);
 
-    const { ChannelService } = await import('./ChannelService');
+    const { ChannelService } = await import("./ChannelService");
     const channelSvc = new ChannelService(this.app, this.userId);
     const adapter = await channelSvc.getAdapter(item.channelId);
 
     if (!adapter.getOrders) {
-      return { status: 'UNSUPPORTED' as const, message: '이 채널은 주문 조회를 지원하지 않습니다.' };
+      return {
+        status: "UNSUPPORTED" as const,
+        message: "이 채널은 주문 조회를 지원하지 않습니다.",
+      };
     }
 
     // 채널 변형 → SKU 매핑 (listed_product_skus). 같은 channelVariantId 에 여러 SKU 가 BOM 으로 묶일 수 있음.
@@ -779,14 +879,27 @@ export class MasterProductService {
       .where(eq(listedProductSkus.listedProductId, listedProductId));
 
     if (skuRows.length === 0) {
-      return { status: 'NO_VARIANTS' as const, message: '연결된 SKU 매핑이 없습니다.' };
+      return {
+        status: "NO_VARIANTS" as const,
+        message: "연결된 SKU 매핑이 없습니다.",
+      };
     }
 
-    type ChannelSkuRow = { channelVariantId: string; skuId: string; skuCode: string; qty: number };
+    type ChannelSkuRow = {
+      channelVariantId: string;
+      skuId: string;
+      skuCode: string;
+      qty: number;
+    };
     const skuByChannelVariant = new Map<string, ChannelSkuRow[]>();
     const skuBySellerCode = new Map<string, ChannelSkuRow[]>();
     for (const r of skuRows) {
-      const row: ChannelSkuRow = { channelVariantId: r.channelVariantId, skuId: r.skuId, skuCode: r.skuCode, qty: r.qty };
+      const row: ChannelSkuRow = {
+        channelVariantId: r.channelVariantId,
+        skuId: r.skuId,
+        skuCode: r.skuCode,
+        qty: r.qty,
+      };
       const cvList = skuByChannelVariant.get(r.channelVariantId) ?? [];
       cvList.push(row);
       skuByChannelVariant.set(r.channelVariantId, cvList);
@@ -801,27 +914,41 @@ export class MasterProductService {
     // 같은 SKU 가 여러 variant 에 매핑돼 있으면 첫 variant 를 ledger 용으로 사용.
     const skuToVariant = new Map<string, string>();
     const mvsRows = await this.app.db
-      .select({ skuId: masterVariantSkus.skuId, masterVariantId: masterVariantSkus.masterVariantId })
+      .select({
+        skuId: masterVariantSkus.skuId,
+        masterVariantId: masterVariantSkus.masterVariantId,
+      })
       .from(masterVariantSkus)
-      .where(inArray(masterVariantSkus.skuId, skuRows.map((r) => r.skuId)));
+      .where(
+        inArray(
+          masterVariantSkus.skuId,
+          skuRows.map((r) => r.skuId),
+        ),
+      );
     for (const r of mvsRows) {
-      if (!skuToVariant.has(r.skuId)) skuToVariant.set(r.skuId, r.masterVariantId);
+      if (!skuToVariant.has(r.skuId))
+        skuToVariant.set(r.skuId, r.masterVariantId);
     }
 
     const stockSvc = new StockService(this.app);
 
-    const channelData = (item.channelData as Record<string, unknown> | null) ?? {};
+    const channelData =
+      (item.channelData as Record<string, unknown> | null) ?? {};
     const processedOrderIds = new Set<string>(
-      Array.isArray(channelData['_processedOrderIds'])
-        ? (channelData['_processedOrderIds'] as unknown[]).filter((v): v is string => typeof v === 'string')
+      Array.isArray(channelData["_processedOrderIds"])
+        ? (channelData["_processedOrderIds"] as unknown[]).filter(
+            (v): v is string => typeof v === "string",
+          )
         : [],
     );
-    const lastPullIso = typeof channelData['_lastSalesPullAt'] === 'string'
-      ? (channelData['_lastSalesPullAt'] as string)
-      : null;
-    const baselineIso = typeof channelData['_salesPullBaselineAt'] === 'string'
-      ? (channelData['_salesPullBaselineAt'] as string)
-      : null;
+    const lastPullIso =
+      typeof channelData["_lastSalesPullAt"] === "string"
+        ? (channelData["_lastSalesPullAt"] as string)
+        : null;
+    const baselineIso =
+      typeof channelData["_salesPullBaselineAt"] === "string"
+        ? (channelData["_salesPullBaselineAt"] as string)
+        : null;
     const baselineMs = baselineIso ? new Date(baselineIso).getTime() : null;
 
     const now = new Date();
@@ -834,7 +961,7 @@ export class MasterProductService {
     );
     const start = new Date(startMs);
     const fmtYYYYMMDD = (d: Date) =>
-      `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+      `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`;
 
     const orders = await adapter.getOrders({
       startDate: fmtYYYYMMDD(start),
@@ -848,7 +975,11 @@ export class MasterProductService {
     for (const ord of orders) {
       if (processedOrderIds.has(ord.id)) continue;
       const ordTime = new Date(ord.orderedAt).getTime();
-      if (Number.isFinite(ordTime) && baselineMs !== null && ordTime < baselineMs) {
+      if (
+        Number.isFinite(ordTime) &&
+        baselineMs !== null &&
+        ordTime < baselineMs
+      ) {
         newProcessedIds.push(ord.id);
         continue;
       }
@@ -858,39 +989,52 @@ export class MasterProductService {
         if (channelQty <= 0) continue;
         // 1순위: channelVariantId, 2순위: channelSellerCode(li.sku)
         let skuRowsForLine: ChannelSkuRow[] | undefined;
-        if (li.channelVariantId) skuRowsForLine = skuByChannelVariant.get(li.channelVariantId);
+        if (li.channelVariantId)
+          skuRowsForLine = skuByChannelVariant.get(li.channelVariantId);
         if (!skuRowsForLine || skuRowsForLine.length === 0) {
           if (li.sku) skuRowsForLine = skuBySellerCode.get(li.sku);
         }
         if (!skuRowsForLine || skuRowsForLine.length === 0) continue;
         for (const r of skuRowsForLine) {
-          sales.push({ orderId: ord.id, skuId: r.skuId, qty: channelQty * Math.max(1, r.qty) });
+          sales.push({
+            orderId: ord.id,
+            skuId: r.skuId,
+            qty: channelQty * Math.max(1, r.qty),
+          });
         }
         matched = true;
       }
       if (matched) newProcessedIds.push(ord.id);
     }
 
-    const deductions: Array<{ sku: string; soldQty: number; prevStock: number; newStock: number }> = [];
+    const deductions: Array<{
+      sku: string;
+      soldQty: number;
+      prevStock: number;
+      newStock: number;
+    }> = [];
     const touchedSkuIds = new Set<string>();
     for (const entry of sales) {
       const ledgerVariantId = skuToVariant.get(entry.skuId);
       if (!ledgerVariantId) {
-        this.app.log.warn({ skuId: entry.skuId }, 'skipping sale deduction — SKU not mapped to any master variant');
+        this.app.log.warn(
+          { skuId: entry.skuId },
+          "skipping sale deduction — SKU not mapped to any master variant",
+        );
         continue;
       }
       const result = await stockSvc.applySku({
         userId: this.userId,
         skuId: entry.skuId,
         variantId: ledgerVariantId,
-        refType: 'ORDER_RESERVE',
+        refType: "ORDER_RESERVE",
         refId: entry.orderId,
         qtyDelta: -entry.qty,
         channelId: item.channelId,
         listedProductId,
         allowNegative: true, // 초과 판매도 일단 기록 (음수 stock 허용) — OVERSELL ledger 는 추후 추가
       });
-      if (result.ok && 'prev' in result) {
+      if (result.ok && "prev" in result) {
         deductions.push({
           sku: result.ledgerId,
           soldQty: entry.qty,
@@ -904,7 +1048,7 @@ export class MasterProductService {
     // Phase 5: 판매 차감 후 연결된 채널에 새 재고 push (best-effort)
     // 차감된 SKU 들과 매핑된 모든 channelVariant 에 대해 push.
     if (touchedSkuIds.size > 0) {
-      const { ChannelService } = await import('./ChannelService');
+      const { ChannelService } = await import("./ChannelService");
       const channelSvc = new ChannelService(this.app, this.userId);
 
       // 영향받은 SKU 들이 매핑된 모든 listed_product_skus (cross-listing 포함) 로드
@@ -916,30 +1060,53 @@ export class MasterProductService {
           channelItemId: listedProducts.channelItemId,
         })
         .from(listedProductSkus)
-        .innerJoin(listedProducts, eq(listedProductSkus.listedProductId, listedProducts.id))
+        .innerJoin(
+          listedProducts,
+          eq(listedProductSkus.listedProductId, listedProducts.id),
+        )
         .where(inArray(listedProductSkus.skuId, Array.from(touchedSkuIds)));
 
       // (listedProductId, channelVariantId) 별로 중복 제거
-      const uniqueTargets = new Map<string, { listedProductId: string; channelVariantId: string; channelId: string; channelItemId: string }>();
+      const uniqueTargets = new Map<
+        string,
+        {
+          listedProductId: string;
+          channelVariantId: string;
+          channelId: string;
+          channelItemId: string;
+        }
+      >();
       for (const m of allMappings) {
         uniqueTargets.set(`${m.listedProductId}::${m.channelVariantId}`, m);
       }
 
       for (const t of uniqueTargets.values()) {
         try {
-          const rows = await this.loadSkusForChannelVariant(t.listedProductId, t.channelVariantId);
+          const rows = await this.loadSkusForChannelVariant(
+            t.listedProductId,
+            t.channelVariantId,
+          );
           const newStock = this.computeAvailableStock(rows);
           const ad = await channelSvc.getAdapter(t.channelId);
           if (ad.pushVariantStock) {
-            await ad.pushVariantStock(t.channelItemId, t.channelVariantId, newStock);
+            await ad.pushVariantStock(
+              t.channelItemId,
+              t.channelVariantId,
+              newStock,
+            );
           }
         } catch (pushErr) {
-          this.app.log.warn({ err: pushErr, target: t }, 'channel stock push after pull-sales failed');
+          this.app.log.warn(
+            { err: pushErr, target: t },
+            "channel stock push after pull-sales failed",
+          );
         }
       }
     }
 
-    const mergedProcessedIds = Array.from(new Set([...processedOrderIds, ...newProcessedIds]));
+    const mergedProcessedIds = Array.from(
+      new Set([...processedOrderIds, ...newProcessedIds]),
+    );
     await this.app.db
       .update(listedProducts)
       .set({
@@ -953,7 +1120,7 @@ export class MasterProductService {
       .where(eq(listedProducts.id, listedProductId));
 
     return {
-      status: 'OK' as const,
+      status: "OK" as const,
       window: { from: start.toISOString(), to: now.toISOString() },
       processedOrderCount: newProcessedIds.length,
       deductions,
@@ -968,17 +1135,20 @@ export class MasterProductService {
     overrides: Record<string, unknown> = {},
   ) {
     const master = await this.getMasterProduct(masterProductId);
-    if (!master) throw new Error('마스터 상품을 찾을 수 없습니다.');
+    if (!master) throw new Error("마스터 상품을 찾을 수 없습니다.");
 
     const [channel] = await this.app.db
       .select()
       .from(channels)
       .where(and(eq(channels.id, channelId), eq(channels.userId, this.userId)));
-    if (!channel) throw new Error('채널을 찾을 수 없습니다.');
+    if (!channel) throw new Error("채널을 찾을 수 없습니다.");
 
     // 이미 등록된 경우 중복 방지
     const [existing] = await this.app.db
-      .select({ id: listedProducts.id, channelItemId: listedProducts.channelItemId })
+      .select({
+        id: listedProducts.id,
+        channelItemId: listedProducts.channelItemId,
+      })
       .from(listedProducts)
       .where(
         and(
@@ -986,32 +1156,43 @@ export class MasterProductService {
           eq(listedProducts.channelId, channelId),
         ),
       );
-    if (existing) throw new Error('이미 해당 채널에 등록된 상품입니다.');
+    if (existing) throw new Error("이미 해당 채널에 등록된 상품입니다.");
 
-    const { ChannelService } = await import('./ChannelService');
+    const { ChannelService } = await import("./ChannelService");
     const channelSvc = new ChannelService(this.app, this.userId);
     const adapter = await channelSvc.getAdapter(channelId);
 
     if (!adapter.registerProduct) {
-      throw new Error('이 채널은 상품 등록을 지원하지 않습니다.');
+      throw new Error("이 채널은 상품 등록을 지원하지 않습니다.");
     }
 
     // vendor key: QTEN → qoo10, SHOPIFY → shopify, etc.
-    const vendorKey = channel.channelType === 'QOO10_JP' ? 'qoo10' : channel.channelType.toLowerCase();
-    const attrsRoot = (master.attributes as Record<string, unknown> | null) ?? {};
-    const commonAttrs = (attrsRoot['common'] as Record<string, unknown> | undefined) ?? {};
-    const channelAttrs = (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
+    const vendorKey =
+      channel.channelType === "QOO10_JP"
+        ? "qoo10"
+        : channel.channelType.toLowerCase();
+    const attrsRoot =
+      (master.attributes as Record<string, unknown> | null) ?? {};
+    const commonAttrs =
+      (attrsRoot["common"] as Record<string, unknown> | undefined) ?? {};
+    const channelAttrs =
+      (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
 
     const variants = master.variants ?? [];
     const optionGroups = master.optionGroups ?? [];
 
-    const commonStr = (key: string) => (typeof commonAttrs[key] === 'string' ? (commonAttrs[key] as string) : '');
-    const commonArr = (key: string) => (Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : []);
-    const commonNum = (key: string) => (typeof commonAttrs[key] === 'number' ? (commonAttrs[key] as number) : undefined);
+    const commonStr = (key: string) =>
+      typeof commonAttrs[key] === "string" ? (commonAttrs[key] as string) : "";
+    const commonArr = (key: string) =>
+      Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : [];
+    const commonNum = (key: string) =>
+      typeof commonAttrs[key] === "number"
+        ? (commonAttrs[key] as number)
+        : undefined;
     const commonRetailPrice = (() => {
-      const v = commonAttrs['retailPrice'];
-      if (typeof v === 'string') return v;
-      if (typeof v === 'number') return String(v);
+      const v = commonAttrs["retailPrice"];
+      if (typeof v === "string") return v;
+      if (typeof v === "number") return String(v);
       return undefined;
     })();
 
@@ -1026,32 +1207,36 @@ export class MasterProductService {
           qty: number;
         }>
       | undefined;
-    if (channel.channelType === 'QOO10_JP' && optionGroups.length > 0 && variants.length > 1) {
+    if (
+      channel.channelType === "QOO10_JP" &&
+      optionGroups.length > 0 &&
+      variants.length > 1
+    ) {
       // Qoo10 ItemType format per combination row:
       // 그룹1||*값1||*그룹2||*값2||*가격||*수량||*판매자코드  — rows joined by $$
       qoo10Variants = variants.map((v) => {
         const optionPath = optionGroups
           .map((g) => {
             const match = v.options.find((o) => o.groupId === g.id);
-            return `${g.name}||*${match ? match.value : ''}`;
+            return `${g.name}||*${match ? match.value : ""}`;
           })
-          .join('$$');
+          .join("$$");
         return {
           optionPath,
           sku: v.sku,
-          price: String(v.price ?? commonRetailPrice ?? '0'),
+          price: String(v.price ?? commonRetailPrice ?? "0"),
           qty: v.stock ?? 0,
         };
       });
       itemTypeStr = qoo10Variants
         .map((v) => {
           // optionPath: "그룹1||*값1$$그룹2||*값2" → "그룹1||*값1||*그룹2||*값2"
-          const axesPart = v.optionPath.replace(/\$\$/g, '||*');
-          const sellerCode = v.sku || '0';
+          const axesPart = v.optionPath.replace(/\$\$/g, "||*");
+          const sellerCode = v.sku || "0";
           // 가격은 0 (차액=0, 실가격은 ItemPrice 기준), 수량은 실제값
           return `${axesPart}||*0||*${v.qty}||*${sellerCode}`;
         })
-        .join('$$');
+        .join("$$");
     }
 
     // Shopify productOptions/variants — 그룹별 name 과 값 배열을 보낸다.
@@ -1064,7 +1249,11 @@ export class MasterProductService {
           inventoryQuantity?: number;
         }>
       | undefined;
-    if (channel.channelType === 'SHOPIFY' && optionGroups.length > 0 && variants.length > 1) {
+    if (
+      channel.channelType === "SHOPIFY" &&
+      optionGroups.length > 0 &&
+      variants.length > 1
+    ) {
       shopifyOptions = optionGroups.map((g) => ({
         name: g.name,
         values: g.values.map((v) => v.value),
@@ -1073,11 +1262,11 @@ export class MasterProductService {
         // 그룹 position 순서로 옵션값을 배열한다 — Shopify 는 productOptions 순서와 1:1 매칭을 기대.
         const optionValuesOrdered = optionGroups.map((g) => {
           const match = v.options.find((o) => o.groupId === g.id);
-          return match ? match.value : '';
+          return match ? match.value : "";
         });
         return {
           options: optionValuesOrdered,
-          price: String(v.price ?? commonRetailPrice ?? '0'),
+          price: String(v.price ?? commonRetailPrice ?? "0"),
           sku: v.sku,
           inventoryQuantity: v.stock ?? 0,
         };
@@ -1085,27 +1274,27 @@ export class MasterProductService {
     }
 
     // countryOfOrigin → originType 추론 (Qoo10 어댑터 폴백용)
-    const countryOfOrigin = commonStr('countryOfOrigin');
+    const countryOfOrigin = commonStr("countryOfOrigin");
     const originTypeFromCountry = (() => {
       const co = countryOfOrigin.trim();
-      if (!co || co === '대한민국' || co === '국내') return 'domestic';
-      if (co === '기타' || co === '기타(ETC)') return 'other';
-      return 'overseas';
+      if (!co || co === "대한민국" || co === "국내") return "domestic";
+      if (co === "기타" || co === "기타(ETC)") return "other";
+      return "overseas";
     })();
 
     const flatInput: Record<string, unknown> = {
       ...channelAttrs,
       title: master.title,
-      descriptionHtml: commonStr('descriptionHtml'),
-      images: commonArr('images'),
-      tags: commonArr('tags'),
-      material: commonStr('material'),
-      weightG: commonNum('weightG'),
-      brand: commonStr('brand'),
+      descriptionHtml: commonStr("descriptionHtml"),
+      images: commonArr("images"),
+      tags: commonArr("tags"),
+      material: commonStr("material"),
+      weightG: commonNum("weightG"),
+      brand: commonStr("brand"),
       countryOfOrigin,
       originType: originTypeFromCountry,
-      sku: variants[0]?.sku ?? '',
-      price: String(variants[0]?.price ?? commonRetailPrice ?? '0'),
+      sku: variants[0]?.sku ?? "",
+      price: String(variants[0]?.price ?? commonRetailPrice ?? "0"),
       inventoryQuantity: variants[0]?.stock ?? 0,
       stock: variants[0]?.stock ?? 0,
       ...(itemTypeStr ? { ItemType: itemTypeStr } : {}),
@@ -1131,7 +1320,7 @@ export class MasterProductService {
         itemTypeStr,
         overrideKeys: Object.keys(overrides),
       },
-      '[registerToChannel] dispatching to adapter',
+      "[registerToChannel] dispatching to adapter",
     );
     const { productId, title } = await adapter.registerProduct(flatInput);
 
@@ -1181,10 +1370,16 @@ export class MasterProductService {
           });
         }
         if (linkRows.length > 0) {
-          await this.app.db.insert(listedProductVariantLinks).values(linkRows).onConflictDoNothing();
+          await this.app.db
+            .insert(listedProductVariantLinks)
+            .values(linkRows)
+            .onConflictDoNothing();
         }
       } catch (err) {
-        this.app.log.warn({ err, productId }, 'failed to fetch channel variants after register');
+        this.app.log.warn(
+          { err, productId },
+          "failed to fetch channel variants after register",
+        );
       }
     }
 
@@ -1202,20 +1397,35 @@ export class MasterProductService {
       .where(eq(listedProducts.masterProductId, masterProductId));
 
     if (listed.length === 0) {
-      return { status: 'NO_CHANNELS' as const, message: '연결된 채널이 없습니다.', results: [] };
+      return {
+        status: "NO_CHANNELS" as const,
+        message: "연결된 채널이 없습니다.",
+        results: [],
+      };
     }
 
-    const results: Array<{ listedProductId: string; status: string; deductions?: unknown }> = [];
+    const results: Array<{
+      listedProductId: string;
+      status: string;
+      deductions?: unknown;
+    }> = [];
     for (const lp of listed) {
       try {
         const result = await this.pullSalesFromChannel(lp.id);
-        results.push({ listedProductId: lp.id, status: result.status, deductions: result.deductions });
+        results.push({
+          listedProductId: lp.id,
+          status: result.status,
+          deductions: result.deductions,
+        });
       } catch (err) {
-        results.push({ listedProductId: lp.id, status: err instanceof Error ? err.message : 'error' });
+        results.push({
+          listedProductId: lp.id,
+          status: err instanceof Error ? err.message : "error",
+        });
       }
     }
 
-    return { status: 'OK' as const, results };
+    return { status: "OK" as const, results };
   }
 
   // ─── 마스터 상품 전체 채널 재고 전송 (마스터→채널) ───────────
@@ -1229,20 +1439,35 @@ export class MasterProductService {
       .where(eq(listedProducts.masterProductId, masterProductId));
 
     if (listed.length === 0) {
-      return { status: 'NO_CHANNELS' as const, message: '연결된 채널이 없습니다.', results: [] };
+      return {
+        status: "NO_CHANNELS" as const,
+        message: "연결된 채널이 없습니다.",
+        results: [],
+      };
     }
 
-    const results: Array<{ listedProductId: string; status: string; updates?: unknown }> = [];
+    const results: Array<{
+      listedProductId: string;
+      status: string;
+      updates?: unknown;
+    }> = [];
     for (const lp of listed) {
       try {
         const result = await this.pushStockToChannel(lp.id);
-        results.push({ listedProductId: lp.id, status: result.status, updates: 'updates' in result ? result.updates : undefined });
+        results.push({
+          listedProductId: lp.id,
+          status: result.status,
+          updates: "updates" in result ? result.updates : undefined,
+        });
       } catch (err) {
-        results.push({ listedProductId: lp.id, status: err instanceof Error ? err.message : 'error' });
+        results.push({
+          listedProductId: lp.id,
+          status: err instanceof Error ? err.message : "error",
+        });
       }
     }
 
-    return { status: 'OK' as const, results };
+    return { status: "OK" as const, results };
   }
 
   // ─── 재고 동기화 (master stock → channel) ────────────────────
@@ -1250,12 +1475,15 @@ export class MasterProductService {
   async pushStockToChannel(listedProductId: string) {
     const item = await this.getListedProduct(listedProductId);
 
-    const { ChannelService } = await import('./ChannelService');
+    const { ChannelService } = await import("./ChannelService");
     const channelSvc = new ChannelService(this.app, this.userId);
     const adapter = await channelSvc.getAdapter(item.channelId);
 
     if (!adapter.pushVariantStock && !adapter.updateProduct) {
-      return { status: 'UNSUPPORTED' as const, message: '이 채널은 재고 업데이트를 지원하지 않습니다.' };
+      return {
+        status: "UNSUPPORTED" as const,
+        message: "이 채널은 재고 업데이트를 지원하지 않습니다.",
+      };
     }
 
     const channelType = item.channelType;
@@ -1275,11 +1503,17 @@ export class MasterProductService {
       .where(eq(listedProductSkus.listedProductId, listedProductId));
 
     if (skuRows.length === 0) {
-      return { status: 'NO_VARIANTS' as const, message: '연결된 SKU 매핑이 없습니다.' };
+      return {
+        status: "NO_VARIANTS" as const,
+        message: "연결된 SKU 매핑이 없습니다.",
+      };
     }
 
     // channelVariantId → BOM rows
-    const byChannelVariant = new Map<string, Array<{ qty: number; stock: number }>>();
+    const byChannelVariant = new Map<
+      string,
+      Array<{ qty: number; stock: number }>
+    >();
     for (const r of skuRows) {
       const list = byChannelVariant.get(r.channelVariantId) ?? [];
       list.push({ qty: r.qty, stock: r.stock });
@@ -1289,7 +1523,7 @@ export class MasterProductService {
     // Qoo10 single-product (channelVariantId === channelItemId): updateProduct 로 라우팅
     const channelVariantIds = Array.from(byChannelVariant.keys());
     const isQoo10SingleProduct =
-      channelType === 'QOO10_JP' &&
+      channelType === "QOO10_JP" &&
       channelVariantIds.length === 1 &&
       channelVariantIds[0] === item.channelItemId;
 
@@ -1299,17 +1533,17 @@ export class MasterProductService {
       try {
         await adapter.updateProduct(item.channelItemId, { qty: stock });
         return {
-          status: 'OK' as const,
-          updates: [{ channelVariantId: cvid, stock, status: 'ok' }],
+          status: "OK" as const,
+          updates: [{ channelVariantId: cvid, stock, status: "ok" }],
         };
       } catch (err) {
         return {
-          status: 'OK' as const,
+          status: "OK" as const,
           updates: [
             {
               channelVariantId: cvid,
               stock,
-              status: err instanceof Error ? err.message : 'error',
+              status: err instanceof Error ? err.message : "error",
             },
           ],
         };
@@ -1317,21 +1551,36 @@ export class MasterProductService {
     }
 
     if (!adapter.pushVariantStock) {
-      return { status: 'UNSUPPORTED' as const, message: '이 채널은 변형 단위 재고 업데이트를 지원하지 않습니다.' };
+      return {
+        status: "UNSUPPORTED" as const,
+        message: "이 채널은 변형 단위 재고 업데이트를 지원하지 않습니다.",
+      };
     }
 
-    const updates: Array<{ channelVariantId: string; stock: number; status: string }> = [];
+    const updates: Array<{
+      channelVariantId: string;
+      stock: number;
+      status: string;
+    }> = [];
     for (const [channelVariantId, rows] of byChannelVariant) {
       const stock = this.computeAvailableStock(rows);
       try {
-        await adapter.pushVariantStock(item.channelItemId, channelVariantId, stock);
-        updates.push({ channelVariantId, stock, status: 'ok' });
+        await adapter.pushVariantStock(
+          item.channelItemId,
+          channelVariantId,
+          stock,
+        );
+        updates.push({ channelVariantId, stock, status: "ok" });
       } catch (err) {
-        updates.push({ channelVariantId, stock, status: err instanceof Error ? err.message : 'error' });
+        updates.push({
+          channelVariantId,
+          stock,
+          status: err instanceof Error ? err.message : "error",
+        });
       }
     }
 
-    return { status: 'OK' as const, updates };
+    return { status: "OK" as const, updates };
   }
 
   // ─── 상품 정보 동기화 (master info → channel) ─────────────────
@@ -1339,14 +1588,17 @@ export class MasterProductService {
   async syncProductInfoToChannel(listedProductId: string) {
     const item = await this.getListedProduct(listedProductId);
     const master = await this.getMasterProduct(item.masterProductId!);
-    if (!master) throw new Error('마스터 상품을 찾을 수 없습니다.');
+    if (!master) throw new Error("마스터 상품을 찾을 수 없습니다.");
 
-    const { ChannelService } = await import('./ChannelService');
+    const { ChannelService } = await import("./ChannelService");
     const channelSvc = new ChannelService(this.app, this.userId);
     const adapter = await channelSvc.getAdapter(item.channelId);
 
     if (!adapter.updateProduct) {
-      return { status: 'UNSUPPORTED' as const, message: '이 채널은 상품 정보 수정을 지원하지 않습니다.' };
+      return {
+        status: "UNSUPPORTED" as const,
+        message: "이 채널은 상품 정보 수정을 지원하지 않습니다.",
+      };
     }
 
     const [channel] = await this.app.db
@@ -1354,18 +1606,29 @@ export class MasterProductService {
       .from(channels)
       .where(eq(channels.id, item.channelId));
 
-    const vendorKey = channel?.channelType === 'QOO10_JP' ? 'qoo10' : (channel?.channelType ?? '').toLowerCase();
-    const attrsRoot = (master.attributes as Record<string, unknown> | null) ?? {};
-    const commonAttrs = (attrsRoot['common'] as Record<string, unknown> | undefined) ?? {};
-    const channelAttrs = (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
+    const vendorKey =
+      channel?.channelType === "QOO10_JP"
+        ? "qoo10"
+        : (channel?.channelType ?? "").toLowerCase();
+    const attrsRoot =
+      (master.attributes as Record<string, unknown> | null) ?? {};
+    const commonAttrs =
+      (attrsRoot["common"] as Record<string, unknown> | undefined) ?? {};
+    const channelAttrs =
+      (attrsRoot[vendorKey] as Record<string, unknown> | undefined) ?? {};
 
-    const commonStr = (key: string) => (typeof commonAttrs[key] === 'string' ? (commonAttrs[key] as string) : '');
-    const commonArr = (key: string) => (Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : []);
-    const commonNum = (key: string) => (typeof commonAttrs[key] === 'number' ? (commonAttrs[key] as number) : undefined);
+    const commonStr = (key: string) =>
+      typeof commonAttrs[key] === "string" ? (commonAttrs[key] as string) : "";
+    const commonArr = (key: string) =>
+      Array.isArray(commonAttrs[key]) ? (commonAttrs[key] as unknown[]) : [];
+    const commonNum = (key: string) =>
+      typeof commonAttrs[key] === "number"
+        ? (commonAttrs[key] as number)
+        : undefined;
     const commonRetailPrice = (() => {
-      const v = commonAttrs['retailPrice'];
-      if (typeof v === 'string') return v;
-      if (typeof v === 'number') return String(v);
+      const v = commonAttrs["retailPrice"];
+      if (typeof v === "string") return v;
+      if (typeof v === "number") return String(v);
       return undefined;
     })();
 
@@ -1393,10 +1656,21 @@ export class MasterProductService {
         .where(inArray(masterProductVariants.id, masterVariantIds));
       const optMap = await this.loadVariantOptions(masterVariantIds);
       const variantStocks = await Promise.all(
-        dbVariants.map(async (v) => [v.id, this.computeAvailableStock(await this.loadSkusForMasterVariant(v.id))] as const),
+        dbVariants.map(
+          async (v) =>
+            [
+              v.id,
+              this.computeAvailableStock(
+                await this.loadSkusForMasterVariant(v.id),
+              ),
+            ] as const,
+        ),
       );
       const stockByVariant = new Map(variantStocks);
-      totalStock = Array.from(stockByVariant.values()).reduce((sum, s) => sum + s, 0);
+      totalStock = Array.from(stockByVariant.values()).reduce(
+        (sum, s) => sum + s,
+        0,
+      );
       linkedVariants = dbVariants.map((v) => ({
         id: v.id,
         sku: v.sku,
@@ -1406,7 +1680,13 @@ export class MasterProductService {
       }));
     }
 
-    type AnyVariantWithOptions = { id: string; sku: string; price: string | null; stock: number; options: VariantOptionView[] };
+    type AnyVariantWithOptions = {
+      id: string;
+      sku: string;
+      price: string | null;
+      stock: number;
+      options: VariantOptionView[];
+    };
     const allVariants: AnyVariantWithOptions[] =
       linkedVariants.length > 0
         ? linkedVariants
@@ -1420,37 +1700,39 @@ export class MasterProductService {
     const firstVariant = allVariants[0];
     const firstPrice = firstVariant?.price ?? commonRetailPrice ?? null;
     const firstSku = firstVariant?.sku ?? null;
-    const masterTags = commonArr('tags') as string[];
-    const brandStr = commonStr('brand');
+    const masterTags = commonArr("tags") as string[];
+    const brandStr = commonStr("brand");
 
     const payload: Record<string, unknown> = {
       ...channelAttrs,
       title: master.title,
-      descriptionHtml: commonStr('descriptionHtml'),
-      images: commonArr('images'),
+      descriptionHtml: commonStr("descriptionHtml"),
+      images: commonArr("images"),
       brand: brandStr,
       vendor: brandStr,
-      material: commonStr('material'),
-      weightG: commonNum('weightG'),
+      material: commonStr("material"),
+      weightG: commonNum("weightG"),
       tags: masterTags,
-      hsCode: commonStr('hsCode'),
-      countryOfOrigin: commonStr('countryOfOrigin'),
+      hsCode: commonStr("hsCode"),
+      countryOfOrigin: commonStr("countryOfOrigin"),
       ...(totalStock !== undefined ? { inventoryQuantity: totalStock } : {}),
-      ...(firstPrice !== null && firstPrice !== undefined ? { price: String(firstPrice) } : {}),
+      ...(firstPrice !== null && firstPrice !== undefined
+        ? { price: String(firstPrice) }
+        : {}),
       ...(firstSku ? { sku: firstSku } : {}),
     };
 
     // Shopify 다중 변형: variantPriceUpdates 로 옵션값 조합별 가격 전송
     // combination 은 그룹 position 순서대로 { name, value } 쌍을 보낸다.
     // 어댑터 측에서 selectedOptions 와 정확히 매칭하기 위해 name 까지 포함.
-    if (channel?.channelType === 'SHOPIFY' && allVariants.length > 1) {
+    if (channel?.channelType === "SHOPIFY" && allVariants.length > 1) {
       const groups = master.optionGroups ?? [];
       payload.variantPriceUpdates = allVariants
         .filter((v) => v.price !== null && v.price !== undefined)
         .map((v) => ({
           combination: groups.map((g) => {
             const match = v.options.find((o) => o.groupId === g.id);
-            return { name: g.name, value: match ? match.value : '' };
+            return { name: g.name, value: match ? match.value : "" };
           }),
           price: String(v.price),
         }));
@@ -1464,12 +1746,12 @@ export class MasterProductService {
         totalStock,
         hasVariantPriceUpdates: Array.isArray(payload.variantPriceUpdates),
       },
-      '[syncProductInfoToChannel] dispatching to adapter',
+      "[syncProductInfoToChannel] dispatching to adapter",
     );
 
     await adapter.updateProduct(item.channelItemId, payload);
 
-    return { status: 'OK' as const, channelItemId: item.channelItemId };
+    return { status: "OK" as const, channelItemId: item.channelItemId };
   }
 
   // ─── Private ─────────────────────────────────────────────────
@@ -1478,8 +1760,13 @@ export class MasterProductService {
     const [p] = await this.app.db
       .select({ id: masterProducts.id })
       .from(masterProducts)
-      .where(and(eq(masterProducts.id, masterProductId), eq(masterProducts.userId, this.userId)));
-    if (!p) throw new Error('마스터 상품을 찾을 수 없습니다.');
+      .where(
+        and(
+          eq(masterProducts.id, masterProductId),
+          eq(masterProducts.userId, this.userId),
+        ),
+      );
+    if (!p) throw new Error("마스터 상품을 찾을 수 없습니다.");
   }
 
   /**
@@ -1492,12 +1779,13 @@ export class MasterProductService {
       .where(eq(masterProductOptionGroups.masterProductId, masterProductId))
       .orderBy(asc(masterProductOptionGroups.position));
 
-    if (groups.length === 0) return [] as Array<{
-      id: string;
-      name: string;
-      position: number;
-      values: Array<{ id: string; value: string; position: number }>;
-    }>;
+    if (groups.length === 0)
+      return [] as Array<{
+        id: string;
+        name: string;
+        position: number;
+        values: Array<{ id: string; value: string; position: number }>;
+      }>;
 
     const groupIds = groups.map((g) => g.id);
     const values = await this.app.db
@@ -1506,7 +1794,10 @@ export class MasterProductService {
       .where(inArray(masterProductOptionValues.groupId, groupIds))
       .orderBy(asc(masterProductOptionValues.position));
 
-    const valuesByGroup = new Map<string, Array<{ id: string; value: string; position: number }>>();
+    const valuesByGroup = new Map<
+      string,
+      Array<{ id: string; value: string; position: number }>
+    >();
     for (const v of values) {
       const arr = valuesByGroup.get(v.groupId) ?? [];
       arr.push({ id: v.id, value: v.value, position: v.position });
@@ -1524,7 +1815,9 @@ export class MasterProductService {
   /**
    * variantId 배열에 대해 (groupId, groupName, groupPosition, optionValueId, value, valuePosition) 매핑을 한 번에 로드.
    */
-  private async loadVariantOptions(variantIds: string[]): Promise<Map<string, VariantOptionView[]>> {
+  private async loadVariantOptions(
+    variantIds: string[],
+  ): Promise<Map<string, VariantOptionView[]>> {
     if (variantIds.length === 0) return new Map();
     const rows = await this.app.db
       .select({
@@ -1539,7 +1832,10 @@ export class MasterProductService {
       .from(masterProductVariantOptionValues)
       .innerJoin(
         masterProductOptionValues,
-        eq(masterProductVariantOptionValues.optionValueId, masterProductOptionValues.id),
+        eq(
+          masterProductVariantOptionValues.optionValueId,
+          masterProductOptionValues.id,
+        ),
       )
       .innerJoin(
         masterProductOptionGroups,
@@ -1575,7 +1871,9 @@ export class MasterProductService {
 
     const groups = await this.loadOptionGroups(masterProductId);
     if (groups.length === 0) {
-      throw new Error('이 마스터 상품에는 옵션 그룹이 정의되어 있지 않습니다. setOptionGroups 를 먼저 호출하세요.');
+      throw new Error(
+        "이 마스터 상품에는 옵션 그룹이 정의되어 있지 않습니다. setOptionGroups 를 먼저 호출하세요.",
+      );
     }
 
     // 한 그룹당 한 값만 허용
@@ -1588,7 +1886,9 @@ export class MasterProductService {
         throw new Error(`존재하지 않는 옵션 그룹: ${ov.groupName}`);
       }
       if (seenGroupIds.has(group.id)) {
-        throw new Error(`한 변형에는 그룹당 옵션값을 하나만 지정할 수 있습니다: ${ov.groupName}`);
+        throw new Error(
+          `한 변형에는 그룹당 옵션값을 하나만 지정할 수 있습니다: ${ov.groupName}`,
+        );
       }
       seenGroupIds.add(group.id);
 
@@ -1625,7 +1925,9 @@ export class MasterProductService {
           .from(masterProductVariantOptionValues)
           .where(eq(masterProductVariantOptionValues.variantId, v.id));
         if (links.length === 0) {
-          throw new Error('옵션이 없는 변형은 마스터 상품당 하나만 허용됩니다.');
+          throw new Error(
+            "옵션이 없는 변형은 마스터 상품당 하나만 허용됩니다.",
+          );
         }
       }
       return;
@@ -1646,7 +1948,7 @@ export class MasterProductService {
       if (links.length !== target.size) continue;
       const same = links.every((l) => target.has(l.ovId));
       if (same) {
-        throw new Error('동일한 옵션 조합을 가진 변형이 이미 존재합니다.');
+        throw new Error("동일한 옵션 조합을 가진 변형이 이미 존재합니다.");
       }
     }
   }
@@ -1706,12 +2008,24 @@ export class MasterProductService {
   ): Promise<
     Map<
       string,
-      Array<{ skuId: string; code: string; qty: number; position: number; stock: number }>
+      Array<{
+        skuId: string;
+        code: string;
+        qty: number;
+        position: number;
+        stock: number;
+      }>
     >
   > {
     const map = new Map<
       string,
-      Array<{ skuId: string; code: string; qty: number; position: number; stock: number }>
+      Array<{
+        skuId: string;
+        code: string;
+        qty: number;
+        position: number;
+        stock: number;
+      }>
     >();
     if (variantIds.length === 0) return map;
 
@@ -1747,7 +2061,9 @@ export class MasterProductService {
    * BOM 행들로부터 채널에 push 할 수 있는 변형 단위 재고 = min over rows of floor(stock / qty).
    * BOM 이 비어 있으면 0 (= 매핑 누락 시 안전하게 품절 처리).
    */
-  private computeAvailableStock(rows: Array<{ qty: number; stock: number }>): number {
+  private computeAvailableStock(
+    rows: Array<{ qty: number; stock: number }>,
+  ): number {
     if (rows.length === 0) return 0;
     let minAvail = Number.POSITIVE_INFINITY;
     for (const r of rows) {

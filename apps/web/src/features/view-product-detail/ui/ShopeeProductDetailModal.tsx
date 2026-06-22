@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type React from 'react';
+import type React from "react";
 import {
   Box,
   Button,
@@ -20,13 +20,13 @@ import {
   Stack,
   Table,
   Text,
-} from '@chakra-ui/react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+} from "@chakra-ui/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { useShopeeProductDetail } from '@/entities/product';
-import type { ShopeeProductDetailItem } from '@/entities/product';
+import { useShopeeProductDetail } from "@/entities/product";
+import type { ShopeeProductDetailItem } from "@/entities/product";
 
 const MotionDiv = motion.div;
 
@@ -36,21 +36,21 @@ export interface ShopeeProductDetailModalProps {
 }
 
 const SHOPEE_STATUS_LABEL: Record<string, string> = {
-  NORMAL: '판매중',
-  UNLIST: '판매중지',
-  REVIEWING: '검수중',
-  BANNED: '차단',
-  SELLER_DELETE: '삭제',
-  SHOPEE_DELETE: '쇼피삭제',
+  NORMAL: "판매중",
+  UNLIST: "판매중지",
+  REVIEWING: "검수중",
+  BANNED: "차단",
+  SELLER_DELETE: "삭제",
+  SHOPEE_DELETE: "쇼피삭제",
 };
 
 function formatTimestamp(ts: number): string {
-  if (!ts) return '-';
-  return new Date(ts * 1000).toLocaleDateString('ko-KR');
+  if (!ts) return "-";
+  return new Date(ts * 1000).toLocaleDateString("ko-KR");
 }
 
 function StatusBadge({ status }: { status: string }): React.JSX.Element {
-  const isNormal = status === 'NORMAL';
+  const isNormal = status === "NORMAL";
   return (
     <Box
       as="span"
@@ -60,9 +60,9 @@ function StatusBadge({ status }: { status: string }): React.JSX.Element {
       py={0.5}
       fontSize="xs"
       borderRadius="sm"
-      bg={isNormal ? 'gray.900' : 'transparent'}
-      color={isNormal ? 'white' : 'gray.600'}
-      borderWidth={isNormal ? '0' : '1px'}
+      bg={isNormal ? "gray.900" : "transparent"}
+      color={isNormal ? "white" : "gray.600"}
+      borderWidth={isNormal ? "0" : "1px"}
       borderStyle="dashed"
       borderColor="gray.400"
     >
@@ -90,16 +90,25 @@ function InfoRow({
   );
 }
 
-function ModelTable({ item }: { item: ShopeeProductDetailItem }): React.JSX.Element {
+function ModelTable({
+  item,
+}: {
+  item: ShopeeProductDetailItem;
+}): React.JSX.Element {
   const { tierVariations, models } = item;
 
-  if (models.length === 0) return <Text fontSize="sm" color="gray.400">모델 정보 없음</Text>;
+  if (models.length === 0)
+    return (
+      <Text fontSize="sm" color="gray.400">
+        모델 정보 없음
+      </Text>
+    );
 
   const headers = tierVariations.map((tv) => tv.name);
 
   return (
     <Box overflowX="auto">
-      <Table.Root size="sm" style={{ tableLayout: 'fixed' }} width="100%">
+      <Table.Root size="sm" style={{ tableLayout: "fixed" }} width="100%">
         <Table.Header>
           <Table.Row>
             {headers.map((h) => (
@@ -107,10 +116,18 @@ function ModelTable({ item }: { item: ShopeeProductDetailItem }): React.JSX.Elem
                 {h}
               </Table.ColumnHeader>
             ))}
-            <Table.ColumnHeader px={3} py={2} width="80px">SKU</Table.ColumnHeader>
-            <Table.ColumnHeader px={3} py={2} width="100px">가격</Table.ColumnHeader>
-            <Table.ColumnHeader px={3} py={2} width="70px">재고</Table.ColumnHeader>
-            <Table.ColumnHeader px={3} py={2} width="80px">상태</Table.ColumnHeader>
+            <Table.ColumnHeader px={3} py={2} width="80px">
+              SKU
+            </Table.ColumnHeader>
+            <Table.ColumnHeader px={3} py={2} width="100px">
+              가격
+            </Table.ColumnHeader>
+            <Table.ColumnHeader px={3} py={2} width="70px">
+              재고
+            </Table.ColumnHeader>
+            <Table.ColumnHeader px={3} py={2} width="80px">
+              상태
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
         <Table.Body>
@@ -118,15 +135,21 @@ function ModelTable({ item }: { item: ShopeeProductDetailItem }): React.JSX.Elem
             <Table.Row key={model.modelId}>
               {model.tierIndex.map((optionIdx, varIdx) => {
                 const optionName =
-                  tierVariations[varIdx]?.options[optionIdx]?.option ?? '-';
+                  tierVariations[varIdx]?.options[optionIdx]?.option ?? "-";
                 return (
                   <Table.Cell key={varIdx} px={3} py={2}>
                     {optionName}
                   </Table.Cell>
                 );
               })}
-              <Table.Cell px={3} py={2} color="gray.500" fontFamily="mono" fontSize="xs">
-                {model.modelSku || '-'}
+              <Table.Cell
+                px={3}
+                py={2}
+                color="gray.500"
+                fontFamily="mono"
+                fontSize="xs"
+              >
+                {model.modelSku || "-"}
               </Table.Cell>
               <Table.Cell px={3} py={2} whiteSpace="nowrap">
                 {model.price.toLocaleString()} {model.currency}
@@ -134,12 +157,16 @@ function ModelTable({ item }: { item: ShopeeProductDetailItem }): React.JSX.Elem
               <Table.Cell
                 px={3}
                 py={2}
-                color={model.stock < 10 ? 'red.500' : 'gray.800'}
+                color={model.stock < 10 ? "red.500" : "gray.800"}
               >
                 {model.stock.toLocaleString()}
               </Table.Cell>
               <Table.Cell px={3} py={2}>
-                <StatusBadge status={model.modelStatus === 'MODEL_NORMAL' ? 'NORMAL' : 'UNLIST'} />
+                <StatusBadge
+                  status={
+                    model.modelStatus === "MODEL_NORMAL" ? "NORMAL" : "UNLIST"
+                  }
+                />
               </Table.Cell>
             </Table.Row>
           ))}
@@ -149,7 +176,11 @@ function ModelTable({ item }: { item: ShopeeProductDetailItem }): React.JSX.Elem
   );
 }
 
-function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.Element {
+function DetailContent({
+  item,
+}: {
+  item: ShopeeProductDetailItem;
+}): React.JSX.Element {
   return (
     <Stack gap={4}>
       {/* 상단 요약 */}
@@ -188,7 +219,7 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
                 bg="gray.100"
                 color="gray.700"
               >
-                {item.condition === 'NEW' ? '새 상품' : '중고'}
+                {item.condition === "NEW" ? "새 상품" : "중고"}
               </Box>
             ) : null}
           </Flex>
@@ -207,17 +238,21 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
       {!item.hasModel ? (
         <SimpleGrid columns={2} gap={2} bg="gray.50" p={3} borderRadius="md">
           <Stack gap={0.5}>
-            <Text fontSize="xs" color="gray.500">현재 가격</Text>
+            <Text fontSize="xs" color="gray.500">
+              현재 가격
+            </Text>
             <Text fontSize="sm" fontWeight="medium" color="gray.900">
               {item.price.toLocaleString()} {item.currency}
             </Text>
           </Stack>
           <Stack gap={0.5}>
-            <Text fontSize="xs" color="gray.500">재고</Text>
+            <Text fontSize="xs" color="gray.500">
+              재고
+            </Text>
             <Text
               fontSize="sm"
               fontWeight="medium"
-              color={item.stock < 10 ? 'red.500' : 'gray.900'}
+              color={item.stock < 10 ? "red.500" : "gray.900"}
             >
               {item.stock.toLocaleString()}
             </Text>
@@ -229,12 +264,17 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
 
       {/* 기본 정보 */}
       <Stack gap={3}>
-        <Text fontSize="xs" fontWeight="semibold" color="gray.500">기본 정보</Text>
+        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+          기본 정보
+        </Text>
         <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
           <InfoRow label="Item ID" value={String(item.itemId)} />
-          <InfoRow label="SKU" value={item.itemSku || '-'} />
+          <InfoRow label="SKU" value={item.itemSku || "-"} />
           <InfoRow label="카테고리 ID" value={String(item.categoryId)} />
-          <InfoRow label="상태" value={<StatusBadge status={item.itemStatus} />} />
+          <InfoRow
+            label="상태"
+            value={<StatusBadge status={item.itemStatus} />}
+          />
           <InfoRow label="등록일" value={formatTimestamp(item.createTime)} />
           <InfoRow label="수정일" value={formatTimestamp(item.updateTime)} />
           {item.weight ? (
@@ -247,7 +287,10 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
             />
           ) : null}
           {item.preOrder?.isPreOrder ? (
-            <InfoRow label="예약주문" value={`발송 ${item.preOrder.daysToShip}일`} />
+            <InfoRow
+              label="예약주문"
+              value={`발송 ${item.preOrder.daysToShip}일`}
+            />
           ) : null}
         </Box>
       </Stack>
@@ -257,7 +300,9 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
         <>
           <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
             <Stack gap={3}>
-              <Text fontSize="xs" fontWeight="semibold" color="gray.500">옵션 / 모델</Text>
+              <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                옵션 / 모델
+              </Text>
               <ModelTable item={item} />
             </Stack>
           </Box>
@@ -280,8 +325,8 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
                   borderRadius="md"
                   overflow="hidden"
                   bg="gray.100"
-                  borderWidth={i === 0 ? '2px' : '1px'}
-                  borderColor={i === 0 ? 'gray.900' : 'gray.200'}
+                  borderWidth={i === 0 ? "2px" : "1px"}
+                  borderColor={i === 0 ? "gray.900" : "gray.200"}
                 >
                   <Image src={url} alt="" w="100%" h="100%" objectFit="cover" />
                 </Box>
@@ -295,13 +340,17 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
       {item.logistics.length > 0 ? (
         <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
           <Stack gap={3}>
-            <Text fontSize="xs" fontWeight="semibold" color="gray.500">배송</Text>
+            <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+              배송
+            </Text>
             <Stack gap={2}>
               {item.logistics.map((l) => (
                 <Flex key={l.logisticId} justify="space-between" fontSize="sm">
                   <Text color="gray.700">{l.logisticName}</Text>
-                  <Text color={l.isFree ? 'green.600' : 'gray.800'}>
-                    {l.isFree ? '무료' : `예상 ${l.estimatedShippingFee.toLocaleString()}`}
+                  <Text color={l.isFree ? "green.600" : "gray.800"}>
+                    {l.isFree
+                      ? "무료"
+                      : `예상 ${l.estimatedShippingFee.toLocaleString()}`}
                   </Text>
                 </Flex>
               ))}
@@ -314,7 +363,9 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
       {item.attributes.length > 0 ? (
         <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
           <Stack gap={3}>
-            <Text fontSize="xs" fontWeight="semibold" color="gray.500">상품 속성</Text>
+            <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+              상품 속성
+            </Text>
             <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
               {item.attributes.map((attr) => (
                 <InfoRow
@@ -324,10 +375,12 @@ function DetailContent({ item }: { item: ShopeeProductDetailItem }): React.JSX.E
                     attr.values.length > 0
                       ? attr.values
                           .map((v) =>
-                            v.valueUnit ? `${v.valueName} ${v.valueUnit}` : v.valueName,
+                            v.valueUnit
+                              ? `${v.valueName} ${v.valueUnit}`
+                              : v.valueName,
                           )
-                          .join(', ')
-                      : '-'
+                          .join(", ")
+                      : "-"
                   }
                 />
               ))}
@@ -349,10 +402,10 @@ export function ShopeeProductDetailModal({
   const { item, isLoading, error, hasApiKey } = useShopeeProductDetail(itemId);
 
   const errorMessage = ((): string => {
-    if (!error) return '';
-    if (error.type === 'NO_API_KEY')
-      return 'Shopee API 키가 없습니다. 채널 설정에서 등록해 주세요.';
-    if (error.type === 'NOT_FOUND') return '상품을 찾을 수 없습니다.';
+    if (!error) return "";
+    if (error.type === "NO_API_KEY")
+      return "Shopee API 키가 없습니다. 채널 설정에서 등록해 주세요.";
+    if (error.type === "NOT_FOUND") return "상품을 찾을 수 없습니다.";
     return error.message;
   })();
 
@@ -368,7 +421,11 @@ export function ShopeeProductDetailModal({
           if (event.target === event.currentTarget) onClose();
         }}
       />
-      <DialogPositioner alignItems="center" justifyContent="center" px={{ base: 0, sm: 4 }}>
+      <DialogPositioner
+        alignItems="center"
+        justifyContent="center"
+        px={{ base: 0, sm: 4 }}
+      >
         <DialogContent
           maxW="4xl"
           w="100%"
@@ -394,7 +451,7 @@ export function ShopeeProductDetailModal({
               right={3}
               top={3}
               bg="transparent"
-              _hover={{ bg: 'gray.100' }}
+              _hover={{ bg: "gray.100" }}
             >
               <X size={16} />
             </DialogCloseTrigger>
@@ -403,15 +460,21 @@ export function ShopeeProductDetailModal({
           <DialogBody py={4} overflowY="auto">
             {/* API 키 없음 */}
             {!hasApiKey && isOpen ? (
-              <Flex minH="200px" align="center" justify="center" direction="column" gap={3}>
+              <Flex
+                minH="200px"
+                align="center"
+                justify="center"
+                direction="column"
+                gap={3}
+              >
                 <Text fontSize="sm" color="gray.600" textAlign="center">
-                  {errorMessage || 'Shopee API 키가 없습니다.'}
+                  {errorMessage || "Shopee API 키가 없습니다."}
                 </Text>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push('/settings/channels')}
+                  onClick={() => router.push("/settings/channels")}
                 >
                   채널 설정으로 이동
                 </Button>
@@ -420,7 +483,13 @@ export function ShopeeProductDetailModal({
 
             {/* 에러 */}
             {hasApiKey && isOpen && error && !isLoading ? (
-              <Flex minH="200px" align="center" justify="center" direction="column" gap={3}>
+              <Flex
+                minH="200px"
+                align="center"
+                justify="center"
+                direction="column"
+                gap={3}
+              >
                 <Text fontSize="sm" color="red.600" textAlign="center">
                   {errorMessage}
                 </Text>
@@ -431,7 +500,12 @@ export function ShopeeProductDetailModal({
             {hasApiKey && isLoading && isOpen ? (
               <Stack gap={4} px={2}>
                 <Flex gap={3} align="flex-start">
-                  <Skeleton w="88px" h="88px" borderRadius="md" flexShrink={0} />
+                  <Skeleton
+                    w="88px"
+                    h="88px"
+                    borderRadius="md"
+                    flexShrink={0}
+                  />
                   <Stack flex="1" gap={2}>
                     <Skeleton height="20px" width="40%" />
                     <SkeletonText noOfLines={2} rootProps={{ gap: 2 }} />
@@ -446,7 +520,7 @@ export function ShopeeProductDetailModal({
             {hasApiKey && item && isOpen && !isLoading && !error ? (
               <AnimatePresence mode="wait">
                 <MotionDiv
-                  key={itemId ?? 'empty'}
+                  key={itemId ?? "empty"}
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 12 }}

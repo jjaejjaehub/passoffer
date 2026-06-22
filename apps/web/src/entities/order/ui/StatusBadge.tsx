@@ -1,16 +1,19 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import type { BoxProps } from '@chakra-ui/react';
-import { Box } from '@chakra-ui/react';
-import type { OrderStatus } from '@/shared/config';
+import type React from "react";
+import type { BoxProps } from "@chakra-ui/react";
+import { Box } from "@chakra-ui/react";
+import type { OrderStatus } from "@/shared/config";
 
 type StatusBadgeProps = BoxProps & {
   status: OrderStatus;
 };
 
-export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.Element {
-  if (status === '신규') {
+export function StatusBadge({
+  status,
+  ...rest
+}: StatusBadgeProps): React.JSX.Element {
+  if (status === "신규") {
     return (
       <Box
         as="span"
@@ -27,7 +30,7 @@ export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.El
     );
   }
 
-  if (status === '처리중') {
+  if (status === "처리중") {
     return (
       <Box
         as="span"
@@ -46,7 +49,7 @@ export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.El
     );
   }
 
-  if (status === '배송준비') {
+  if (status === "배송준비") {
     return (
       <Box
         as="span"
@@ -65,7 +68,7 @@ export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.El
     );
   }
 
-  if (status === '배송중') {
+  if (status === "배송중") {
     return (
       <Box
         as="span"
@@ -82,7 +85,7 @@ export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.El
     );
   }
 
-  if (status === '완료') {
+  if (status === "완료") {
     return (
       <Box
         as="span"
@@ -119,4 +122,3 @@ export function StatusBadge({ status, ...rest }: StatusBadgeProps): React.JSX.El
     </Box>
   );
 }
-

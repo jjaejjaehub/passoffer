@@ -2,8 +2,15 @@ import { Box, Button, Flex, Spinner, Text } from "@chakra-ui/react";
 import { KeyIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useShopifyProducts, useShopifyUpdateProductStatus, useShopifyDeleteProduct } from "@/entities/product";
-import { ShopifyProductBulkActionBar, ShopifyBulkDeleteDialog } from "@/features/edit-item-status";
+import {
+  useShopifyProducts,
+  useShopifyUpdateProductStatus,
+  useShopifyDeleteProduct,
+} from "@/entities/product";
+import {
+  ShopifyProductBulkActionBar,
+  ShopifyBulkDeleteDialog,
+} from "@/features/edit-item-status";
 import { ShopifyProductTable } from "@/widgets/product-table";
 import { ErrorState, EmptyState } from "@/shared/ui";
 
@@ -29,8 +36,12 @@ export function ShopifyProductsContent({
 }: ShopifyProductsContentProps): React.JSX.Element {
   const router = useRouter();
 
-  const [selectedShopifyProductIds, setSelectedShopifyProductIds] = useState<Set<string>>(() => new Set());
-  const [shopifyDeleteTargetId, setShopifyDeleteTargetId] = useState<string | null>(null);
+  const [selectedShopifyProductIds, setSelectedShopifyProductIds] = useState<
+    Set<string>
+  >(() => new Set());
+  const [shopifyDeleteTargetId, setShopifyDeleteTargetId] = useState<
+    string | null
+  >(null);
   const [shopifyBulkDeleteOpen, setShopifyBulkDeleteOpen] = useState(false);
   const [shopifyBulkPending, setShopifyBulkPending] = useState(false);
 
@@ -82,7 +93,9 @@ export function ShopifyProductsContent({
 
   const handleShopifyBulkDelete = async (): Promise<void> => {
     await Promise.all(
-      Array.from(selectedShopifyProductIds).map((id) => deleteShopifyProductAsync(id)),
+      Array.from(selectedShopifyProductIds).map((id) =>
+        deleteShopifyProductAsync(id),
+      ),
     );
     setSelectedShopifyProductIds(new Set());
     setShopifyBulkDeleteOpen(false);
@@ -114,11 +127,21 @@ export function ShopifyProductsContent({
     const isAuthError = shopifyError.type === "AUTH_ERROR";
     return (
       <ErrorState
-        title={isAuthError ? "Shopify API 인증 실패" : "Shopify 상품 조회 중 오류 발생"}
-        description={isAuthError
-          ? "API 키 또는 액세스 토큰이 유효하지 않습니다. 채널 설정에서 자격증명을 확인해 주세요."
-          : shopifyError.message}
-        onRetry={isAuthError ? () => router.push("/settings/channels") : () => shopifyRefetch()}
+        title={
+          isAuthError
+            ? "Shopify API 인증 실패"
+            : "Shopify 상품 조회 중 오류 발생"
+        }
+        description={
+          isAuthError
+            ? "API 키 또는 액세스 토큰이 유효하지 않습니다. 채널 설정에서 자격증명을 확인해 주세요."
+            : shopifyError.message
+        }
+        onRetry={
+          isAuthError
+            ? () => router.push("/settings/channels")
+            : () => shopifyRefetch()
+        }
         actionLabel={isAuthError ? "채널 설정" : "다시 시도"}
       />
     );
@@ -138,8 +161,12 @@ export function ShopifyProductsContent({
       <ShopifyProductBulkActionBar
         selectedIds={selectedShopifyProductIds}
         isPending={shopifyBulkPending || isShopifyStatusPending}
-        onBulkPublish={() => { void handleShopifyBulkPublish(); }}
-        onBulkUnpublish={() => { void handleShopifyBulkUnpublish(); }}
+        onBulkPublish={() => {
+          void handleShopifyBulkPublish();
+        }}
+        onBulkUnpublish={() => {
+          void handleShopifyBulkUnpublish();
+        }}
         onBulkDelete={() => setShopifyBulkDeleteOpen(true)}
       />
       <ShopifyBulkDeleteDialog
@@ -260,7 +287,13 @@ export function ShopifyDeleteConfirmDialog({
 
   return (
     <>
-      <Box position="fixed" inset={0} bg="blackAlpha.400" zIndex={1400} onClick={onClose} />
+      <Box
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.400"
+        zIndex={1400}
+        onClick={onClose}
+      />
       <Box
         position="fixed"
         top="50%"
@@ -273,12 +306,19 @@ export function ShopifyDeleteConfirmDialog({
         p={6}
         w="360px"
       >
-        <Text fontWeight="semibold" fontSize="md" mb={2}>상품을 삭제하시겠습니까?</Text>
+        <Text fontWeight="semibold" fontSize="md" mb={2}>
+          상품을 삭제하시겠습니까?
+        </Text>
         <Text fontSize="sm" color="gray.600" mb={5}>
           삭제된 상품은 Shopify에서 완전히 제거되며 복구할 수 없습니다.
         </Text>
         <Flex justify="flex-end" gap={2}>
-          <Button size="sm" variant="outline" onClick={onClose} disabled={isPending}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onClose}
+            disabled={isPending}
+          >
             취소
           </Button>
           <Button

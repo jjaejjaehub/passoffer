@@ -1,1 +1,1 @@
-export * from './ui/OrdersAuxPanel';
+export * from "./ui/OrdersAuxPanel";

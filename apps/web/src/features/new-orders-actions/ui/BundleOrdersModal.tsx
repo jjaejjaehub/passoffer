@@ -1,21 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  Button,
-  Flex,
-  HStack,
-  Text,
-  VStack,
-} from '@chakra-ui/react';
-import { Package, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { Box, Button, Flex, HStack, Text, VStack } from "@chakra-ui/react";
+import { Package, X } from "lucide-react";
 
-import {
-  useBundleOrders,
-  type OrderListItem,
-} from '@/entities/order';
-import { appToaster } from '@/shared/ui/app-toaster';
+import { useBundleOrders, type OrderListItem } from "@/entities/order";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export interface BundleOrdersModalProps {
   open: boolean;
@@ -31,18 +21,18 @@ interface ValidationResult {
 
 function validateOrders(orders: OrderListItem[]): ValidationResult {
   if (orders.length < 2) {
-    return { ok: false, message: '합포장은 2건 이상 선택해야 합니다' };
+    return { ok: false, message: "합포장은 2건 이상 선택해야 합니다" };
   }
   const first = orders[0];
   const sameReceiver = orders.every(
     (o) =>
-      (o.receiverName ?? '') === (first.receiverName ?? '') &&
-      (o.zipCode ?? '') === (first.zipCode ?? ''),
+      (o.receiverName ?? "") === (first.receiverName ?? "") &&
+      (o.zipCode ?? "") === (first.zipCode ?? ""),
   );
   if (!sameReceiver) {
     return {
       ok: false,
-      message: '수령인 이름과 우편번호가 모두 동일해야 합니다',
+      message: "수령인 이름과 우편번호가 모두 동일해야 합니다",
     };
   }
   const distinctBundles = new Set(
@@ -51,7 +41,7 @@ function validateOrders(orders: OrderListItem[]): ValidationResult {
   if (distinctBundles.size >= 2) {
     return {
       ok: false,
-      message: '서로 다른 합포장 그룹에 이미 속해있어 합칠 수 없습니다',
+      message: "서로 다른 합포장 그룹에 이미 속해있어 합칠 수 없습니다",
     };
   }
   return { ok: true, message: null };
@@ -84,17 +74,17 @@ export function BundleOrdersModal({
         primaryOrderId: primaryId,
       });
       appToaster.create({
-        title: '합포장 완료',
+        title: "합포장 완료",
         description: `${res.orderIds.length}건 합포장 (그룹 ${res.bundleNumber})`,
-        type: 'success',
+        type: "success",
       });
       onCompleted?.();
       onClose();
     } catch (err) {
       appToaster.create({
-        title: '합포장 실패',
+        title: "합포장 실패",
         description: err instanceof Error ? err.message : String(err),
-        type: 'error',
+        type: "error",
       });
     }
   };
@@ -115,7 +105,7 @@ export function BundleOrdersModal({
         top="50%"
         left="50%"
         transform="translate(-50%, -50%)"
-        w={{ base: 'calc(100% - 32px)', md: '720px' }}
+        w={{ base: "calc(100% - 32px)", md: "720px" }}
         bg="white"
         zIndex={1001}
         borderRadius="xl"
@@ -149,12 +139,12 @@ export function BundleOrdersModal({
             onClick={onClose}
             disabled={bundleMut.isPending}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#718096',
-              background: 'transparent',
-              border: 'none',
-              cursor: bundleMut.isPending ? 'not-allowed' : 'pointer',
+              display: "flex",
+              alignItems: "center",
+              color: "#718096",
+              background: "transparent",
+              border: "none",
+              cursor: bundleMut.isPending ? "not-allowed" : "pointer",
               padding: 0,
             }}
             aria-label="닫기"
@@ -188,18 +178,18 @@ export function BundleOrdersModal({
             >
               <Box
                 as="table"
-                style={{ width: '100%', borderCollapse: 'collapse' }}
+                style={{ width: "100%", borderCollapse: "collapse" }}
               >
                 <Box as="thead" bg="gray.50">
                   <Box as="tr">
                     <Box
                       as="th"
                       style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
+                        padding: "8px 10px",
+                        textAlign: "left",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#4a5568',
+                        color: "#4a5568",
                         width: 60,
                       }}
                     >
@@ -208,11 +198,11 @@ export function BundleOrdersModal({
                     <Box
                       as="th"
                       style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
+                        padding: "8px 10px",
+                        textAlign: "left",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#4a5568',
+                        color: "#4a5568",
                       }}
                     >
                       주문번호
@@ -220,11 +210,11 @@ export function BundleOrdersModal({
                     <Box
                       as="th"
                       style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
+                        padding: "8px 10px",
+                        textAlign: "left",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#4a5568',
+                        color: "#4a5568",
                       }}
                     >
                       수령인
@@ -232,11 +222,11 @@ export function BundleOrdersModal({
                     <Box
                       as="th"
                       style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
+                        padding: "8px 10px",
+                        textAlign: "left",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#4a5568',
+                        color: "#4a5568",
                       }}
                     >
                       우편번호
@@ -244,11 +234,11 @@ export function BundleOrdersModal({
                     <Box
                       as="th"
                       style={{
-                        padding: '8px 10px',
-                        textAlign: 'left',
+                        padding: "8px 10px",
+                        textAlign: "left",
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#4a5568',
+                        color: "#4a5568",
                       }}
                     >
                       합포장 그룹
@@ -261,17 +251,16 @@ export function BundleOrdersModal({
                       as="tr"
                       key={o.id}
                       style={{
-                        borderTop: '1px solid #edf2f7',
-                        background:
-                          primaryId === o.id ? '#ebf8ff' : 'white',
-                        cursor: 'pointer',
+                        borderTop: "1px solid #edf2f7",
+                        background: primaryId === o.id ? "#ebf8ff" : "white",
+                        cursor: "pointer",
                       }}
                       onClick={() => setPrimaryId(o.id)}
                     >
                       <Box
                         as="td"
                         style={{
-                          padding: '8px 10px',
+                          padding: "8px 10px",
                           fontSize: 13,
                         }}
                       >
@@ -284,31 +273,31 @@ export function BundleOrdersModal({
                       </Box>
                       <Box
                         as="td"
-                        style={{ padding: '8px 10px', fontSize: 13 }}
+                        style={{ padding: "8px 10px", fontSize: 13 }}
                       >
-                        {o.channelOrderId ?? '-'}
+                        {o.channelOrderId ?? "-"}
                       </Box>
                       <Box
                         as="td"
-                        style={{ padding: '8px 10px', fontSize: 13 }}
+                        style={{ padding: "8px 10px", fontSize: 13 }}
                       >
-                        {o.receiverName ?? '-'}
+                        {o.receiverName ?? "-"}
                       </Box>
                       <Box
                         as="td"
-                        style={{ padding: '8px 10px', fontSize: 13 }}
+                        style={{ padding: "8px 10px", fontSize: 13 }}
                       >
-                        {o.zipCode ?? '-'}
+                        {o.zipCode ?? "-"}
                       </Box>
                       <Box
                         as="td"
                         style={{
-                          padding: '8px 10px',
+                          padding: "8px 10px",
                           fontSize: 12,
-                          color: o.bundleNumber ? '#2b6cb0' : '#a0aec0',
+                          color: o.bundleNumber ? "#2b6cb0" : "#a0aec0",
                         }}
                       >
-                        {o.bundleNumber ?? '(미지정)'}
+                        {o.bundleNumber ?? "(미지정)"}
                       </Box>
                     </Box>
                   ))}

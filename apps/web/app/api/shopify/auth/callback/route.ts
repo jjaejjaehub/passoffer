@@ -50,7 +50,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const pendingCookie = req.cookies.get("shopify_oauth_pending")?.value;
   if (!pendingCookie) {
     return NextResponse.json(
-      { error: "SESSION_EXPIRED", message: "OAuth 세션이 만료되었습니다. 다시 시도해 주세요." },
+      {
+        error: "SESSION_EXPIRED",
+        message: "OAuth 세션이 만료되었습니다. 다시 시도해 주세요.",
+      },
       { status: 400 },
     );
   }
@@ -62,7 +65,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     state: string;
   };
   try {
-    pending = JSON.parse(Buffer.from(pendingCookie, "base64").toString("utf-8"));
+    pending = JSON.parse(
+      Buffer.from(pendingCookie, "base64").toString("utf-8"),
+    );
   } catch {
     return NextResponse.json({ error: "INVALID_SESSION" }, { status: 400 });
   }
@@ -85,18 +90,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   // authorization code → access token 교환
   let shopifyTokenRes: Response;
   try {
-    shopifyTokenRes = await fetch(
-      `https://${shop}/admin/oauth/access_token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          client_id: pending.clientId,
-          client_secret: pending.clientSecret,
-          code,
-        }),
-      },
-    );
+    shopifyTokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: pending.clientId,
+        client_secret: pending.clientSecret,
+        code,
+      }),
+    });
   } catch {
     return NextResponse.json(
       { error: "NETWORK_ERROR", message: "Shopify 서버에 연결할 수 없습니다." },
@@ -112,8 +114,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   };
 
   if (!shopifyTokenRes.ok || !tokenData.access_token) {
-    const message = tokenData.error_description ?? tokenData.error ?? "토큰 교환에 실패했습니다.";
-    return NextResponse.json({ error: "TOKEN_EXCHANGE_FAILED", message }, { status: 400 });
+    const message =
+      tokenData.error_description ??
+      tokenData.error ??
+      "토큰 교환에 실패했습니다.";
+    return NextResponse.json(
+      { error: "TOKEN_EXCHANGE_FAILED", message },
+      { status: 400 },
+    );
   }
 
   // JWT 쿠키에서 사용자 토큰 가져오기
@@ -142,15 +150,22 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   });
 
   if (!saveRes.ok) {
-    const err = (await saveRes.json().catch(() => ({}))) as { message?: string };
+    const err = (await saveRes.json().catch(() => ({}))) as {
+      message?: string;
+    };
     return NextResponse.json(
-      { error: "SAVE_FAILED", message: err.message ?? "채널 저장에 실패했습니다." },
+      {
+        error: "SAVE_FAILED",
+        message: err.message ?? "채널 저장에 실패했습니다.",
+      },
       { status: 500 },
     );
   }
 
   // 쿠키 정리 후 채널 관리 페이지로 리다이렉트
-  const res = NextResponse.redirect(new URL("/settings/channels?shopify=connected", APP_URL));
+  const res = NextResponse.redirect(
+    new URL("/settings/channels?shopify=connected", APP_URL),
+  );
   res.cookies.delete("shopify_oauth_pending");
   return res;
 }

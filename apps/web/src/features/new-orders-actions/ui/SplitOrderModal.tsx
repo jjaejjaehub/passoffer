@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -9,11 +9,11 @@ import {
   Spinner,
   Text,
   VStack,
-} from '@chakra-ui/react';
-import { Scissors, X } from 'lucide-react';
+} from "@chakra-ui/react";
+import { Scissors, X } from "lucide-react";
 
-import { useNewOrderItems, useSplitOrder } from '@/entities/order';
-import { appToaster } from '@/shared/ui/app-toaster';
+import { useNewOrderItems, useSplitOrder } from "@/entities/order";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export interface SplitOrderModalProps {
   open: boolean;
@@ -72,17 +72,17 @@ export function SplitOrderModal({
         splits: [{ itemIds: Array.from(selected) }],
       });
       appToaster.create({
-        title: '주문 분할 완료',
+        title: "주문 분할 완료",
         description: `자식 주문 ${res.childOrderIds.length}건 생성`,
-        type: 'success',
+        type: "success",
       });
       onCompleted?.();
       onClose();
     } catch (err) {
       appToaster.create({
-        title: '주문 분할 실패',
+        title: "주문 분할 실패",
         description: err instanceof Error ? err.message : String(err),
-        type: 'error',
+        type: "error",
       });
     }
   };
@@ -103,7 +103,7 @@ export function SplitOrderModal({
         top="50%"
         left="50%"
         transform="translate(-50%, -50%)"
-        w={{ base: 'calc(100% - 32px)', md: '640px' }}
+        w={{ base: "calc(100% - 32px)", md: "640px" }}
         bg="white"
         zIndex={1001}
         borderRadius="xl"
@@ -128,7 +128,8 @@ export function SplitOrderModal({
                 주문 분할
               </Text>
               <Text fontSize="xs" color="gray.500" mt={0.5}>
-                선택한 line item이 새 주문으로 분리됩니다 (남은 항목은 원본에 유지)
+                선택한 line item이 새 주문으로 분리됩니다 (남은 항목은 원본에
+                유지)
               </Text>
             </Box>
           </Flex>
@@ -137,12 +138,12 @@ export function SplitOrderModal({
             onClick={onClose}
             disabled={splitMut.isPending}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#718096',
-              background: 'transparent',
-              border: 'none',
-              cursor: splitMut.isPending ? 'not-allowed' : 'pointer',
+              display: "flex",
+              alignItems: "center",
+              color: "#718096",
+              background: "transparent",
+              border: "none",
+              cursor: splitMut.isPending ? "not-allowed" : "pointer",
               padding: 0,
             }}
             aria-label="닫기"
@@ -193,7 +194,7 @@ export function SplitOrderModal({
                         py={2}
                         borderBottomWidth="1px"
                         borderColor="gray.100"
-                        bg={checked ? 'blue.50' : 'white'}
+                        bg={checked ? "blue.50" : "white"}
                         cursor="pointer"
                         onClick={() => toggle(it.id)}
                       >
@@ -204,14 +205,19 @@ export function SplitOrderModal({
                         />
                         <Box flex={1} minW={0}>
                           <Text fontSize="sm" fontWeight="medium" truncate>
-                            {it.channelItemTitle ?? '(제목 없음)'}
+                            {it.channelItemTitle ?? "(제목 없음)"}
                           </Text>
                           <Text fontSize="xs" color="gray.500">
-                            {it.channelItemCode ?? '-'}
-                            {it.channelOption ? ` · ${it.channelOption}` : ''}
+                            {it.channelItemCode ?? "-"}
+                            {it.channelOption ? ` · ${it.channelOption}` : ""}
                           </Text>
                         </Box>
-                        <Text fontSize="sm" color="gray.700" minW="60px" textAlign="right">
+                        <Text
+                          fontSize="sm"
+                          color="gray.700"
+                          minW="60px"
+                          textAlign="right"
+                        >
                           x {it.orderQty}
                         </Text>
                       </Flex>
@@ -228,11 +234,12 @@ export function SplitOrderModal({
                       line item이 1개뿐인 주문은 분할할 수 없습니다
                     </Text>
                   )}
-                  {totalItems >= 2 && (selectedCount === 0 || remainCount === 0) && (
-                    <Text fontSize="xs" color="orange.600">
-                      최소 1개를 선택하고 1개 이상은 남겨야 합니다
-                    </Text>
-                  )}
+                  {totalItems >= 2 &&
+                    (selectedCount === 0 || remainCount === 0) && (
+                      <Text fontSize="xs" color="orange.600">
+                        최소 1개를 선택하고 1개 이상은 남겨야 합니다
+                      </Text>
+                    )}
                 </HStack>
               </>
             )}

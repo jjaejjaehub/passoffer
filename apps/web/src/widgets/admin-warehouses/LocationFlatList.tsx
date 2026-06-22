@@ -75,7 +75,12 @@ export function LocationFlatList({
             {flat.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={4}>
-                  <Text fontSize="sm" color="gray.500" py={4} textAlign="center">
+                  <Text
+                    fontSize="sm"
+                    color="gray.500"
+                    py={4}
+                    textAlign="center"
+                  >
                     로케이션이 없습니다.
                   </Text>
                 </Table.Cell>

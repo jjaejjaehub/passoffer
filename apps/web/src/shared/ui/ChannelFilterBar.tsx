@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import { HStack, Button } from '@chakra-ui/react';
-import { useTranslations } from 'next-intl';
-import type { ChannelId } from '@/shared/config';
-import { CHANNEL_NAMES, LIVE_CHANNELS } from '@/shared/config';
+import type React from "react";
+import { HStack, Button } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
+import type { ChannelId } from "@/shared/config";
+import { CHANNEL_NAMES, LIVE_CHANNELS } from "@/shared/config";
 
 interface ChannelFilterBarProps {
   value: ChannelId[];
@@ -15,7 +15,7 @@ export function ChannelFilterBar({
   value,
   onChange,
 }: ChannelFilterBarProps): React.JSX.Element {
-  const tChannels = useTranslations('config.channels');
+  const tChannels = useTranslations("config.channels");
   const handleToggle = (channelId: ChannelId): void => {
     const isSelected = value.includes(channelId);
     if (isSelected) {
@@ -40,11 +40,11 @@ export function ChannelFilterBar({
             key={channel.id}
             size="sm"
             variant="outline"
-            bg={isSelected ? 'gray.900' : 'white'}
-            color={isSelected ? 'white' : 'gray.800'}
-            borderColor={isSelected ? 'gray.900' : 'gray.200'}
+            bg={isSelected ? "gray.900" : "white"}
+            color={isSelected ? "white" : "gray.800"}
+            borderColor={isSelected ? "gray.900" : "gray.200"}
             _hover={{
-              bg: isSelected ? 'gray.800' : 'gray.50',
+              bg: isSelected ? "gray.800" : "gray.50",
             }}
             onClick={() => handleToggle(channel.id)}
           >
@@ -55,4 +55,3 @@ export function ChannelFilterBar({
     </HStack>
   );
 }
-

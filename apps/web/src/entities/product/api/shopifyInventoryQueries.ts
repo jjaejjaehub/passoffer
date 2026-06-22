@@ -83,7 +83,10 @@ export const shopifyInventoryQueryRoot = ["shopify", "inventory"] as const;
 export const shopifyInventoryQueries = {
   all: () => shopifyInventoryQueryRoot,
   list: (
-    params: Pick<ShopifyInventoryQueryParams, "pageSize" | "after" | "keyword" | "status">,
+    params: Pick<
+      ShopifyInventoryQueryParams,
+      "pageSize" | "after" | "keyword" | "status"
+    >,
   ) => [...shopifyInventoryQueryRoot, params] as const,
 };
 
@@ -118,7 +121,12 @@ export function useShopifyInventory(
   const { pageSize = 50, after, keyword, status, enabled = true } = params;
 
   const query = useQuery({
-    queryKey: shopifyInventoryQueries.list({ pageSize, after, keyword, status }),
+    queryKey: shopifyInventoryQueries.list({
+      pageSize,
+      after,
+      keyword,
+      status,
+    }),
     queryFn: async (): Promise<ShopifyInventoryApiResponse> => {
       const searchParams = new URLSearchParams({
         channelId: channelUuid!,
@@ -151,6 +159,8 @@ export function useShopifyInventory(
     isLoading: query.isLoading && hasKey,
     error: query.error ? parseShopifyInventoryError(query.error) : null,
     hasApiKey: hasKey,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

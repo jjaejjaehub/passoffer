@@ -159,7 +159,8 @@ export function OrderTableV2({
   const { data: channelList } = useChannels();
   const channelMap = useMemo(() => {
     const m = new Map<string, { name: string; channelType: string }>();
-    for (const c of channelList ?? []) m.set(c.id, { name: c.name, channelType: c.channelType });
+    for (const c of channelList ?? [])
+      m.set(c.id, { name: c.name, channelType: c.channelType });
     return m;
   }, [channelList]);
   const [pageSize, setPageSize] = useLocalStoragePref<PageSize>(
@@ -280,7 +281,7 @@ export function OrderTableV2({
           const typeLabel =
             entry && tChannels.has(`${entry.channelType}.name`)
               ? tChannels(`${entry.channelType}.name`)
-              : entry?.channelType ?? id;
+              : (entry?.channelType ?? id);
           return (
             <Text fontSize="xs" color="gray.700">
               {entry?.name ?? typeLabel}
@@ -514,7 +515,7 @@ export function OrderTableV2({
               >
                 {SORTABLE_FIELDS.map((field) => {
                   const active = params.sortBy === field;
-                  const dir = active ? params.sortDir ?? "desc" : null;
+                  const dir = active ? (params.sortDir ?? "desc") : null;
                   return (
                     <ChakraButton
                       key={field}

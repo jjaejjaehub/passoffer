@@ -1,10 +1,14 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
-import { useChannelApiKey } from '@/entities/channel';
-import { http } from '@/shared/api';
-import type { InquiryFilter, InquiryItem, InquiryListResult } from '../model/types';
+import { useQuery } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
+import { useChannelApiKey } from "@/entities/channel";
+import { http } from "@/shared/api";
+import type {
+  InquiryFilter,
+  InquiryItem,
+  InquiryListResult,
+} from "../model/types";
 
 interface InquiryApiResponse {
   items: Array<{
@@ -21,14 +25,14 @@ interface InquiryApiResponse {
   totalCount: number;
 }
 
-function mapApiItem(raw: InquiryApiResponse['items'][number]): InquiryItem {
+function mapApiItem(raw: InquiryApiResponse["items"][number]): InquiryItem {
   return {
     qnaNo: raw.QnaNo,
     itemCode: raw.ItemCode,
     itemTitle: raw.ItemTitle,
     question: raw.Question,
     answer: raw.Answer,
-    isAnswered: raw.IsAnswered === 'Y',
+    isAnswered: raw.IsAnswered === "Y",
     questionDate: raw.QuestionDate,
     answerDate: raw.AnswerDate,
     buyerNick: raw.BuyerNick,
@@ -42,8 +46,9 @@ export interface InquiryQueryParams {
 }
 
 export const inquiryQueries = {
-  all: () => ['qoo10', 'inquiry'] as const,
-  list: (params: InquiryQueryParams) => [...inquiryQueries.all(), params] as const,
+  all: () => ["qoo10", "inquiry"] as const,
+  list: (params: InquiryQueryParams) =>
+    [...inquiryQueries.all(), params] as const,
 };
 
 export interface InquiryQueryResult {
@@ -53,9 +58,11 @@ export interface InquiryQueryResult {
   error: { message: string } | null;
 }
 
-export function useQoo10Inquiries(params: InquiryQueryParams = {}): InquiryQueryResult {
-  const { hasKey } = useChannelApiKey('qoo10');
-  const { page = 1, pageSize = 20, filter = 'ALL' } = params;
+export function useQoo10Inquiries(
+  params: InquiryQueryParams = {},
+): InquiryQueryResult {
+  const { hasKey } = useChannelApiKey("qoo10");
+  const { page = 1, pageSize = 20, filter = "ALL" } = params;
 
   const query = useQuery({
     queryKey: inquiryQueries.list({ page, pageSize, filter }),
@@ -64,7 +71,7 @@ export function useQoo10Inquiries(params: InquiryQueryParams = {}): InquiryQuery
         page: String(page),
         pageSize: String(pageSize),
       });
-      if (filter !== 'ALL') searchParams.set('answered', filter);
+      if (filter !== "ALL") searchParams.set("answered", filter);
 
       const res = await http.get<InquiryApiResponse>(
         `/api/qoo10/inquiry?${searchParams.toString()}`,
@@ -83,8 +90,9 @@ export function useQoo10Inquiries(params: InquiryQueryParams = {}): InquiryQuery
   const error = query.error
     ? {
         message: isAxiosError<{ message?: string }>(query.error)
-          ? (query.error.response?.data?.message ?? '문의를 불러오는 중 오류가 발생했습니다.')
-          : '문의를 불러오는 중 오류가 발생했습니다.',
+          ? (query.error.response?.data?.message ??
+            "문의를 불러오는 중 오류가 발생했습니다.")
+          : "문의를 불러오는 중 오류가 발생했습니다.",
       }
     : null;
 

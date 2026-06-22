@@ -10,17 +10,27 @@
 //   auto   — 출고지시 전환 시 DispatchService 가 자동 평가
 //   manual — 사용자가 주문 선택 후 명시적으로 적용
 
-import type { FastifyInstance } from 'fastify';
-import { and, asc, desc, eq, sql, count, inArray } from 'drizzle-orm';
-import { giftRules, skus, channels, orders, orderItems } from '../db/schema';
+import type { FastifyInstance } from "fastify";
+import { and, asc, desc, eq, sql, count, inArray } from "drizzle-orm";
+import { giftRules, skus, channels, orders, orderItems } from "../db/schema";
 
-type DbLike = FastifyInstance['db'];
+type DbLike = FastifyInstance["db"];
 
-export type GiftConditionType = 'sku' | 'category' | 'amount' | 'qty' | 'all';
-export type GiftDistributionMode = 'auto' | 'manual';
+export type GiftConditionType = "sku" | "category" | "amount" | "qty" | "all";
+export type GiftDistributionMode = "auto" | "manual";
 export type GiftCurrency =
-  | 'KRW' | 'JPY' | 'USD' | 'EUR' | 'GBP' | 'CNY'
-  | 'TWD' | 'HKD' | 'SGD' | 'AUD' | 'CAD' | 'THB';
+  | "KRW"
+  | "JPY"
+  | "USD"
+  | "EUR"
+  | "GBP"
+  | "CNY"
+  | "TWD"
+  | "HKD"
+  | "SGD"
+  | "AUD"
+  | "CAD"
+  | "THB";
 
 export interface GiftRuleConditionPayload {
   skuIds?: string[];
@@ -96,11 +106,15 @@ export class GiftRuleService {
       filters.distributionMode
         ? eq(giftRules.distributionMode, filters.distributionMode)
         : undefined,
-      filters.conditionType ? eq(giftRules.conditionType, filters.conditionType) : undefined,
-      typeof filters.isActive === 'boolean' ? eq(giftRules.isActive, filters.isActive) : undefined,
+      filters.conditionType
+        ? eq(giftRules.conditionType, filters.conditionType)
+        : undefined,
+      typeof filters.isActive === "boolean"
+        ? eq(giftRules.isActive, filters.isActive)
+        : undefined,
       filters.search
-        ? sql`(${giftRules.name} ILIKE ${'%' + filters.search + '%'}
-            OR ${giftRules.note} ILIKE ${'%' + filters.search + '%'})`
+        ? sql`(${giftRules.name} ILIKE ${"%" + filters.search + "%"}
+            OR ${giftRules.note} ILIKE ${"%" + filters.search + "%"})`
         : undefined,
     );
 
@@ -174,12 +188,14 @@ export class GiftRuleService {
       .values({
         userId: this.userId,
         name: input.name,
-        distributionMode: input.distributionMode ?? 'auto',
+        distributionMode: input.distributionMode ?? "auto",
         channelFilter: input.channelFilter ?? null,
         conditionType: input.conditionType,
         conditionCurrency: input.conditionCurrency ?? null,
         conditionMinAmount:
-          input.conditionMinAmount != null ? String(input.conditionMinAmount) : null,
+          input.conditionMinAmount != null
+            ? String(input.conditionMinAmount)
+            : null,
         conditionMinQty: input.conditionMinQty ?? null,
         conditionPayload: input.conditionPayload ?? {},
         giftSkuId: input.giftSkuId,
@@ -197,7 +213,7 @@ export class GiftRuleService {
 
   async update(id: string, patch: UpdateInput): Promise<void> {
     const existing = await this.getById(id);
-    if (!existing) throw new Error('규칙을 찾을 수 없습니다.');
+    if (!existing) throw new Error("규칙을 찾을 수 없습니다.");
     if (patch.giftSkuId) await this.assertSkuOwned(patch.giftSkuId);
     if (patch.channelFilter?.channelIds?.length) {
       await this.assertChannelsOwned(patch.channelFilter.channelIds);
@@ -212,21 +228,35 @@ export class GiftRuleService {
       .update(giftRules)
       .set({
         ...(patch.name !== undefined && { name: patch.name }),
-        ...(patch.distributionMode !== undefined && { distributionMode: patch.distributionMode }),
-        ...(patch.channelFilter !== undefined && { channelFilter: patch.channelFilter }),
-        ...(patch.conditionType !== undefined && { conditionType: patch.conditionType }),
+        ...(patch.distributionMode !== undefined && {
+          distributionMode: patch.distributionMode,
+        }),
+        ...(patch.channelFilter !== undefined && {
+          channelFilter: patch.channelFilter,
+        }),
+        ...(patch.conditionType !== undefined && {
+          conditionType: patch.conditionType,
+        }),
         ...(patch.conditionCurrency !== undefined && {
           conditionCurrency: patch.conditionCurrency,
         }),
         ...(patch.conditionMinAmount !== undefined && {
           conditionMinAmount:
-            patch.conditionMinAmount != null ? String(patch.conditionMinAmount) : null,
+            patch.conditionMinAmount != null
+              ? String(patch.conditionMinAmount)
+              : null,
         }),
-        ...(patch.conditionMinQty !== undefined && { conditionMinQty: patch.conditionMinQty }),
-        ...(patch.conditionPayload !== undefined && { conditionPayload: patch.conditionPayload }),
+        ...(patch.conditionMinQty !== undefined && {
+          conditionMinQty: patch.conditionMinQty,
+        }),
+        ...(patch.conditionPayload !== undefined && {
+          conditionPayload: patch.conditionPayload,
+        }),
         ...(patch.giftSkuId !== undefined && { giftSkuId: patch.giftSkuId }),
         ...(patch.giftQty !== undefined && { giftQty: patch.giftQty }),
-        ...(patch.maxApplyCount !== undefined && { maxApplyCount: patch.maxApplyCount }),
+        ...(patch.maxApplyCount !== undefined && {
+          maxApplyCount: patch.maxApplyCount,
+        }),
         ...(patch.priority !== undefined && { priority: patch.priority }),
         ...(patch.isActive !== undefined && { isActive: patch.isActive }),
         ...(patch.activeFrom !== undefined && { activeFrom: patch.activeFrom }),
@@ -254,7 +284,12 @@ export class GiftRuleService {
     if (ids.length === 0) return 0;
     const res = await this.db
       .delete(giftRules)
-      .where(and(eq(giftRules.userId, this.userId), sql`${giftRules.id} = ANY(${ids})`))
+      .where(
+        and(
+          eq(giftRules.userId, this.userId),
+          sql`${giftRules.id} = ANY(${ids})`,
+        ),
+      )
       .returning({ id: giftRules.id });
     return res.length;
   }
@@ -292,7 +327,9 @@ export class GiftRuleService {
       .where(eq(orderItems.orderId, orderId));
 
     const totalQty = items.reduce((s, it) => s + (it.orderQty ?? 0), 0);
-    const itemSkuIds = items.map((it) => it.skuId).filter((v): v is string => !!v);
+    const itemSkuIds = items
+      .map((it) => it.skuId)
+      .filter((v): v is string => !!v);
 
     const now = new Date();
     const rules = await db
@@ -311,7 +348,8 @@ export class GiftRuleService {
     for (const r of rules) {
       if (r.activeFrom && r.activeFrom > now) continue;
       if (r.activeTo && r.activeTo < now) continue;
-      if (r.maxApplyCount != null && r.appliedCount >= r.maxApplyCount) continue;
+      if (r.maxApplyCount != null && r.appliedCount >= r.maxApplyCount)
+        continue;
 
       const channelFilter = r.channelFilter as GiftRuleChannelFilter | null;
       if (channelFilter?.channelIds?.length) {
@@ -322,25 +360,30 @@ export class GiftRuleService {
 
       let match = false;
       switch (r.conditionType) {
-        case 'all':
+        case "all":
           match = true;
           break;
-        case 'amount': {
+        case "amount": {
           if (r.conditionMinAmount == null) break;
           const min = Number(r.conditionMinAmount);
           const orderAmount = Number(order.total ?? 0);
-          if (r.conditionCurrency && order.currency && r.conditionCurrency !== order.currency) break;
+          if (
+            r.conditionCurrency &&
+            order.currency &&
+            r.conditionCurrency !== order.currency
+          )
+            break;
           match = orderAmount >= min;
           break;
         }
-        case 'qty':
+        case "qty":
           match = r.conditionMinQty != null && totalQty >= r.conditionMinQty;
           break;
-        case 'sku':
+        case "sku":
           if (!payload.skuIds?.length) break;
           match = itemSkuIds.some((id) => payload.skuIds!.includes(id));
           break;
-        case 'category':
+        case "category":
           match = false;
           break;
       }
@@ -374,9 +417,14 @@ export class GiftRuleService {
       .where(eq(orderItems.orderId, orderId));
 
     for (const it of items) {
-      const current = (Array.isArray(it.appliedGifts) ? it.appliedGifts : []) as AppliedGift[];
+      const current = (
+        Array.isArray(it.appliedGifts) ? it.appliedGifts : []
+      ) as AppliedGift[];
       const existingIds = new Set(current.map((g) => g.ruleId));
-      const merged = [...current, ...gifts.filter((g) => !existingIds.has(g.ruleId))];
+      const merged = [
+        ...current,
+        ...gifts.filter((g) => !existingIds.has(g.ruleId)),
+      ];
       if (merged.length === current.length) continue;
       await db
         .update(orderItems)
@@ -395,7 +443,7 @@ export class GiftRuleService {
     let appliedOrders = 0;
     let totalGifts = 0;
     for (const orderId of orderIds) {
-      const gifts = await this.evaluateForOrder(orderId, 'manual');
+      const gifts = await this.evaluateForOrder(orderId, "manual");
       if (gifts.length === 0) continue;
       await this.applyToOrder(orderId, gifts);
       appliedOrders++;
@@ -413,16 +461,18 @@ export class GiftRuleService {
       .from(skus)
       .where(and(eq(skus.id, skuId), eq(skus.userId, this.userId)))
       .limit(1);
-    if (!rows[0]) throw new Error('해당 SKU 의 소유자가 아닙니다.');
+    if (!rows[0]) throw new Error("해당 SKU 의 소유자가 아닙니다.");
   }
 
   private async assertChannelsOwned(channelIds: string[]): Promise<void> {
     const rows = await this.db
       .select({ id: channels.id })
       .from(channels)
-      .where(and(eq(channels.userId, this.userId), inArray(channels.id, channelIds)));
+      .where(
+        and(eq(channels.userId, this.userId), inArray(channels.id, channelIds)),
+      );
     if (rows.length !== channelIds.length) {
-      throw new Error('일부 채널의 소유자가 아닙니다.');
+      throw new Error("일부 채널의 소유자가 아닙니다.");
     }
   }
 }

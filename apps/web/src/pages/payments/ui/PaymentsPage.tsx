@@ -21,11 +21,7 @@ import { ConfirmOrdersModal } from "@/features/confirm-orders";
 import { PageHeader } from "@/shared/ui";
 import { appToaster } from "@/shared/ui/app-toaster";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
-import {
-  DEFAULT_PAGE_SIZE,
-  LS_KEYS,
-  type PageSize,
-} from "@/shared/config";
+import { DEFAULT_PAGE_SIZE, LS_KEYS, type PageSize } from "@/shared/config";
 
 const PAYMENTS_PRESET_RANKS = [10];
 
@@ -58,7 +54,8 @@ export function PaymentsPage(): React.JSX.Element {
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const { items, total, counts, paymentSummary, isLoading } = usePayments(params);
+  const { items, total, counts, paymentSummary, isLoading } =
+    usePayments(params);
   const confirmMutation = useConfirmOrders();
 
   const handleConfirm = async (input: {
@@ -75,11 +72,13 @@ export function PaymentsPage(): React.JSX.Element {
     const parts: string[] = [
       `${result.totalConfirmed.toLocaleString()}건 확인`,
     ];
-    if (result.totalFailed > 0) parts.push(`${result.totalFailed.toLocaleString()}건 실패`);
-    if (result.skipped > 0) parts.push(`${result.skipped.toLocaleString()}건 스킵`);
+    if (result.totalFailed > 0)
+      parts.push(`${result.totalFailed.toLocaleString()}건 실패`);
+    if (result.skipped > 0)
+      parts.push(`${result.skipped.toLocaleString()}건 스킵`);
     appToaster.create({
-      title: parts.join(' / '),
-      type: result.totalFailed > 0 ? 'warning' : 'success',
+      title: parts.join(" / "),
+      type: result.totalFailed > 0 ? "warning" : "success",
     });
     setSelectedOrderIds(new Set());
     setConfirmOpen(false);
@@ -96,7 +95,9 @@ export function PaymentsPage(): React.JSX.Element {
             <Button
               size="sm"
               colorScheme="blue"
-              disabled={selectedOrderIds.size === 0 || confirmMutation.isPending}
+              disabled={
+                selectedOrderIds.size === 0 || confirmMutation.isPending
+              }
               onClick={() => setConfirmOpen(true)}
             >
               <Flex align="center" gap={1.5}>

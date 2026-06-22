@@ -1,10 +1,10 @@
-import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { SkuService } from '../../services/SkuService';
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { SkuService } from "../../services/SkuService";
 
 const decimalString = z
   .string()
-  .regex(/^-?\d+(\.\d+)?$/, '숫자 문자열이어야 합니다.');
+  .regex(/^-?\d+(\.\d+)?$/, "숫자 문자열이어야 합니다.");
 
 const playautoFields = {
   // 기본정보
@@ -39,7 +39,7 @@ const playautoFields = {
   originCountry: z.string().max(64).optional().nullable(),
   originExtras: z.array(z.record(z.unknown())).optional(),
   requiresCaution: z.boolean().optional(),
-  taxType: z.enum(['GENERAL', 'ZERO', 'EXEMPT']).optional(),
+  taxType: z.enum(["GENERAL", "ZERO", "EXEMPT"]).optional(),
   brand: z.string().max(128).optional().nullable(),
   manufacturer: z.string().max(128).optional().nullable(),
   manufacturerEn: z.string().max(40).optional().nullable(),
@@ -50,7 +50,7 @@ const playautoFields = {
 } as const;
 
 const createBody = z.object({
-  code: z.string().min(1, 'SKU 코드를 입력해 주세요').max(128),
+  code: z.string().min(1, "SKU 코드를 입력해 주세요").max(128),
   name: z.string().max(255).optional().nullable(),
   stock: z.number().int().min(0).optional(),
   barcode: z.string().max(64).optional().nullable(),
@@ -61,7 +61,10 @@ const createBody = z.object({
 const updateBody = createBody.partial().omit({ stock: true });
 
 const bulkBody = z.object({
-  items: z.array(createBody).min(1, '최소 1개 이상의 SKU 가 필요합니다.').max(500),
+  items: z
+    .array(createBody)
+    .min(1, "최소 1개 이상의 SKU 가 필요합니다.")
+    .max(500),
 });
 
 const adjustBody = z.object({
@@ -78,8 +81,12 @@ const attachBody = z.object({
 export async function skuRoutes(app: FastifyInstance): Promise<void> {
   const getSvc = (userId: string) => new SkuService(app, userId);
 
-  app.get('/skus', { preHandler: [app.authenticate] }, async (request) => {
-    const query = request.query as { search?: string; page?: string; pageSize?: string };
+  app.get("/skus", { preHandler: [app.authenticate] }, async (request) => {
+    const query = request.query as {
+      search?: string;
+      page?: string;
+      pageSize?: string;
+    };
     return getSvc(request.user.userId).listSkus({
       search: query.search,
       page: query.page ? Number(query.page) : undefined,
@@ -88,78 +95,115 @@ export async function skuRoutes(app: FastifyInstance): Promise<void> {
   });
 
   app.get<{ Params: { id: string } }>(
-    '/skus/:id',
+    "/skus/:id",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const sku = await getSvc(request.user.userId).getSku(request.params.id);
-      if (!sku) return reply.status(404).send({ error: 'NOT_FOUND', message: 'SKU 를 찾을 수 없습니다.' });
+      if (!sku)
+        return reply
+          .status(404)
+          .send({ error: "NOT_FOUND", message: "SKU 를 찾을 수 없습니다." });
       return sku;
     },
   );
 
-  app.post('/skus', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = createBody.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
-    }
-    try {
-      const created = await getSvc(request.user.userId).createSku(parsed.data);
-      return reply.status(201).send(created);
-    } catch (err) {
-      return reply.status(400).send({ error: 'CREATE_FAILED', message: (err as Error).message });
-    }
-  });
+  app.post(
+    "/skus",
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = createBody.safeParse(request.body);
+      if (!parsed.success) {
+        return reply
+          .status(400)
+          .send({ error: "INVALID_REQUEST", details: parsed.error.flatten() });
+      }
+      try {
+        const created = await getSvc(request.user.userId).createSku(
+          parsed.data,
+        );
+        return reply.status(201).send(created);
+      } catch (err) {
+        return reply
+          .status(400)
+          .send({ error: "CREATE_FAILED", message: (err as Error).message });
+      }
+    },
+  );
 
-  app.post('/skus/bulk', { preHandler: [app.authenticate] }, async (request, reply) => {
-    const parsed = bulkBody.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
-    }
-    try {
-      const created = await getSvc(request.user.userId).createSkusBulk(parsed.data);
-      return reply.status(201).send(created);
-    } catch (err) {
-      return reply.status(400).send({ error: 'BULK_CREATE_FAILED', message: (err as Error).message });
-    }
-  });
+  app.post(
+    "/skus/bulk",
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = bulkBody.safeParse(request.body);
+      if (!parsed.success) {
+        return reply
+          .status(400)
+          .send({ error: "INVALID_REQUEST", details: parsed.error.flatten() });
+      }
+      try {
+        const created = await getSvc(request.user.userId).createSkusBulk(
+          parsed.data,
+        );
+        return reply.status(201).send(created);
+      } catch (err) {
+        return reply
+          .status(400)
+          .send({
+            error: "BULK_CREATE_FAILED",
+            message: (err as Error).message,
+          });
+      }
+    },
+  );
 
   app.put<{ Params: { id: string } }>(
-    '/skus/:id',
+    "/skus/:id",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const parsed = updateBody.safeParse(request.body);
       if (!parsed.success) {
-        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+        return reply
+          .status(400)
+          .send({ error: "INVALID_REQUEST", details: parsed.error.flatten() });
       }
       try {
-        const updated = await getSvc(request.user.userId).updateSku(request.params.id, parsed.data);
+        const updated = await getSvc(request.user.userId).updateSku(
+          request.params.id,
+          parsed.data,
+        );
         return updated;
       } catch (err) {
-        return reply.status(400).send({ error: 'UPDATE_FAILED', message: (err as Error).message });
+        return reply
+          .status(400)
+          .send({ error: "UPDATE_FAILED", message: (err as Error).message });
       }
     },
   );
 
   app.delete<{ Params: { id: string } }>(
-    '/skus/:id',
+    "/skus/:id",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       try {
         await getSvc(request.user.userId).deleteSku(request.params.id);
         return reply.status(204).send();
       } catch (err) {
-        return reply.status(400).send({ error: 'DELETE_FAILED', message: (err as Error).message });
+        return reply
+          .status(400)
+          .send({ error: "DELETE_FAILED", message: (err as Error).message });
       }
     },
   );
 
   app.post<{ Params: { id: string } }>(
-    '/skus/:id/adjust-stock',
+    "/skus/:id/adjust-stock",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const parsed = adjustBody.safeParse(request.body);
       if (!parsed.success) {
-        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+        return reply
+          .status(400)
+          .send({ error: "INVALID_REQUEST", details: parsed.error.flatten() });
       }
       try {
         const result = await getSvc(request.user.userId).adjustStock(
@@ -169,18 +213,22 @@ export async function skuRoutes(app: FastifyInstance): Promise<void> {
         );
         return result;
       } catch (err) {
-        return reply.status(400).send({ error: 'ADJUST_FAILED', message: (err as Error).message });
+        return reply
+          .status(400)
+          .send({ error: "ADJUST_FAILED", message: (err as Error).message });
       }
     },
   );
 
   app.post<{ Params: { id: string } }>(
-    '/skus/:id/master-variants',
+    "/skus/:id/master-variants",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       const parsed = attachBody.safeParse(request.body);
       if (!parsed.success) {
-        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+        return reply
+          .status(400)
+          .send({ error: "INVALID_REQUEST", details: parsed.error.flatten() });
       }
       try {
         await getSvc(request.user.userId).attachToMasterVariant(
@@ -191,13 +239,15 @@ export async function skuRoutes(app: FastifyInstance): Promise<void> {
         );
         return reply.status(204).send();
       } catch (err) {
-        return reply.status(400).send({ error: 'ATTACH_FAILED', message: (err as Error).message });
+        return reply
+          .status(400)
+          .send({ error: "ATTACH_FAILED", message: (err as Error).message });
       }
     },
   );
 
   app.delete<{ Params: { id: string; masterVariantId: string } }>(
-    '/skus/:id/master-variants/:masterVariantId',
+    "/skus/:id/master-variants/:masterVariantId",
     { preHandler: [app.authenticate] },
     async (request, reply) => {
       try {
@@ -207,7 +257,9 @@ export async function skuRoutes(app: FastifyInstance): Promise<void> {
         );
         return reply.status(204).send();
       } catch (err) {
-        return reply.status(400).send({ error: 'DETACH_FAILED', message: (err as Error).message });
+        return reply
+          .status(400)
+          .send({ error: "DETACH_FAILED", message: (err as Error).message });
       }
     },
   );

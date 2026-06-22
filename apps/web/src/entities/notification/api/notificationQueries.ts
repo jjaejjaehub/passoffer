@@ -33,8 +33,6 @@ export function useUserNotifications(limit = 100) {
   return useQuery({
     queryKey: notificationQueries.byUser(limit),
     queryFn: async (): Promise<NotificationListResponse> =>
-      http.get<NotificationListResponse>(
-        `/api/notifications?limit=${limit}`,
-      ),
+      http.get<NotificationListResponse>(`/api/notifications?limit=${limit}`),
   });
 }

@@ -1,18 +1,21 @@
-import type { Order, CarrierId } from '@/entities/order/model/types';
-import type { OrderStatus } from '@/shared/config';
-import type { Qoo10ShippingItem } from '@/shared/api/qoo10/types';
+import type { Order, CarrierId } from "@/entities/order/model/types";
+import type { OrderStatus } from "@/shared/config";
+import type { Qoo10ShippingItem } from "@/shared/api/qoo10/types";
 
 const JPY_TO_KRW = 9.0;
 
 // ─── 배송 상태 매핑 ──────────────────────────────
 // 공식 상태 코드: 1:배송대기 2:배송요청 3:배송준비 4:배송중 5:배송완료
-function mapQoo10Status(shippingStatus: string, claimStatus: string): OrderStatus {
+function mapQoo10Status(
+  shippingStatus: string,
+  claimStatus: string,
+): OrderStatus {
   // 클레임 상태 우선 처리
   if (claimStatus) {
     const code = Number(claimStatus);
-    if (code >= 1 && code <= 3) return '취소'; // 취소요청/취소중/취소완료
-    if (code >= 4 && code <= 6) return '반품'; // 반품요청/반품중/반품완료
-    if (code >= 11 && code <= 13) return '배송중'; // 교환신청/교환승인/재배송중
+    if (code >= 1 && code <= 3) return "취소"; // 취소요청/취소중/취소완료
+    if (code >= 4 && code <= 6) return "반품"; // 반품요청/반품중/반품완료
+    if (code >= 11 && code <= 13) return "배송중"; // 교환신청/교환승인/재배송중
   }
 
   // 배송 상태 문자열에서 코드 파싱 (예: "Seller confirm(3)")
@@ -21,17 +24,17 @@ function mapQoo10Status(shippingStatus: string, claimStatus: string): OrderStatu
 
   switch (code) {
     case 1:
-      return '신규'; // 배송대기
+      return "신규"; // 배송대기
     case 2:
-      return '처리중'; // 배송요청
+      return "처리중"; // 배송요청
     case 3:
-      return '배송준비'; // 배송준비
+      return "배송준비"; // 배송준비
     case 4:
-      return '배송중'; // 배송중
+      return "배송중"; // 배송중
     case 5:
-      return '완료'; // 배송완료
+      return "완료"; // 배송완료
     default:
-      return '신규';
+      return "신규";
   }
 }
 
@@ -39,31 +42,42 @@ function mapQoo10Status(shippingStatus: string, claimStatus: string): OrderStatu
 function mapQoo10Carrier(deliveryCompany: string): string | null {
   if (!deliveryCompany) return null;
   const name = deliveryCompany.toLowerCase();
-  if (name.includes('yamato') || name.includes('クロネコ') || name.includes('ヤマト')) return 'yamato';
-  if (name.includes('sagawa') || name.includes('佐川')) return 'sagawa';
-  if (name.includes('japan post') || name.includes('郵便') || name.includes('yupack'))
-    return 'japanpost';
-  if (name.includes('seino') || name.includes('西濃')) return 'seino';
-  if (name.includes('cj') || name.includes('대한통운')) return 'cj';
-  if (name.includes('lotte') || name.includes('롯데')) return 'lotte';
-  if (name.includes('hanjin') || name.includes('한진')) return 'hanjin';
-  if (name.includes('epost') || name.includes('우체국')) return 'epost';
-  return 'etc';
+  if (
+    name.includes("yamato") ||
+    name.includes("クロネコ") ||
+    name.includes("ヤマト")
+  )
+    return "yamato";
+  if (name.includes("sagawa") || name.includes("佐川")) return "sagawa";
+  if (
+    name.includes("japan post") ||
+    name.includes("郵便") ||
+    name.includes("yupack")
+  )
+    return "japanpost";
+  if (name.includes("seino") || name.includes("西濃")) return "seino";
+  if (name.includes("cj") || name.includes("대한통운")) return "cj";
+  if (name.includes("lotte") || name.includes("롯데")) return "lotte";
+  if (name.includes("hanjin") || name.includes("한진")) return "hanjin";
+  if (name.includes("epost") || name.includes("우체국")) return "epost";
+  return "etc";
 }
 
 // ─── 단건 변환 ───────────────────────────────────
 export function adaptQoo10Order(raw: Qoo10ShippingItem): Order {
-  const isJpy = raw.Currency === 'JPY';
+  const isJpy = raw.Currency === "JPY";
   const totalKrw = isJpy ? Math.round(raw.Total * JPY_TO_KRW) : raw.Total;
-  const carrierId = raw.TrackingNo ? (mapQoo10Carrier(raw.DeliveryCompany) as CarrierId | null) : null;
+  const carrierId = raw.TrackingNo
+    ? (mapQoo10Carrier(raw.DeliveryCompany) as CarrierId | null)
+    : null;
 
   return {
     id: `qoo10_${raw.PackNo}`,
-    channelId: 'qoo10',
+    channelId: "qoo10",
     channelOrderId: String(raw.OrderNo),
     packNo: raw.PackNo,
     shippingStatusLabel: raw.ShippingStatus,
-    status: mapQoo10Status(raw.ShippingStatus, raw.claimStatus ?? ''),
+    status: mapQoo10Status(raw.ShippingStatus, raw.claimStatus ?? ""),
     buyerName: raw.Buyer,
     buyerKana: raw.BuyerKana,
     buyerPhone: raw.BuyerMobile || raw.BuyerTel,
@@ -83,14 +97,18 @@ export function adaptQoo10Order(raw: Qoo10ShippingItem): Order {
     items: [
       {
         id: `${raw.PackNo}_${raw.ItemNo}`,
-        productName: raw.Option ? `${raw.ItemTitle} (${raw.Option})` : raw.ItemTitle,
+        productName: raw.Option
+          ? `${raw.ItemTitle} (${raw.Option})`
+          : raw.ItemTitle,
         option: raw.Option || undefined,
         quantity: raw.OrderQty,
-        unitPrice: isJpy ? Math.round(raw.OrderPrice * JPY_TO_KRW) : raw.OrderPrice,
+        unitPrice: isJpy
+          ? Math.round(raw.OrderPrice * JPY_TO_KRW)
+          : raw.OrderPrice,
         totalPrice: totalKrw,
       },
     ],
-    currency: isJpy ? 'JPY' : 'KRW',
+    currency: isJpy ? "JPY" : "KRW",
     orderPrice: raw.OrderPrice,
     discount: raw.Discount,
     originalAmount: raw.Total,
@@ -149,5 +167,3 @@ export function adaptQoo10Orders(
   const safeItems = Array.isArray(items) ? items : [];
   return safeItems.map(adaptQoo10Order);
 }
-
-

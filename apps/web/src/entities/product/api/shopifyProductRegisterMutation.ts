@@ -23,7 +23,8 @@ export function useShopifyRegisterProductMutation() {
     mutationFn: async (
       values: ShopifyRegisterFormValues,
     ): Promise<ShopifyRegisterProductResponse> => {
-      if (!hasKey || !channelUuid) throw new Error("Shopify 채널이 연결되지 않았습니다.");
+      if (!hasKey || !channelUuid)
+        throw new Error("Shopify 채널이 연결되지 않았습니다.");
 
       return http.post<ShopifyRegisterProductResponse>(
         `/api/products/${channelUuid}`,

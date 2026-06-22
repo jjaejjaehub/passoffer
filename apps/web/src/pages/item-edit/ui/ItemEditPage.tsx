@@ -44,7 +44,12 @@ import {
   SimpleOptionSection,
 } from "@/features/product-edit";
 import { appToaster } from "@/shared/ui/app-toaster";
-import { EmptyState, PageHeader, RichHtmlEditor, ShipDateCell } from "@/shared/ui";
+import {
+  EmptyState,
+  PageHeader,
+  RichHtmlEditor,
+  ShipDateCell,
+} from "@/shared/ui";
 import {
   itemEditContentsSchema,
   itemEditImageSchema,
@@ -426,7 +431,10 @@ function ItemEditPageContent(): React.JSX.Element {
   const editGoodsImage = useEditGoodsImage();
   const editGoodsContents = useEditGoodsContents();
   const setPriceQty = useQoo10SetPriceQty();
-  const isSavePending = editGoodsImage.isPending || editGoodsContents.isPending || setPriceQty.isPending;
+  const isSavePending =
+    editGoodsImage.isPending ||
+    editGoodsContents.isPending ||
+    setPriceQty.isPending;
 
   const {
     product,
@@ -462,9 +470,7 @@ function ItemEditPageContent(): React.JSX.Element {
 
   const categoryQuery = useQuery(categoryQueries.all());
 
-  const brandQuery = useQuery(
-    brandQueries.search(debouncedBrandKeyword),
-  );
+  const brandQuery = useQuery(brandQueries.search(debouncedBrandKeyword));
 
   const categories = categoryQuery.data?.ResultObject ?? [];
   const brandResults = brandQuery.data?.ResultObject ?? [];
@@ -689,7 +695,8 @@ function ItemEditPageContent(): React.JSX.Element {
           </Text>
           {isStatusRestricted && (
             <Text fontSize="xs" color="orange.600" mt={1}>
-              상품 목록에서 거래중지 상태를 확인하거나, 상태를 변경한 뒤 다시 시도해 주세요.
+              상품 목록에서 거래중지 상태를 확인하거나, 상태를 변경한 뒤 다시
+              시도해 주세요.
             </Text>
           )}
         </Box>
@@ -728,7 +735,8 @@ function ItemEditPageContent(): React.JSX.Element {
           p={3}
         >
           <Text fontSize="sm" color="blue.800">
-            이 상품은 마스터 상품과 연결되어 있어 일부 항목은 마스터 상품의 값을 따릅니다. 가격·재고·배송 등 채널 전용 항목만 수정할 수 있습니다.
+            이 상품은 마스터 상품과 연결되어 있어 일부 항목은 마스터 상품의 값을
+            따릅니다. 가격·재고·배송 등 채널 전용 항목만 수정할 수 있습니다.
           </Text>
         </Box>
       )}
@@ -743,1216 +751,1237 @@ function ItemEditPageContent(): React.JSX.Element {
           style={{ margin: 0, padding: 0, border: "none", minWidth: 0 }}
         >
           <Stack gap={6}>
-          {/* ── 섹션 1: 카테고리 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Flex justify="space-between" align="center" mb={4}>
-              <Heading as="h2" size="md">
-                카테고리
-              </Heading>
-              {categoryQuery.isLoading && (
-                <Text fontSize="xs" color="gray.500">
-                  불러오는 중…
-                </Text>
+            {/* ── 섹션 1: 카테고리 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Flex justify="space-between" align="center" mb={4}>
+                <Heading as="h2" size="md">
+                  카테고리
+                </Heading>
+                {categoryQuery.isLoading && (
+                  <Text fontSize="xs" color="gray.500">
+                    불러오는 중…
+                  </Text>
+                )}
+              </Flex>
+
+              {categoryQuery.isLoading ? (
+                <Stack gap={4}>
+                  <Skeleton height="40px" />
+                  <Skeleton height="40px" />
+                  <Skeleton height="40px" />
+                </Stack>
+              ) : (
+                <Stack gap={4}>
+                  <Controller
+                    name="mainCatCd"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl isInvalid={Boolean(errors.mainCatCd)}>
+                        <Stack gap={1}>
+                          <Text fontSize="sm" fontWeight="medium">
+                            대분류{" "}
+                            <Text as="span" color="gray.400">
+                              *
+                            </Text>
+                          </Text>
+                          <Select
+                            id={`${idPrefix}-mainCatCd`}
+                            placeholder="대분류 선택"
+                            size="sm"
+                            value={field.value}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              setValue("midCatCd", "");
+                              setValue("SecondSubCat", "");
+                            }}
+                            isDisabled={isMasterLinked}
+                          >
+                            {mainCatOptions.map((opt) => (
+                              <option key={opt.code} value={opt.code}>
+                                {opt.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </Stack>
+                        <FormErrorMessage>
+                          {errors.mainCatCd?.message}
+                        </FormErrorMessage>
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="midCatCd"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl isInvalid={Boolean(errors.midCatCd)}>
+                        <Stack gap={1}>
+                          <Text fontSize="sm" fontWeight="medium">
+                            중분류{" "}
+                            <Text as="span" color="gray.400">
+                              *
+                            </Text>
+                          </Text>
+                          <Select
+                            id={`${idPrefix}-midCatCd`}
+                            placeholder="중분류 선택"
+                            size="sm"
+                            value={field.value}
+                            onChange={(e) => {
+                              field.onChange(e.target.value);
+                              setValue("SecondSubCat", "");
+                            }}
+                            isDisabled={isMasterLinked || !selectedMainCatCd}
+                          >
+                            {midCatOptions.map((opt) => (
+                              <option key={opt.code} value={opt.code}>
+                                {opt.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </Stack>
+                        <FormErrorMessage>
+                          {errors.midCatCd?.message}
+                        </FormErrorMessage>
+                      </FormControl>
+                    )}
+                  />
+
+                  <Controller
+                    name="SecondSubCat"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl isInvalid={Boolean(errors.SecondSubCat)}>
+                        <Stack gap={1}>
+                          <Text fontSize="sm" fontWeight="medium">
+                            소분류{" "}
+                            <Text as="span" color="gray.400">
+                              *
+                            </Text>
+                          </Text>
+                          <Select
+                            id={`${idPrefix}-SecondSubCat`}
+                            placeholder="소분류 선택"
+                            size="sm"
+                            value={field.value}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            isDisabled={isMasterLinked || !selectedMidCatCd}
+                          >
+                            {secondSubCatOptions.map((opt) => (
+                              <option key={opt.code} value={opt.code}>
+                                {opt.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </Stack>
+                        <FormErrorMessage>
+                          {errors.SecondSubCat?.message}
+                        </FormErrorMessage>
+                      </FormControl>
+                    )}
+                  />
+                </Stack>
               )}
-            </Flex>
+            </Box>
 
-            {categoryQuery.isLoading ? (
-              <Stack gap={4}>
-                <Skeleton height="40px" />
-                <Skeleton height="40px" />
-                <Skeleton height="40px" />
+            {/* ── 섹션 2: 브랜드 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                브랜드
+              </Heading>
+
+              <Stack gap={2} ref={containerRef}>
+                <Box id={`${idPrefix}-BrandNo`}>
+                  <FormControl isInvalid={Boolean(errors.BrandNo)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      브랜드 검색{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Input
+                      id={`${idPrefix}-BrandSearch`}
+                      size="sm"
+                      value={brandKeyword}
+                      disabled={noBrandInput || isMasterLinked}
+                      onChange={(e) => {
+                        setBrandKeyword(e.target.value);
+                        setIsBrandDropdownOpen(true);
+                        setValue("BrandNo", "");
+                        setSelectedBrandLabel("");
+                      }}
+                      onFocus={() => {
+                        if (noBrandInput || isMasterLinked) return;
+                        setIsBrandDropdownOpen(true);
+                      }}
+                      placeholder="브랜드명을 입력해 주세요"
+                      autoComplete="off"
+                    />
+
+                    <FormErrorMessage>
+                      {errors.BrandNo?.message}
+                    </FormErrorMessage>
+
+                    <Flex mt={2} align="center" gap={2}>
+                      <input
+                        type="checkbox"
+                        checked={noBrandInput}
+                        disabled={isMasterLinked}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setValue("NoBrandInput", checked, {
+                            shouldValidate: true,
+                          });
+
+                          if (checked) {
+                            setBrandKeyword("");
+                            setSelectedBrandLabel("");
+                            setIsBrandDropdownOpen(false);
+                            setValue("BrandNo", "", { shouldValidate: true });
+                          } else {
+                            setValue("BrandNo", "", { shouldValidate: false });
+                          }
+                        }}
+                      />
+                      <Text fontSize="sm" color="gray.600">
+                        입력하지 않음
+                      </Text>
+                    </Flex>
+                  </FormControl>
+                </Box>
+
+                {noBrandInput
+                  ? null
+                  : isBrandDropdownOpen &&
+                    brandKeyword.trim().length >= 2 && (
+                      <Box position="relative">
+                        <Box
+                          borderWidth="1px"
+                          borderColor="gray.200"
+                          borderRadius="md"
+                          bg="white"
+                          mt={2}
+                          p={2}
+                          maxH="240px"
+                          overflowY="auto"
+                          shadow="sm"
+                        >
+                          {brandQuery.error ? (
+                            <Text
+                              fontSize="sm"
+                              color="red.500"
+                              py={3}
+                              textAlign="center"
+                            >
+                              {brandErrorMessage}
+                            </Text>
+                          ) : brandQuery.isLoading ? (
+                            <Stack gap={2}>
+                              <Skeleton height="32px" />
+                              <Skeleton height="32px" />
+                              <Skeleton height="32px" />
+                            </Stack>
+                          ) : brandResults.length === 0 ? (
+                            <Text
+                              fontSize="sm"
+                              color="gray.500"
+                              py={3}
+                              textAlign="center"
+                            >
+                              검색 결과가 없습니다.
+                            </Text>
+                          ) : (
+                            <Stack gap={1}>
+                              {brandResults.map((brand) => {
+                                const label = `${brand.M_B_NM} (${brand.M_B_NM_EN})`;
+                                const isSelected =
+                                  brand.M_B_NO === selectedBrandNo;
+                                return (
+                                  <Button
+                                    key={brand.M_B_NO}
+                                    type="button"
+                                    variant="ghost"
+                                    justifyContent="flex-start"
+                                    px={2}
+                                    borderRadius="md"
+                                    bg={isSelected ? "gray.100" : "transparent"}
+                                    onClick={() => {
+                                      setValue("BrandNo", brand.M_B_NO, {
+                                        shouldValidate: true,
+                                      });
+                                      setBrandKeyword(label);
+                                      setSelectedBrandLabel(label);
+                                      setIsBrandDropdownOpen(false);
+                                    }}
+                                  >
+                                    <Text
+                                      fontSize="sm"
+                                      fontWeight={
+                                        isSelected ? "semibold" : "normal"
+                                      }
+                                    >
+                                      {label}
+                                    </Text>
+                                  </Button>
+                                );
+                              })}
+                            </Stack>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+
+                {selectedBrandNo && selectedBrandLabel && (
+                  <Text fontSize="sm" color="gray.600" mt={1}>
+                    선택됨: {selectedBrandLabel}
+                  </Text>
+                )}
               </Stack>
-            ) : (
+            </Box>
+
+            {/* ── 섹션 3: 상품 기본정보 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                상품 기본정보
+              </Heading>
+
               <Stack gap={4}>
-                <Controller
-                  name="mainCatCd"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl isInvalid={Boolean(errors.mainCatCd)}>
-                      <Stack gap={1}>
-                        <Text fontSize="sm" fontWeight="medium">
-                          대분류{" "}
-                          <Text as="span" color="gray.400">
-                            *
-                          </Text>
-                        </Text>
-                        <Select
-                          id={`${idPrefix}-mainCatCd`}
-                          placeholder="대분류 선택"
-                          size="sm"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                            setValue("midCatCd", "");
-                            setValue("SecondSubCat", "");
-                          }}
-                          isDisabled={isMasterLinked}
-                        >
-                          {mainCatOptions.map((opt) => (
-                            <option key={opt.code} value={opt.code}>
-                              {opt.name}
-                            </option>
-                          ))}
-                        </Select>
-                      </Stack>
-                      <FormErrorMessage>
-                        {errors.mainCatCd?.message}
-                      </FormErrorMessage>
-                    </FormControl>
-                  )}
-                />
-
-                <Controller
-                  name="midCatCd"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl isInvalid={Boolean(errors.midCatCd)}>
-                      <Stack gap={1}>
-                        <Text fontSize="sm" fontWeight="medium">
-                          중분류{" "}
-                          <Text as="span" color="gray.400">
-                            *
-                          </Text>
-                        </Text>
-                        <Select
-                          id={`${idPrefix}-midCatCd`}
-                          placeholder="중분류 선택"
-                          size="sm"
-                          value={field.value}
-                          onChange={(e) => {
-                            field.onChange(e.target.value);
-                            setValue("SecondSubCat", "");
-                          }}
-                          isDisabled={isMasterLinked || !selectedMainCatCd}
-                        >
-                          {midCatOptions.map((opt) => (
-                            <option key={opt.code} value={opt.code}>
-                              {opt.name}
-                            </option>
-                          ))}
-                        </Select>
-                      </Stack>
-                      <FormErrorMessage>
-                        {errors.midCatCd?.message}
-                      </FormErrorMessage>
-                    </FormControl>
-                  )}
-                />
-
-                <Controller
-                  name="SecondSubCat"
-                  control={control}
-                  render={({ field }) => (
-                    <FormControl isInvalid={Boolean(errors.SecondSubCat)}>
-                      <Stack gap={1}>
-                        <Text fontSize="sm" fontWeight="medium">
-                          소분류{" "}
-                          <Text as="span" color="gray.400">
-                            *
-                          </Text>
-                        </Text>
-                        <Select
-                          id={`${idPrefix}-SecondSubCat`}
-                          placeholder="소분류 선택"
-                          size="sm"
-                          value={field.value}
-                          onChange={(e) => field.onChange(e.target.value)}
-                          isDisabled={isMasterLinked || !selectedMidCatCd}
-                        >
-                          {secondSubCatOptions.map((opt) => (
-                            <option key={opt.code} value={opt.code}>
-                              {opt.name}
-                            </option>
-                          ))}
-                        </Select>
-                      </Stack>
-                      <FormErrorMessage>
-                        {errors.SecondSubCat?.message}
-                      </FormErrorMessage>
-                    </FormControl>
-                  )}
-                />
-              </Stack>
-            )}
-          </Box>
-
-          {/* ── 섹션 2: 브랜드 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              브랜드
-            </Heading>
-
-            <Stack gap={2} ref={containerRef}>
-              <Box id={`${idPrefix}-BrandNo`}>
-                <FormControl isInvalid={Boolean(errors.BrandNo)}>
+                <FormControl isInvalid={Boolean(errors.ItemCode)}>
                   <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    브랜드 검색{" "}
+                    Qoo10 상품코드{" "}
                     <Text as="span" color="gray.400">
                       *
                     </Text>
                   </Text>
                   <Input
-                    id={`${idPrefix}-BrandSearch`}
+                    id={`${idPrefix}-ItemCode`}
                     size="sm"
-                    value={brandKeyword}
-                    disabled={noBrandInput || isMasterLinked}
-                    onChange={(e) => {
-                      setBrandKeyword(e.target.value);
-                      setIsBrandDropdownOpen(true);
-                      setValue("BrandNo", "");
-                      setSelectedBrandLabel("");
-                    }}
-                    onFocus={() => {
-                      if (noBrandInput || isMasterLinked) return;
-                      setIsBrandDropdownOpen(true);
-                    }}
-                    placeholder="브랜드명을 입력해 주세요"
-                    autoComplete="off"
-                  />
-
-                  <FormErrorMessage>{errors.BrandNo?.message}</FormErrorMessage>
-
-                  <Flex mt={2} align="center" gap={2}>
-                    <input
-                      type="checkbox"
-                      checked={noBrandInput}
-                      disabled={isMasterLinked}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setValue("NoBrandInput", checked, {
-                          shouldValidate: true,
-                        });
-
-                        if (checked) {
-                          setBrandKeyword("");
-                          setSelectedBrandLabel("");
-                          setIsBrandDropdownOpen(false);
-                          setValue("BrandNo", "", { shouldValidate: true });
-                        } else {
-                          setValue("BrandNo", "", { shouldValidate: false });
-                        }
-                      }}
-                    />
-                    <Text fontSize="sm" color="gray.600">
-                      입력하지 않음
-                    </Text>
-                  </Flex>
-                </FormControl>
-              </Box>
-
-              {noBrandInput
-                ? null
-                : isBrandDropdownOpen &&
-                  brandKeyword.trim().length >= 2 && (
-                    <Box position="relative">
-                      <Box
-                        borderWidth="1px"
-                        borderColor="gray.200"
-                        borderRadius="md"
-                        bg="white"
-                        mt={2}
-                        p={2}
-                        maxH="240px"
-                        overflowY="auto"
-                        shadow="sm"
-                      >
-                        {brandQuery.error ? (
-                          <Text
-                            fontSize="sm"
-                            color="red.500"
-                            py={3}
-                            textAlign="center"
-                          >
-                            {brandErrorMessage}
-                          </Text>
-                        ) : brandQuery.isLoading ? (
-                          <Stack gap={2}>
-                            <Skeleton height="32px" />
-                            <Skeleton height="32px" />
-                            <Skeleton height="32px" />
-                          </Stack>
-                        ) : brandResults.length === 0 ? (
-                          <Text
-                            fontSize="sm"
-                            color="gray.500"
-                            py={3}
-                            textAlign="center"
-                          >
-                            검색 결과가 없습니다.
-                          </Text>
-                        ) : (
-                          <Stack gap={1}>
-                            {brandResults.map((brand) => {
-                              const label = `${brand.M_B_NM} (${brand.M_B_NM_EN})`;
-                              const isSelected =
-                                brand.M_B_NO === selectedBrandNo;
-                              return (
-                                <Button
-                                  key={brand.M_B_NO}
-                                  type="button"
-                                  variant="ghost"
-                                  justifyContent="flex-start"
-                                  px={2}
-                                  borderRadius="md"
-                                  bg={isSelected ? "gray.100" : "transparent"}
-                                  onClick={() => {
-                                    setValue("BrandNo", brand.M_B_NO, {
-                                      shouldValidate: true,
-                                    });
-                                    setBrandKeyword(label);
-                                    setSelectedBrandLabel(label);
-                                    setIsBrandDropdownOpen(false);
-                                  }}
-                                >
-                                  <Text
-                                    fontSize="sm"
-                                    fontWeight={
-                                      isSelected ? "semibold" : "normal"
-                                    }
-                                  >
-                                    {label}
-                                  </Text>
-                                </Button>
-                              );
-                            })}
-                          </Stack>
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-
-              {selectedBrandNo && selectedBrandLabel && (
-                <Text fontSize="sm" color="gray.600" mt={1}>
-                  선택됨: {selectedBrandLabel}
-                </Text>
-              )}
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 3: 상품 기본정보 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              상품 기본정보
-            </Heading>
-
-            <Stack gap={4}>
-              <FormControl isInvalid={Boolean(errors.ItemCode)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  Qoo10 상품코드{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Input
-                  id={`${idPrefix}-ItemCode`}
-                  size="sm"
-                  readOnly
-                  bg="gray.50"
-                  {...register("ItemCode")}
-                />
-                <FormErrorMessage>{errors.ItemCode?.message}</FormErrorMessage>
-              </FormControl>
-
-              <FormControl isInvalid={Boolean(errors.ItemTitle)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  상품명{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Input
-                  id={`${idPrefix}-ItemTitle`}
-                  size="sm"
-                  value={itemTitle}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setValue("ItemTitle", next, { shouldValidate: true });
-                  }}
-                  placeholder="상품명을 입력해 주세요"
-                  maxLength={100}
-                  readOnly={isMasterLinked}
-                  bg={isMasterLinked ? "gray.50" : undefined}
-                />
-                <Flex justify="space-between" mt={1}>
-                  <Text fontSize="xs" color="gray.400">
-                    최대 100자
-                  </Text>
-                  <Text
-                    fontSize="xs"
-                    color={titleRemaining < 10 ? "red.500" : "gray.400"}
-                  >
-                    잔여 {Math.max(0, titleRemaining)}자
-                  </Text>
-                </Flex>
-                <FormErrorMessage>{errors.ItemTitle?.message}</FormErrorMessage>
-              </FormControl>
-
-              <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                <FormControl isInvalid={Boolean(errors.PromotionName)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    홍보용 상품명
-                  </Text>
-                  <Input
-                    id={`${idPrefix}-PromotionName`}
-                    size="sm"
-                    placeholder="선택"
-                    maxLength={20}
-                    readOnly={isMasterLinked}
-                    bg={isMasterLinked ? "gray.50" : undefined}
-                    {...register("PromotionName")}
+                    readOnly
+                    bg="gray.50"
+                    {...register("ItemCode")}
                   />
                   <FormErrorMessage>
-                    {errors.PromotionName?.message}
+                    {errors.ItemCode?.message}
                   </FormErrorMessage>
                 </FormControl>
 
-                <FormControl isInvalid={Boolean(errors.SellerCode)}>
+                <FormControl isInvalid={Boolean(errors.ItemTitle)}>
                   <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    판매자상품코드
+                    상품명{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
                   </Text>
                   <Input
-                    id={`${idPrefix}-SellerCode`}
+                    id={`${idPrefix}-ItemTitle`}
                     size="sm"
-                    placeholder="선택"
+                    value={itemTitle}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      setValue("ItemTitle", next, { shouldValidate: true });
+                    }}
+                    placeholder="상품명을 입력해 주세요"
                     maxLength={100}
                     readOnly={isMasterLinked}
                     bg={isMasterLinked ? "gray.50" : undefined}
-                    {...register("SellerCode")}
                   />
-                  <FormErrorMessage>
-                    {errors.SellerCode?.message}
-                  </FormErrorMessage>
-                </FormControl>
-              </Stack>
-
-              <FormControl isInvalid={Boolean(errors.AdultYN)}>
-                <Text fontSize="sm" fontWeight="medium" mb={2}>
-                  성인상품 여부{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Box id={`${idPrefix}-AdultYN`}>
-                  <Select
-                    size="sm"
-                    isDisabled={isMasterLinked}
-                    value={adYn}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const nextAdultYN = raw === "Y" ? "Y" : "N";
-                      setValue("AdultYN", nextAdultYN, {
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    <option value="N">일반상품</option>
-                    <option value="Y">성인상품</option>
-                  </Select>
-                </Box>
-                <Text fontSize="xs" color="gray.400" mt={2}>
-                  현재: {adultLabel}
-                </Text>
-                <FormErrorMessage>{errors.AdultYN?.message}</FormErrorMessage>
-              </FormControl>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 4: 판매기간 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              판매기간
-            </Heading>
-
-            <Stack gap={4}>
-              <FormControl isInvalid={Boolean(errors.ExpireDate)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  판매종료일{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Controller
-                  name="ExpireDate"
-                  control={control}
-                  render={({ field }) => (
-                    <Box id={`${idPrefix}-ExpireDate`}>
-                      <ShipDateCell
-                        orderId="expireDate"
-                        value={field.value ?? null}
-                        isDisabled
-                        onChange={(next) => {
-                          const normalized = next ?? "";
-                          field.onChange(normalized);
-                        }}
-                      />
-                    </Box>
-                  )}
-                />
-                <FormErrorMessage>
-                  {errors.ExpireDate?.message}
-                </FormErrorMessage>
-              </FormControl>
-              <Text fontSize="xs" color="gray.500">
-                UpdateGoods API에서는 변경되지 않습니다. 조회 전용입니다.
-              </Text>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 5: 가격 / 재고 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              가격 / 재고
-            </Heading>
-
-            <Stack gap={4}>
-              <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                <FormControl isInvalid={Boolean(errors.ItemPrice)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    판매가격{" "}
-                    <Text as="span" color="gray.400">
-                      *
+                  <Flex justify="space-between" mt={1}>
+                    <Text fontSize="xs" color="gray.400">
+                      최대 100자
                     </Text>
-                  </Text>
-                  <Input
-                    id={`${idPrefix}-ItemPrice`}
-                    size="sm"
-                    type="number"
-                    step={1}
-                    {...register("ItemPrice", {
-                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                    })}
-                  />
-                  <Text fontSize="xs" color="gray.400" mt={1}>
-                    단위: 円
-                  </Text>
+                    <Text
+                      fontSize="xs"
+                      color={titleRemaining < 10 ? "red.500" : "gray.400"}
+                    >
+                      잔여 {Math.max(0, titleRemaining)}자
+                    </Text>
+                  </Flex>
                   <FormErrorMessage>
-                    {errors.ItemPrice?.message}
+                    {errors.ItemTitle?.message}
                   </FormErrorMessage>
                 </FormControl>
 
-                <FormControl isInvalid={Boolean(errors.RetailPrice)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    공급원가
-                  </Text>
-                  <Input
-                    id={`${idPrefix}-RetailPrice`}
-                    size="sm"
-                    type="number"
-                    step={1}
-                    {...register("RetailPrice", {
-                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                    })}
-                    placeholder="선택"
-                  />
-                  <FormErrorMessage>
-                    {errors.RetailPrice?.message}
-                  </FormErrorMessage>
-                </FormControl>
-              </Stack>
-
-              <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                <FormControl isInvalid={Boolean(errors.TaxRate)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    소비세율{" "}
-                    <Text as="span" color="gray.400">
-                      *
+                <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                  <FormControl isInvalid={Boolean(errors.PromotionName)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      홍보용 상품명
                     </Text>
-                  </Text>
-                  <Select
-                    id={`${idPrefix}-TaxRate`}
-                    size="sm"
-                    isDisabled
-                    value={watch("TaxRate")}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      const nextTaxRate =
-                        raw === "S"
-                          ? "S"
-                          : raw === "8"
-                            ? "8"
-                            : raw === "0"
-                              ? "0"
-                              : "10";
-                      setValue("TaxRate", nextTaxRate, {
-                        shouldValidate: true,
-                      });
-                    }}
-                  >
-                    {TAX_RATE_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                  <FormErrorMessage>{errors.TaxRate?.message}</FormErrorMessage>
-                </FormControl>
-
-                <FormControl isInvalid={Boolean(errors.ItemQty)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    재고수량{" "}
-                    <Text as="span" color="gray.400">
-                      *
-                    </Text>
-                  </Text>
-                  <Input
-                    id={`${idPrefix}-ItemQty`}
-                    size="sm"
-                    type="number"
-                    step={1}
-                    readOnly={isMasterLinked}
-                    bg={isMasterLinked ? "gray.50" : undefined}
-                    {...register("ItemQty", {
-                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                    })}
-                  />
-                  {isMasterLinked && (
-                    <Text fontSize="xs" color="gray.500" mt={1}>
-                      마스터 상품과 연결된 상품의 재고는 마스터 상품에서 관리됩니다.
-                    </Text>
-                  )}
-                  <FormErrorMessage>{errors.ItemQty?.message}</FormErrorMessage>
-                </FormControl>
-              </Stack>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 6: 대표이미지 / 동영상 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              대표이미지
-            </Heading>
-
-            <Stack gap={4}>
-              <FormControl isInvalid={Boolean(errors.StandardImage)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  이미지 URL{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Input
-                  id={`${idPrefix}-StandardImage`}
-                  size="sm"
-                  disabled={isFormDisabled || isMasterLinked}
-                  value={standardImageUrl}
-                  onChange={(e) => {
-                    setPreviewFailed(false);
-                    setValue("StandardImage", e.target.value, {
-                      shouldValidate: true,
-                    });
-                  }}
-                  placeholder="https://example.com/image.jpg"
-                />
-                {previewUrl && !previewFailed ? (
-                  <Box mt={3}>
-                    <Image
-                      src={previewUrl}
-                      alt="미리보기"
-                      width={160}
-                      height={120}
-                      style={{
-                        objectFit: "cover",
-                        borderRadius: 8,
-                      }}
-                      onError={() => setPreviewFailed(true)}
+                    <Input
+                      id={`${idPrefix}-PromotionName`}
+                      size="sm"
+                      placeholder="선택"
+                      maxLength={20}
+                      readOnly={isMasterLinked}
+                      bg={isMasterLinked ? "gray.50" : undefined}
+                      {...register("PromotionName")}
                     />
-                  </Box>
-                ) : (
-                  <Box
-                    mt={3}
-                    borderWidth="1px"
-                    borderColor="gray.200"
-                    borderRadius="md"
-                    bg="gray.50"
-                    height="120px"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Text fontSize="sm" color="gray.500">
-                      이미지 미리보기
+                    <FormErrorMessage>
+                      {errors.PromotionName?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isInvalid={Boolean(errors.SellerCode)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      판매자상품코드
                     </Text>
-                  </Box>
-                )}
-                <FormErrorMessage>
-                  {errors.StandardImage?.message}
-                </FormErrorMessage>
-              </FormControl>
+                    <Input
+                      id={`${idPrefix}-SellerCode`}
+                      size="sm"
+                      placeholder="선택"
+                      maxLength={100}
+                      readOnly={isMasterLinked}
+                      bg={isMasterLinked ? "gray.50" : undefined}
+                      {...register("SellerCode")}
+                    />
+                    <FormErrorMessage>
+                      {errors.SellerCode?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+                </Stack>
 
-              <FormControl isInvalid={Boolean(errors.VideoURL)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  동영상 URL
-                </Text>
-                <Input
-                  id={`${idPrefix}-VideoURL`}
-                  size="sm"
-                  disabled={isFormDisabled || isMasterLinked}
-                  placeholder="선택 (유튜브 등)"
-                  {...register("VideoURL")}
-                />
-                <FormErrorMessage>{errors.VideoURL?.message}</FormErrorMessage>
-              </FormControl>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 7: 상품상세 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              상품상세
-            </Heading>
-
-            <Stack gap={3}>
-              <FormControl isInvalid={Boolean(errors.ItemDescription)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  상품상세 HTML{" "}
-                  <Text as="span" color="gray.400">
-                    *
-                  </Text>
-                </Text>
-                <Box id={`${idPrefix}-ItemDescription`}>
-                  <RichHtmlEditor
-                    value={watch("ItemDescription") ?? ""}
-                    onChange={(nextHtml) =>
-                      setValue("ItemDescription", nextHtml, {
-                        shouldValidate: true,
-                      })
-                    }
-                    isDisabled={isFormDisabled || isMasterLinked}
-                    minHeight="220px"
-                  />
-                </Box>
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  UpdateGoods로는 변경되지 않습니다. 화면에서 편집 후 저장 시 별도 상세수정 API로 반영됩니다.
-                </Text>
-                <FormErrorMessage>
-                  {errors.ItemDescription?.message}
-                </FormErrorMessage>
-              </FormControl>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 8: 배송비 / 발송가능일 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              배송비 / 발송가능일
-            </Heading>
-
-            <Stack gap={4}>
-              <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                <FormControl isInvalid={Boolean(errors.ShippingNo)}>
-                  <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    배송비코드{" "}
+                <FormControl isInvalid={Boolean(errors.AdultYN)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    성인상품 여부{" "}
                     <Text as="span" color="gray.400">
                       *
                     </Text>
                   </Text>
-                  <Input
-                    id={`${idPrefix}-ShippingNo`}
-                    size="sm"
-                    type="number"
-                    step={1}
-                    {...register("ShippingNo", {
-                      setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                    })}
-                  />
-                  {shippingNo === 0 && (
-                    <Text fontSize="xs" color="gray.500" mt={2}>
-                      0 입력 시 무료배송으로 처리됩니다.
-                    </Text>
-                  )}
-                  <FormErrorMessage>
-                    {errors.ShippingNo?.message}
-                  </FormErrorMessage>
+                  <Box id={`${idPrefix}-AdultYN`}>
+                    <Select
+                      size="sm"
+                      isDisabled={isMasterLinked}
+                      value={adYn}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const nextAdultYN = raw === "Y" ? "Y" : "N";
+                        setValue("AdultYN", nextAdultYN, {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      <option value="N">일반상품</option>
+                      <option value="Y">성인상품</option>
+                    </Select>
+                  </Box>
+                  <Text fontSize="xs" color="gray.400" mt={2}>
+                    현재: {adultLabel}
+                  </Text>
+                  <FormErrorMessage>{errors.AdultYN?.message}</FormErrorMessage>
                 </FormControl>
+              </Stack>
+            </Box>
 
-                <FormControl isInvalid={Boolean(errors.AvailableDateType)}>
+            {/* ── 섹션 4: 판매기간 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                판매기간
+              </Heading>
+
+              <Stack gap={4}>
+                <FormControl isInvalid={Boolean(errors.ExpireDate)}>
                   <Text fontSize="sm" fontWeight="medium" mb={1}>
-                    발송가능일 타입{" "}
+                    판매종료일{" "}
                     <Text as="span" color="gray.400">
                       *
                     </Text>
                   </Text>
                   <Controller
-                    name="AvailableDateType"
+                    name="ExpireDate"
                     control={control}
                     render={({ field }) => (
-                      <Select
-                        id={`${idPrefix}-AvailableDateType`}
-                        size="sm"
-                        value={field.value}
-                        onChange={(e) => field.onChange(e.target.value)}
-                      >
-                        {AVAILABLE_DATE_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </Select>
+                      <Box id={`${idPrefix}-ExpireDate`}>
+                        <ShipDateCell
+                          orderId="expireDate"
+                          value={field.value ?? null}
+                          isDisabled
+                          onChange={(next) => {
+                            const normalized = next ?? "";
+                            field.onChange(normalized);
+                          }}
+                        />
+                      </Box>
                     )}
                   />
                   <FormErrorMessage>
-                    {errors.AvailableDateType?.message}
+                    {errors.ExpireDate?.message}
+                  </FormErrorMessage>
+                </FormControl>
+                <Text fontSize="xs" color="gray.500">
+                  UpdateGoods API에서는 변경되지 않습니다. 조회 전용입니다.
+                </Text>
+              </Stack>
+            </Box>
+
+            {/* ── 섹션 5: 가격 / 재고 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                가격 / 재고
+              </Heading>
+
+              <Stack gap={4}>
+                <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                  <FormControl isInvalid={Boolean(errors.ItemPrice)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      판매가격{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Input
+                      id={`${idPrefix}-ItemPrice`}
+                      size="sm"
+                      type="number"
+                      step={1}
+                      {...register("ItemPrice", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                    <Text fontSize="xs" color="gray.400" mt={1}>
+                      단위: 円
+                    </Text>
+                    <FormErrorMessage>
+                      {errors.ItemPrice?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isInvalid={Boolean(errors.RetailPrice)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      공급원가
+                    </Text>
+                    <Input
+                      id={`${idPrefix}-RetailPrice`}
+                      size="sm"
+                      type="number"
+                      step={1}
+                      {...register("RetailPrice", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                      placeholder="선택"
+                    />
+                    <FormErrorMessage>
+                      {errors.RetailPrice?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+                </Stack>
+
+                <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                  <FormControl isInvalid={Boolean(errors.TaxRate)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      소비세율{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Select
+                      id={`${idPrefix}-TaxRate`}
+                      size="sm"
+                      isDisabled
+                      value={watch("TaxRate")}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        const nextTaxRate =
+                          raw === "S"
+                            ? "S"
+                            : raw === "8"
+                              ? "8"
+                              : raw === "0"
+                                ? "0"
+                                : "10";
+                        setValue("TaxRate", nextTaxRate, {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      {TAX_RATE_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                    <FormErrorMessage>
+                      {errors.TaxRate?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isInvalid={Boolean(errors.ItemQty)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      재고수량{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Input
+                      id={`${idPrefix}-ItemQty`}
+                      size="sm"
+                      type="number"
+                      step={1}
+                      readOnly={isMasterLinked}
+                      bg={isMasterLinked ? "gray.50" : undefined}
+                      {...register("ItemQty", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                    {isMasterLinked && (
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        마스터 상품과 연결된 상품의 재고는 마스터 상품에서
+                        관리됩니다.
+                      </Text>
+                    )}
+                    <FormErrorMessage>
+                      {errors.ItemQty?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+                </Stack>
+              </Stack>
+            </Box>
+
+            {/* ── 섹션 6: 대표이미지 / 동영상 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                대표이미지
+              </Heading>
+
+              <Stack gap={4}>
+                <FormControl isInvalid={Boolean(errors.StandardImage)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    이미지 URL{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
+                  </Text>
+                  <Input
+                    id={`${idPrefix}-StandardImage`}
+                    size="sm"
+                    disabled={isFormDisabled || isMasterLinked}
+                    value={standardImageUrl}
+                    onChange={(e) => {
+                      setPreviewFailed(false);
+                      setValue("StandardImage", e.target.value, {
+                        shouldValidate: true,
+                      });
+                    }}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                  {previewUrl && !previewFailed ? (
+                    <Box mt={3}>
+                      <Image
+                        src={previewUrl}
+                        alt="미리보기"
+                        width={160}
+                        height={120}
+                        style={{
+                          objectFit: "cover",
+                          borderRadius: 8,
+                        }}
+                        onError={() => setPreviewFailed(true)}
+                      />
+                    </Box>
+                  ) : (
+                    <Box
+                      mt={3}
+                      borderWidth="1px"
+                      borderColor="gray.200"
+                      borderRadius="md"
+                      bg="gray.50"
+                      height="120px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Text fontSize="sm" color="gray.500">
+                        이미지 미리보기
+                      </Text>
+                    </Box>
+                  )}
+                  <FormErrorMessage>
+                    {errors.StandardImage?.message}
+                  </FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={Boolean(errors.VideoURL)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    동영상 URL
+                  </Text>
+                  <Input
+                    id={`${idPrefix}-VideoURL`}
+                    size="sm"
+                    disabled={isFormDisabled || isMasterLinked}
+                    placeholder="선택 (유튜브 등)"
+                    {...register("VideoURL")}
+                  />
+                  <FormErrorMessage>
+                    {errors.VideoURL?.message}
                   </FormErrorMessage>
                 </FormControl>
               </Stack>
+            </Box>
 
-              <FormControl isInvalid={Boolean(errors.AvailableDateValue)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  발송가능일 값{" "}
-                  <Text as="span" color="gray.400">
-                    *
+            {/* ── 섹션 7: 상품상세 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                상품상세
+              </Heading>
+
+              <Stack gap={3}>
+                <FormControl isInvalid={Boolean(errors.ItemDescription)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    상품상세 HTML{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
                   </Text>
-                </Text>
-                <Input
-                  id={`${idPrefix}-AvailableDateValue`}
-                  size="sm"
-                  value={watch("AvailableDateValue")}
-                  onChange={(e) =>
-                    setValue("AvailableDateValue", e.target.value, {
-                      shouldValidate: true,
-                    })
-                  }
-                  placeholder={getAvailableDateValuePlaceholder(
-                    availableDateType,
-                  )}
-                />
-                <FormErrorMessage>
-                  {errors.AvailableDateValue?.message}
-                </FormErrorMessage>
-              </FormControl>
-
-              <FormControl isInvalid={Boolean(errors.DesiredShippingDate)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  희망 배송일 (DesiredShippingDate)
-                </Text>
-                <Input
-                  id={`${idPrefix}-DesiredShippingDate`}
-                  size="sm"
-                  placeholder="선택"
-                  {...register("DesiredShippingDate")}
-                />
-                <FormErrorMessage>
-                  {errors.DesiredShippingDate?.message}
-                </FormErrorMessage>
-              </FormControl>
-            </Stack>
-          </Box>
-
-          {/* ── 섹션 9: 원산지 ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              원산지
-            </Heading>
-
-            <Stack gap={4}>
-              <FormControl isInvalid={Boolean(errors.ProductionPlaceType)}>
-                <Text fontSize="sm" fontWeight="medium" mb={2}>
-                  원산지 타입{" "}
-                  <Text as="span" color="gray.400">
-                    *
+                  <Box id={`${idPrefix}-ItemDescription`}>
+                    <RichHtmlEditor
+                      value={watch("ItemDescription") ?? ""}
+                      onChange={(nextHtml) =>
+                        setValue("ItemDescription", nextHtml, {
+                          shouldValidate: true,
+                        })
+                      }
+                      isDisabled={isFormDisabled || isMasterLinked}
+                      minHeight="220px"
+                    />
+                  </Box>
+                  <Text fontSize="xs" color="gray.500" mt={1}>
+                    UpdateGoods로는 변경되지 않습니다. 화면에서 편집 후 저장 시
+                    별도 상세수정 API로 반영됩니다.
                   </Text>
-                </Text>
-                <Controller
-                  name="ProductionPlaceType"
-                  control={control}
-                  render={({ field }) => (
-                    <Box id={`${idPrefix}-ProductionPlaceType`}>
-                      <Select
-                        size="sm"
-                        isDisabled={isMasterLinked}
-                        value={field.value}
-                        onChange={(e) => {
-                          const raw = e.target.value;
-                          const next =
-                            raw === "1" || raw === "2" || raw === "3"
-                              ? raw
-                              : "1";
-                          field.onChange(next);
-                          setValue("ProductionPlace", "", { shouldValidate: false });
-                        }}
-                      >
-                        {PRODUCTION_PLACE_TYPE_OPTIONS.map((opt) => (
-                          <option key={opt.id} value={opt.id}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </Box>
-                  )}
-                />
-                <FormErrorMessage>
-                  {errors.ProductionPlaceType?.message}
-                </FormErrorMessage>
-              </FormControl>
+                  <FormErrorMessage>
+                    {errors.ItemDescription?.message}
+                  </FormErrorMessage>
+                </FormControl>
+              </Stack>
+            </Box>
 
-              <FormControl isInvalid={Boolean(errors.ProductionPlace)}>
-                <Text fontSize="sm" fontWeight="medium" mb={1}>
-                  원산지{" "}
-                  <Text as="span" color="gray.400">
-                    *
+            {/* ── 섹션 8: 배송비 / 발송가능일 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                배송비 / 발송가능일
+              </Heading>
+
+              <Stack gap={4}>
+                <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                  <FormControl isInvalid={Boolean(errors.ShippingNo)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      배송비코드{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Input
+                      id={`${idPrefix}-ShippingNo`}
+                      size="sm"
+                      type="number"
+                      step={1}
+                      {...register("ShippingNo", {
+                        setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                      })}
+                    />
+                    {shippingNo === 0 && (
+                      <Text fontSize="xs" color="gray.500" mt={2}>
+                        0 입력 시 무료배송으로 처리됩니다.
+                      </Text>
+                    )}
+                    <FormErrorMessage>
+                      {errors.ShippingNo?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+
+                  <FormControl isInvalid={Boolean(errors.AvailableDateType)}>
+                    <Text fontSize="sm" fontWeight="medium" mb={1}>
+                      발송가능일 타입{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Text>
+                    <Controller
+                      name="AvailableDateType"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          id={`${idPrefix}-AvailableDateType`}
+                          size="sm"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                        >
+                          {AVAILABLE_DATE_TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.id} value={opt.id}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                    <FormErrorMessage>
+                      {errors.AvailableDateType?.message}
+                    </FormErrorMessage>
+                  </FormControl>
+                </Stack>
+
+                <FormControl isInvalid={Boolean(errors.AvailableDateValue)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    발송가능일 값{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
                   </Text>
-                </Text>
-                {productionPlaceType === "1" ? (
-                  <Select
-                    id={`${idPrefix}-ProductionPlace`}
-                    size="sm"
-                    isDisabled={isMasterLinked}
-                    value={watch("ProductionPlace")}
-                    onChange={(e) => {
-                      const val = e.target.value === "0" ? "" : e.target.value;
-                      setValue("ProductionPlace", val, { shouldValidate: true });
-                    }}
-                  >
-                    {JAPAN_PREFECTURE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </Select>
-                ) : (
                   <Input
-                    id={`${idPrefix}-ProductionPlace-alt`}
+                    id={`${idPrefix}-AvailableDateValue`}
                     size="sm"
-                    readOnly={isMasterLinked}
-                    bg={isMasterLinked ? "gray.50" : undefined}
-                    value={watch("ProductionPlace")}
+                    value={watch("AvailableDateValue")}
                     onChange={(e) =>
-                      setValue("ProductionPlace", e.target.value, {
+                      setValue("AvailableDateValue", e.target.value, {
                         shouldValidate: true,
                       })
                     }
-                    placeholder={
-                      productionPlaceType === "2"
-                        ? "국가코드 (예: KR)"
-                        : "자유입력"
-                    }
+                    placeholder={getAvailableDateValuePlaceholder(
+                      availableDateType,
+                    )}
                   />
-                )}
-                <FormErrorMessage>
-                  {errors.ProductionPlace?.message}
-                </FormErrorMessage>
-              </FormControl>
-            </Stack>
-          </Box>
+                  <FormErrorMessage>
+                    {errors.AvailableDateValue?.message}
+                  </FormErrorMessage>
+                </FormControl>
 
-          {/* ── 섹션 10: 추가 정보 (Accordion) ───────────────────────── */}
-          <Box
-            borderWidth="1px"
-            borderColor="gray.200"
-            borderRadius="lg"
-            bg="white"
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={2}>
-              추가 정보
-            </Heading>
+                <FormControl isInvalid={Boolean(errors.DesiredShippingDate)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    희망 배송일 (DesiredShippingDate)
+                  </Text>
+                  <Input
+                    id={`${idPrefix}-DesiredShippingDate`}
+                    size="sm"
+                    placeholder="선택"
+                    {...register("DesiredShippingDate")}
+                  />
+                  <FormErrorMessage>
+                    {errors.DesiredShippingDate?.message}
+                  </FormErrorMessage>
+                </FormControl>
+              </Stack>
+            </Box>
 
-            <Accordion allowToggle defaultIndex={[0]}>
-              <AccordionItem border="none">
-                <AccordionButton px={0}>
-                  <Box flex="1" textAlign="left">
-                    필드 입력 (전부 선택)
-                  </Box>
-                  <AccordionIcon />
-                </AccordionButton>
-                <AccordionPanel px={0} pt={3}>
-                  <Stack gap={4}>
-                    <FormControl isInvalid={Boolean(errors.Drugtype)}>
-                      <Text fontSize="sm" fontWeight="medium" mb={1}>
-                        의약품 구분 (Drugtype)
-                      </Text>
-                      <Input
-                        id={`${idPrefix}-Drugtype`}
-                        size="sm"
-                        placeholder="선택"
-                        readOnly={isMasterLinked}
-                        bg={isMasterLinked ? "gray.50" : undefined}
-                        {...register("Drugtype")}
-                      />
-                      <FormErrorMessage>
-                        {errors.Drugtype?.message}
-                      </FormErrorMessage>
-                    </FormControl>
+            {/* ── 섹션 9: 원산지 ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={4}>
+                원산지
+              </Heading>
 
-                    <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                      <FormControl isInvalid={Boolean(errors.ModelNm)}>
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          모델번호 (ModelNm)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-ModelNm`}
-                          size="sm"
-                          placeholder="선택"
-                          readOnly={isMasterLinked}
-                          bg={isMasterLinked ? "gray.50" : undefined}
-                          {...register("ModelNm")}
-                        />
-                        <FormErrorMessage>
-                          {errors.ModelNm?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-
-                      <FormControl isInvalid={Boolean(errors.ManufactureDate)}>
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          제조일자 (ManufactureDate)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-ManufactureDate`}
-                          size="sm"
-                          placeholder="선택"
-                          readOnly={isMasterLinked}
-                          bg={isMasterLinked ? "gray.50" : undefined}
-                          {...register("ManufactureDate")}
-                        />
-                        <FormErrorMessage>
-                          {errors.ManufactureDate?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-                    </Stack>
-
-                    <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                      <FormControl isInvalid={Boolean(errors.Material)}>
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          소재 (Material)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-Material`}
-                          size="sm"
-                          placeholder="선택"
-                          readOnly={isMasterLinked}
-                          bg={isMasterLinked ? "gray.50" : undefined}
-                          {...register("Material")}
-                        />
-                        <FormErrorMessage>
-                          {errors.Material?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-
-                      <FormControl isInvalid={Boolean(errors.Weight)}>
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          상품무게 (Weight)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-Weight`}
-                          size="sm"
-                          placeholder="선택"
-                          readOnly={isMasterLinked}
-                          bg={isMasterLinked ? "gray.50" : undefined}
-                          {...register("Weight")}
-                        />
-                        <FormErrorMessage>
-                          {errors.Weight?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-                    </Stack>
-
-                    <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                      <FormControl isInvalid={Boolean(errors.ContactInfo)}>
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          서비스담당자 (ContactInfo)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-ContactInfo`}
-                          size="sm"
-                          placeholder="선택"
-                          readOnly={isMasterLinked}
-                          bg={isMasterLinked ? "gray.50" : undefined}
-                          {...register("ContactInfo")}
-                        />
-                        <FormErrorMessage>
-                          {errors.ContactInfo?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-
-                      <FormControl
-                        isInvalid={Boolean(errors.IndustrialCodeType)}
-                      >
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          산업코드타입 (IndustrialCodeType)
-                        </Text>
+              <Stack gap={4}>
+                <FormControl isInvalid={Boolean(errors.ProductionPlaceType)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={2}>
+                    원산지 타입{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
+                  </Text>
+                  <Controller
+                    name="ProductionPlaceType"
+                    control={control}
+                    render={({ field }) => (
+                      <Box id={`${idPrefix}-ProductionPlaceType`}>
                         <Select
-                          id={`${idPrefix}-IndustrialCodeType`}
                           size="sm"
                           isDisabled={isMasterLinked}
-                          value={watch("IndustrialCodeType")}
-                          onChange={(e) =>
-                            setValue(
-                              "IndustrialCodeType",
-                              normalizeIndustrialCodeType(e.target.value),
-                            )
-                          }
+                          value={field.value}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const next =
+                              raw === "1" || raw === "2" || raw === "3"
+                                ? raw
+                                : "1";
+                            field.onChange(next);
+                            setValue("ProductionPlace", "", {
+                              shouldValidate: false,
+                            });
+                          }}
                         >
-                          <option value="">미선택</option>
-                          <option value="J">J</option>
-                          <option value="K">K</option>
-                          <option value="I">I</option>
-                          <option value="U">U</option>
-                          <option value="E">E</option>
-                          <option value="H">H</option>
+                          {PRODUCTION_PLACE_TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.id} value={opt.id}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </Select>
+                      </Box>
+                    )}
+                  />
+                  <FormErrorMessage>
+                    {errors.ProductionPlaceType?.message}
+                  </FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={Boolean(errors.ProductionPlace)}>
+                  <Text fontSize="sm" fontWeight="medium" mb={1}>
+                    원산지{" "}
+                    <Text as="span" color="gray.400">
+                      *
+                    </Text>
+                  </Text>
+                  {productionPlaceType === "1" ? (
+                    <Select
+                      id={`${idPrefix}-ProductionPlace`}
+                      size="sm"
+                      isDisabled={isMasterLinked}
+                      value={watch("ProductionPlace")}
+                      onChange={(e) => {
+                        const val =
+                          e.target.value === "0" ? "" : e.target.value;
+                        setValue("ProductionPlace", val, {
+                          shouldValidate: true,
+                        });
+                      }}
+                    >
+                      {JAPAN_PREFECTURE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Input
+                      id={`${idPrefix}-ProductionPlace-alt`}
+                      size="sm"
+                      readOnly={isMasterLinked}
+                      bg={isMasterLinked ? "gray.50" : undefined}
+                      value={watch("ProductionPlace")}
+                      onChange={(e) =>
+                        setValue("ProductionPlace", e.target.value, {
+                          shouldValidate: true,
+                        })
+                      }
+                      placeholder={
+                        productionPlaceType === "2"
+                          ? "국가코드 (예: KR)"
+                          : "자유입력"
+                      }
+                    />
+                  )}
+                  <FormErrorMessage>
+                    {errors.ProductionPlace?.message}
+                  </FormErrorMessage>
+                </FormControl>
+              </Stack>
+            </Box>
+
+            {/* ── 섹션 10: 추가 정보 (Accordion) ───────────────────────── */}
+            <Box
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="lg"
+              bg="white"
+              p={5}
+            >
+              <Heading as="h2" size="md" mb={2}>
+                추가 정보
+              </Heading>
+
+              <Accordion allowToggle defaultIndex={[0]}>
+                <AccordionItem border="none">
+                  <AccordionButton px={0}>
+                    <Box flex="1" textAlign="left">
+                      필드 입력 (전부 선택)
+                    </Box>
+                    <AccordionIcon />
+                  </AccordionButton>
+                  <AccordionPanel px={0} pt={3}>
+                    <Stack gap={4}>
+                      <FormControl isInvalid={Boolean(errors.Drugtype)}>
+                        <Text fontSize="sm" fontWeight="medium" mb={1}>
+                          의약품 구분 (Drugtype)
+                        </Text>
+                        <Input
+                          id={`${idPrefix}-Drugtype`}
+                          size="sm"
+                          placeholder="선택"
+                          readOnly={isMasterLinked}
+                          bg={isMasterLinked ? "gray.50" : undefined}
+                          {...register("Drugtype")}
+                        />
                         <FormErrorMessage>
-                          {errors.IndustrialCodeType?.message}
+                          {errors.Drugtype?.message}
+                        </FormErrorMessage>
+                      </FormControl>
+
+                      <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                        <FormControl isInvalid={Boolean(errors.ModelNm)}>
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            모델번호 (ModelNm)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-ModelNm`}
+                            size="sm"
+                            placeholder="선택"
+                            readOnly={isMasterLinked}
+                            bg={isMasterLinked ? "gray.50" : undefined}
+                            {...register("ModelNm")}
+                          />
+                          <FormErrorMessage>
+                            {errors.ModelNm?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+
+                        <FormControl
+                          isInvalid={Boolean(errors.ManufactureDate)}
+                        >
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            제조일자 (ManufactureDate)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-ManufactureDate`}
+                            size="sm"
+                            placeholder="선택"
+                            readOnly={isMasterLinked}
+                            bg={isMasterLinked ? "gray.50" : undefined}
+                            {...register("ManufactureDate")}
+                          />
+                          <FormErrorMessage>
+                            {errors.ManufactureDate?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                      </Stack>
+
+                      <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                        <FormControl isInvalid={Boolean(errors.Material)}>
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            소재 (Material)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-Material`}
+                            size="sm"
+                            placeholder="선택"
+                            readOnly={isMasterLinked}
+                            bg={isMasterLinked ? "gray.50" : undefined}
+                            {...register("Material")}
+                          />
+                          <FormErrorMessage>
+                            {errors.Material?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+
+                        <FormControl isInvalid={Boolean(errors.Weight)}>
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            상품무게 (Weight)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-Weight`}
+                            size="sm"
+                            placeholder="선택"
+                            readOnly={isMasterLinked}
+                            bg={isMasterLinked ? "gray.50" : undefined}
+                            {...register("Weight")}
+                          />
+                          <FormErrorMessage>
+                            {errors.Weight?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                      </Stack>
+
+                      <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                        <FormControl isInvalid={Boolean(errors.ContactInfo)}>
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            서비스담당자 (ContactInfo)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-ContactInfo`}
+                            size="sm"
+                            placeholder="선택"
+                            readOnly={isMasterLinked}
+                            bg={isMasterLinked ? "gray.50" : undefined}
+                            {...register("ContactInfo")}
+                          />
+                          <FormErrorMessage>
+                            {errors.ContactInfo?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+
+                        <FormControl
+                          isInvalid={Boolean(errors.IndustrialCodeType)}
+                        >
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            산업코드타입 (IndustrialCodeType)
+                          </Text>
+                          <Select
+                            id={`${idPrefix}-IndustrialCodeType`}
+                            size="sm"
+                            isDisabled={isMasterLinked}
+                            value={watch("IndustrialCodeType")}
+                            onChange={(e) =>
+                              setValue(
+                                "IndustrialCodeType",
+                                normalizeIndustrialCodeType(e.target.value),
+                              )
+                            }
+                          >
+                            <option value="">미선택</option>
+                            <option value="J">J</option>
+                            <option value="K">K</option>
+                            <option value="I">I</option>
+                            <option value="U">U</option>
+                            <option value="E">E</option>
+                            <option value="H">H</option>
+                          </Select>
+                          <FormErrorMessage>
+                            {errors.IndustrialCodeType?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                      </Stack>
+
+                      <Stack direction={{ base: "column", md: "row" }} gap={4}>
+                        <FormControl
+                          isInvalid={Boolean(errors.OptionShippingNo1)}
+                        >
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            옵션배송비 1 (OptionShippingNo1)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-OptionShippingNo1`}
+                            size="sm"
+                            placeholder="선택"
+                            {...register("OptionShippingNo1")}
+                          />
+                          <FormErrorMessage>
+                            {errors.OptionShippingNo1?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                        <FormControl
+                          isInvalid={Boolean(errors.OptionShippingNo2)}
+                        >
+                          <Text fontSize="sm" fontWeight="medium" mb={1}>
+                            옵션배송비 2 (OptionShippingNo2)
+                          </Text>
+                          <Input
+                            id={`${idPrefix}-OptionShippingNo2`}
+                            size="sm"
+                            placeholder="선택"
+                            {...register("OptionShippingNo2")}
+                          />
+                          <FormErrorMessage>
+                            {errors.OptionShippingNo2?.message}
+                          </FormErrorMessage>
+                        </FormControl>
+                      </Stack>
+
+                      <FormControl isInvalid={Boolean(errors.IndustrialCode)}>
+                        <Text fontSize="sm" fontWeight="medium" mb={1}>
+                          산업코드 (IndustrialCode)
+                        </Text>
+                        <Input
+                          id={`${idPrefix}-IndustrialCode`}
+                          size="sm"
+                          placeholder="선택"
+                          readOnly={isMasterLinked}
+                          bg={isMasterLinked ? "gray.50" : undefined}
+                          {...register("IndustrialCode")}
+                        />
+                        <FormErrorMessage>
+                          {errors.IndustrialCode?.message}
+                        </FormErrorMessage>
+                      </FormControl>
+
+                      <FormControl isInvalid={Boolean(errors.Keyword)}>
+                        <Text fontSize="sm" fontWeight="medium" mb={1}>
+                          검색키워드 (최대 10개, 콤마 구분)
+                        </Text>
+                        <Input
+                          id={`${idPrefix}-Keyword`}
+                          size="sm"
+                          placeholder="예: shoes, leather, men"
+                          readOnly={isMasterLinked}
+                          bg={isMasterLinked ? "gray.50" : undefined}
+                          value={watch("Keyword")}
+                          onChange={(e) =>
+                            setValue("Keyword", e.target.value, {
+                              shouldValidate: true,
+                            })
+                          }
+                        />
+                        <FormErrorMessage>
+                          {errors.Keyword?.message}
                         </FormErrorMessage>
                       </FormControl>
                     </Stack>
+                  </AccordionPanel>
+                </AccordionItem>
+              </Accordion>
+            </Box>
 
-                    <Stack direction={{ base: "column", md: "row" }} gap={4}>
-                      <FormControl
-                        isInvalid={Boolean(errors.OptionShippingNo1)}
-                      >
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          옵션배송비 1 (OptionShippingNo1)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-OptionShippingNo1`}
-                          size="sm"
-                          placeholder="선택"
-                          {...register("OptionShippingNo1")}
-                        />
-                        <FormErrorMessage>
-                          {errors.OptionShippingNo1?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-                      <FormControl
-                        isInvalid={Boolean(errors.OptionShippingNo2)}
-                      >
-                        <Text fontSize="sm" fontWeight="medium" mb={1}>
-                          옵션배송비 2 (OptionShippingNo2)
-                        </Text>
-                        <Input
-                          id={`${idPrefix}-OptionShippingNo2`}
-                          size="sm"
-                          placeholder="선택"
-                          {...register("OptionShippingNo2")}
-                        />
-                        <FormErrorMessage>
-                          {errors.OptionShippingNo2?.message}
-                        </FormErrorMessage>
-                      </FormControl>
-                    </Stack>
+            {/* <OptionSection /> 슬롯: 기존 옵션 form 제거 후 재구성 */}
+            {/* <InventoryOptionSection itemCode={itemCode} channelId="qoo10" /> */}
+            {/* <SimpleOptionSection itemCode={itemCode} channelId="qoo10" /> */}
 
-                    <FormControl isInvalid={Boolean(errors.IndustrialCode)}>
-                      <Text fontSize="sm" fontWeight="medium" mb={1}>
-                        산업코드 (IndustrialCode)
-                      </Text>
-                      <Input
-                        id={`${idPrefix}-IndustrialCode`}
-                        size="sm"
-                        placeholder="선택"
-                        readOnly={isMasterLinked}
-                        bg={isMasterLinked ? "gray.50" : undefined}
-                        {...register("IndustrialCode")}
-                      />
-                      <FormErrorMessage>
-                        {errors.IndustrialCode?.message}
-                      </FormErrorMessage>
-                    </FormControl>
-
-                    <FormControl isInvalid={Boolean(errors.Keyword)}>
-                      <Text fontSize="sm" fontWeight="medium" mb={1}>
-                        검색키워드 (최대 10개, 콤마 구분)
-                      </Text>
-                      <Input
-                        id={`${idPrefix}-Keyword`}
-                        size="sm"
-                        placeholder="예: shoes, leather, men"
-                        readOnly={isMasterLinked}
-                        bg={isMasterLinked ? "gray.50" : undefined}
-                        value={watch("Keyword")}
-                        onChange={(e) =>
-                          setValue("Keyword", e.target.value, {
-                            shouldValidate: true,
-                          })
-                        }
-                      />
-                      <FormErrorMessage>
-                        {errors.Keyword?.message}
-                      </FormErrorMessage>
-                    </FormControl>
-                  </Stack>
-                </AccordionPanel>
-              </AccordionItem>
-            </Accordion>
-          </Box>
-
-          {/* <OptionSection /> 슬롯: 기존 옵션 form 제거 후 재구성 */}
-          {/* <InventoryOptionSection itemCode={itemCode} channelId="qoo10" /> */}
-          {/* <SimpleOptionSection itemCode={itemCode} channelId="qoo10" /> */}
-
-          {/* ── 하단 액션 버튼 ───────────────────────── */}
-          <Flex justify="flex-end" gap={3} pt={2}>
-            <Button
-              variant="ghost"
-              onClick={() => router.push("/sales-products")}
-              disabled={isFormDisabled}
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              bg="gray.900"
-              color="white"
-              _hover={{ bg: "gray.800" }}
-              disabled={isFormDisabled}
-              loading={isFormDisabled}
-            >
-              수정 완료
-            </Button>
-          </Flex>
+            {/* ── 하단 액션 버튼 ───────────────────────── */}
+            <Flex justify="flex-end" gap={3} pt={2}>
+              <Button
+                variant="ghost"
+                onClick={() => router.push("/sales-products")}
+                disabled={isFormDisabled}
+              >
+                취소
+              </Button>
+              <Button
+                type="submit"
+                bg="gray.900"
+                color="white"
+                _hover={{ bg: "gray.800" }}
+                disabled={isFormDisabled}
+                loading={isFormDisabled}
+              >
+                수정 완료
+              </Button>
+            </Flex>
           </Stack>
         </fieldset>
       </Box>

@@ -50,10 +50,14 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
 
   const { data: detail, isLoading } = useSku(id ?? null);
   const { mutateAsync: createSku, isPending: isCreating } = useCreateSku();
-  const { mutateAsync: bulkCreateSkus, isPending: isBulkCreating } = useBulkCreateSkus();
-  const { mutateAsync: updateSku, isPending: isUpdating } = useUpdateSku(id ?? "");
+  const { mutateAsync: bulkCreateSkus, isPending: isBulkCreating } =
+    useBulkCreateSkus();
+  const { mutateAsync: updateSku, isPending: isUpdating } = useUpdateSku(
+    id ?? "",
+  );
   const { mutateAsync: deleteSku, isPending: isDeleting } = useDeleteSku();
-  const { mutateAsync: adjustStock, isPending: isAdjusting } = useAdjustSkuStock(id ?? "");
+  const { mutateAsync: adjustStock, isPending: isAdjusting } =
+    useAdjustSkuStock(id ?? "");
 
   const [mode, setMode] = useState<Mode>("single");
   const [state, setState] = useState<FormState>(defaultState);
@@ -64,9 +68,7 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
 
   // Bulk 모드용: 코드 prefix + 속성 축
   const [bulkPrefix, setBulkPrefix] = useState("");
-  const [axes, setAxes] = useState<AxisRow[]>([
-    { name: "color", values: "" },
-  ]);
+  const [axes, setAxes] = useState<AxisRow[]>([{ name: "color", values: "" }]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setState((s) => ({ ...s, [key]: value }));
@@ -81,7 +83,8 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
       warehouseText: detail.warehouseText ?? "",
       isPrimaryWarehouse: detail.isPrimaryWarehouse ?? false,
       vendorText: detail.vendorText ?? "",
-      leadTimeDays: detail.leadTimeDays == null ? "" : String(detail.leadTimeDays),
+      leadTimeDays:
+        detail.leadTimeDays == null ? "" : String(detail.leadTimeDays),
       safetyStock: String(detail.safetyStock ?? 0),
       modelName: detail.modelName ?? "",
       inventoryCode: detail.inventoryCode ?? "",
@@ -155,7 +158,9 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
         attrs[a.name] = combo[idx]!;
       });
       const suffix = combo.join("-").toUpperCase().replace(/\s+/g, "_");
-      const code = bulkPrefix.trim() ? `${bulkPrefix.trim()}-${suffix}` : suffix;
+      const code = bulkPrefix.trim()
+        ? `${bulkPrefix.trim()}-${suffix}`
+        : suffix;
       return { code, attrs };
     });
   }, [axes, bulkPrefix]);
@@ -174,20 +179,31 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
       if (isEdit) {
         const { ...rest } = payload;
         await updateSku(rest);
-        appToaster.create({ title: t("form.toasts.updateSuccess"), type: "success" });
+        appToaster.create({
+          title: t("form.toasts.updateSuccess"),
+          type: "success",
+        });
       } else {
         const stockNum = Number(state.initialStock);
         const created = await createSku({
           ...payload,
           stock: Number.isFinite(stockNum) && stockNum >= 0 ? stockNum : 0,
         });
-        appToaster.create({ title: t("form.toasts.createSuccess"), type: "success" });
+        appToaster.create({
+          title: t("form.toasts.createSuccess"),
+          type: "success",
+        });
         router.push(ROUTES.skuEdit(created.id));
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("form.toasts.saveFailed");
+      const message =
+        err instanceof Error ? err.message : t("form.toasts.saveFailed");
       setFormError(message);
-      appToaster.create({ title: t("form.toasts.saveFailed"), description: message, type: "error" });
+      appToaster.create({
+        title: t("form.toasts.saveFailed"),
+        description: message,
+        type: "error",
+      });
     }
   }
 
@@ -218,26 +234,45 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
       });
       router.push(ROUTES.skus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("form.toasts.bulkCreateFailed");
+      const message =
+        err instanceof Error ? err.message : t("form.toasts.bulkCreateFailed");
       setFormError(message);
-      appToaster.create({ title: t("form.toasts.bulkCreateFailed"), description: message, type: "error" });
+      appToaster.create({
+        title: t("form.toasts.bulkCreateFailed"),
+        description: message,
+        type: "error",
+      });
     }
   }
 
   async function handleAdjust(): Promise<void> {
     const delta = Number(adjustQty);
     if (!Number.isFinite(delta) || delta === 0) {
-      appToaster.create({ title: t("form.toasts.emptyAdjustQty"), type: "warning" });
+      appToaster.create({
+        title: t("form.toasts.emptyAdjustQty"),
+        type: "warning",
+      });
       return;
     }
     try {
-      await adjustStock({ qtyDelta: delta, note: adjustNote.trim() || undefined });
+      await adjustStock({
+        qtyDelta: delta,
+        note: adjustNote.trim() || undefined,
+      });
       setAdjustQty("");
       setAdjustNote("");
-      appToaster.create({ title: t("form.toasts.adjustSuccess"), type: "success" });
+      appToaster.create({
+        title: t("form.toasts.adjustSuccess"),
+        type: "success",
+      });
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("form.toasts.adjustFailed");
-      appToaster.create({ title: t("form.toasts.adjustFailed"), description: message, type: "error" });
+      const message =
+        err instanceof Error ? err.message : t("form.toasts.adjustFailed");
+      appToaster.create({
+        title: t("form.toasts.adjustFailed"),
+        description: message,
+        type: "error",
+      });
     }
   }
 
@@ -245,11 +280,19 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
     if (!id) return;
     try {
       await deleteSku(id);
-      appToaster.create({ title: t("form.toasts.deleteSuccess"), type: "success" });
+      appToaster.create({
+        title: t("form.toasts.deleteSuccess"),
+        type: "success",
+      });
       router.push(ROUTES.skus);
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("form.toasts.deleteFailed");
-      appToaster.create({ title: t("form.toasts.deleteFailed"), description: message, type: "error" });
+      const message =
+        err instanceof Error ? err.message : t("form.toasts.deleteFailed");
+      appToaster.create({
+        title: t("form.toasts.deleteFailed"),
+        description: message,
+        type: "error",
+      });
     }
   }
 
@@ -276,14 +319,20 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
           title={isEdit ? t("form.titleEdit") : t("form.titleNew")}
           description={t("form.description")}
         />
-        <Button variant="outline" size="sm" onClick={() => router.push(ROUTES.skus)}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(ROUTES.skus)}
+        >
           {t("form.backToList")}
         </Button>
       </Flex>
 
       {!isEdit && (
         <Flex gap={2} mb={4} align="center">
-          <Text fontSize="sm" color="gray.600" mr={2}>{t("form.modeLabel")}</Text>
+          <Text fontSize="sm" color="gray.600" mr={2}>
+            {t("form.modeLabel")}
+          </Text>
           <Button
             size="sm"
             variant={mode === "single" ? "solid" : "outline"}
@@ -320,12 +369,21 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
           {!isEdit && mode === "bulk" && (
             <Tabs.Trigger value="bulk">{t("form.tabs.bulk")}</Tabs.Trigger>
           )}
-          {isEdit && <Tabs.Trigger value="mapping">{t("form.tabs.mapping")}</Tabs.Trigger>}
+          {isEdit && (
+            <Tabs.Trigger value="mapping">
+              {t("form.tabs.mapping")}
+            </Tabs.Trigger>
+          )}
         </Tabs.List>
 
         {/* ─── 기본정보 ─── */}
         <Tabs.Content value="basic">
-          <BasicInfoSection state={state} update={update} mode={mode} isEdit={isEdit} />
+          <BasicInfoSection
+            state={state}
+            update={update}
+            mode={mode}
+            isEdit={isEdit}
+          />
         </Tabs.Content>
 
         {/* ─── 규격/가격 ─── */}
@@ -390,7 +448,11 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
           )}
         </Box>
         <Flex gap={2}>
-          <Button size="sm" variant="outline" onClick={() => router.push(ROUTES.skus)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(ROUTES.skus)}
+          >
             {t("form.actions.cancel")}
           </Button>
           <Button
@@ -398,7 +460,9 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
             bg="gray.900"
             color="white"
             _hover={{ bg: "gray.800" }}
-            onClick={() => (mode === "bulk" ? void handleBulkSubmit() : void handleSubmit())}
+            onClick={() =>
+              mode === "bulk" ? void handleBulkSubmit() : void handleSubmit()
+            }
             loading={isBusy}
           >
             {isEdit
@@ -412,4 +476,3 @@ export function SkuFormPage({ id }: Props): React.JSX.Element {
     </Box>
   );
 }
-

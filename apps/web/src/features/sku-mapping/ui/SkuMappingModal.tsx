@@ -30,8 +30,10 @@ export function SkuMappingModal({
   onOpenChange,
   onSuccess,
 }: Props): React.JSX.Element | null {
-  const { data: mappings, isLoading } = useListedProductSkuMappings(listedProductId);
-  const { mutateAsync: replaceMappings, isPending } = useReplaceListedProductSkus(listedProductId);
+  const { data: mappings, isLoading } =
+    useListedProductSkuMappings(listedProductId);
+  const { mutateAsync: replaceMappings, isPending } =
+    useReplaceListedProductSkus(listedProductId);
   const [rows, setRows] = useState<VariantRowState>({});
 
   useEffect(() => {
@@ -70,7 +72,8 @@ export function SkuMappingModal({
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "SKU 매핑 저장에 실패했습니다.";
+      const msg =
+        err instanceof Error ? err.message : "SKU 매핑 저장에 실패했습니다.";
       appToaster.create({ title: msg, type: "error" });
     }
   };
@@ -99,7 +102,9 @@ export function SkuMappingModal({
         p={6}
       >
         <Flex justify="space-between" align="center" mb={5}>
-          <Text fontWeight="semibold" fontSize="md">SKU 매핑</Text>
+          <Text fontWeight="semibold" fontSize="md">
+            SKU 매핑
+          </Text>
           <Button
             variant="ghost"
             size="sm"
@@ -111,13 +116,18 @@ export function SkuMappingModal({
         </Flex>
 
         <Text fontSize="xs" color="gray.500" mb={3}>
-          채널 옵션마다 매핑할 SKU를 선택하세요. 한 옵션에 여러 SKU(번들)도 가능합니다.
+          채널 옵션마다 매핑할 SKU를 선택하세요. 한 옵션에 여러 SKU(번들)도
+          가능합니다.
         </Text>
 
         {isLoading ? (
-          <Flex justify="center" py={8}><Spinner size="md" /></Flex>
+          <Flex justify="center" py={8}>
+            <Spinner size="md" />
+          </Flex>
         ) : channelVariants.length === 0 ? (
-          <Text fontSize="sm" color="gray.500" py={4}>채널 옵션이 없습니다.</Text>
+          <Text fontSize="sm" color="gray.500" py={4}>
+            채널 옵션이 없습니다.
+          </Text>
         ) : (
           <Stack gap={3}>
             {channelVariants.map((v) => {
@@ -132,17 +142,25 @@ export function SkuMappingModal({
                 >
                   <Stack gap={1} mb={2}>
                     <Text fontSize="sm" fontWeight="medium">
-                      {v.optionName || v.optionValue || v.optionCode || v.channelVariantId}
+                      {v.optionName ||
+                        v.optionValue ||
+                        v.optionCode ||
+                        v.channelVariantId}
                     </Text>
                     <Flex gap={2} fontSize="xs" color="gray.500">
                       {v.optionCode && <Text>코드: {v.optionCode}</Text>}
-                      {typeof v.stock === "number" && <Text>채널재고: {v.stock}</Text>}
+                      {typeof v.stock === "number" && (
+                        <Text>채널재고: {v.stock}</Text>
+                      )}
                     </Flex>
                   </Stack>
                   <SkuPickerCell
                     attached={attached}
                     onChange={(next) =>
-                      setRows((prev) => ({ ...prev, [v.channelVariantId]: next }))
+                      setRows((prev) => ({
+                        ...prev,
+                        [v.channelVariantId]: next,
+                      }))
                     }
                     placeholder="이 옵션에 매핑할 SKU 검색"
                   />

@@ -67,7 +67,8 @@ export function useDeleteSku() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string): Promise<void> => http.delete<void>(`/api/skus/${id}`),
+    mutationFn: (id: string): Promise<void> =>
+      http.delete<void>(`/api/skus/${id}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
     },
@@ -94,8 +95,11 @@ export function useAttachSkuToVariant(skuId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { masterVariantId: string; qty?: number; position?: number }) =>
-      http.post<void>(`/api/skus/${skuId}/master-variants`, input),
+    mutationFn: (input: {
+      masterVariantId: string;
+      qty?: number;
+      position?: number;
+    }) => http.post<void>(`/api/skus/${skuId}/master-variants`, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
       void queryClient.invalidateQueries({ queryKey: ["master-products"] });
@@ -108,7 +112,9 @@ export function useDetachSkuFromVariant(skuId: string) {
 
   return useMutation({
     mutationFn: (masterVariantId: string) =>
-      http.delete<void>(`/api/skus/${skuId}/master-variants/${masterVariantId}`),
+      http.delete<void>(
+        `/api/skus/${skuId}/master-variants/${masterVariantId}`,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: skusQueryRoot });
       void queryClient.invalidateQueries({ queryKey: ["master-products"] });

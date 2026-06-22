@@ -4,4 +4,4 @@ export {
   LOCALE_COOKIE,
   isLocale,
   type Locale,
-} from './config';
+} from "./config";

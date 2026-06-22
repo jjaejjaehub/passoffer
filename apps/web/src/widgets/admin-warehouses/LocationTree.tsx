@@ -1,13 +1,7 @@
 "use client";
 
 import { Box, Flex, IconButton, Text } from "@chakra-ui/react";
-import {
-  ChevronDown,
-  ChevronRight,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import type { InventoryRow, LocationNode } from "@oms/types";
@@ -272,7 +266,10 @@ function TreeRow({
         </Text>
 
         {hasStock ? (
-          <StatusBadge tone="info" label={`${stock.total.toLocaleString()}개`} />
+          <StatusBadge
+            tone="info"
+            label={`${stock.total.toLocaleString()}개`}
+          />
         ) : (
           <Text fontSize="xs" color="gray.400">
             0

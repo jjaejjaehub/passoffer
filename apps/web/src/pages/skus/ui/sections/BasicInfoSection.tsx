@@ -105,7 +105,9 @@ export function BasicInfoSection({ state, update, mode, isEdit }: Props) {
               checked={state.isPrimaryWarehouse}
               onChange={(e) => update("isPrimaryWarehouse", e.target.checked)}
             />
-            <Text fontSize="sm" color="gray.600">{t("form.basic.isPrimaryWarehouseHint")}</Text>
+            <Text fontSize="sm" color="gray.600">
+              {t("form.basic.isPrimaryWarehouseHint")}
+            </Text>
           </Flex>
         </Field>
 

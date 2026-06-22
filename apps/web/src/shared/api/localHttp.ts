@@ -2,7 +2,7 @@
  * Next.js 내부 API 라우트(/api/qoo10/...)용 axios 클라이언트.
  * baseURL 없이 상대 경로로 호출하므로 현재 오리진(localhost:3000)으로 요청됨.
  */
-import axios, { type AxiosRequestConfig, type AxiosResponse } from 'axios';
+import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
 
 const localClient = axios.create({
   timeout: 30_000,

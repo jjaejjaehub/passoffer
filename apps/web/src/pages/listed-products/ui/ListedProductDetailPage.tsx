@@ -61,7 +61,9 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
   if (!product) {
     return (
       <Box py={10} textAlign="center">
-        <Text color="gray.500" fontSize="sm">{t("notFound")}</Text>
+        <Text color="gray.500" fontSize="sm">
+          {t("notFound")}
+        </Text>
       </Box>
     );
   }
@@ -90,34 +92,59 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
 
       <Stack gap={6} maxW="640px">
         <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" p={5}>
-          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>{t("sections.basicInfo")}</Text>
+          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>
+            {t("sections.basicInfo")}
+          </Text>
           <Stack gap={2.5}>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.channelItemCode")}</Text>
-              <Text fontSize="sm" fontWeight="medium">{product.channelItemCode ?? "-"}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.channelItemCode")}
+              </Text>
+              <Text fontSize="sm" fontWeight="medium">
+                {product.channelItemCode ?? "-"}
+              </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.channelSellerCode")}</Text>
-              <Text fontSize="sm" fontWeight="medium">{product.channelSellerCode ?? "-"}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.channelSellerCode")}
+              </Text>
+              <Text fontSize="sm" fontWeight="medium">
+                {product.channelSellerCode ?? "-"}
+              </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.channel")}</Text>
-              <Text fontSize="sm" fontWeight="medium">{product.channelName}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.channel")}
+              </Text>
+              <Text fontSize="sm" fontWeight="medium">
+                {product.channelName}
+              </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.status")}</Text>
-              <Text fontSize="sm" fontWeight="medium">{product.status ?? "-"}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.status")}
+              </Text>
+              <Text fontSize="sm" fontWeight="medium">
+                {product.status ?? "-"}
+              </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.syncStatus")}</Text>
-              <Badge colorPalette={SYNC_STATUS_COLOR[product.syncStatus] ?? "gray"} size="sm">
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.syncStatus")}
+              </Text>
+              <Badge
+                colorPalette={SYNC_STATUS_COLOR[product.syncStatus] ?? "gray"}
+                size="sm"
+              >
                 {t.has(`syncStatus.${product.syncStatus}`)
                   ? t(`syncStatus.${product.syncStatus}` as "syncStatus.SYNCED")
                   : product.syncStatus}
               </Badge>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.lastSyncedAt")}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.lastSyncedAt")}
+              </Text>
               <Text fontSize="sm" fontWeight="medium">
                 {product.lastSyncedAt
                   ? new Date(product.lastSyncedAt).toLocaleString("ko-KR")
@@ -125,7 +152,9 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
               </Text>
             </Flex>
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.600">{t("labels.createdAt")}</Text>
+              <Text fontSize="sm" color="gray.600">
+                {t("labels.createdAt")}
+              </Text>
               <Text fontSize="sm" fontWeight="medium">
                 {new Date(product.createdAt).toLocaleDateString("ko-KR")}
               </Text>
@@ -135,11 +164,20 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
 
         {channelDataEntries.length > 0 && (
           <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" p={5}>
-            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>{t("sections.channelData")}</Text>
+            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>
+              {t("sections.channelData")}
+            </Text>
             <Stack gap={2}>
               {channelDataEntries.map(([key, value]) => (
-                <Flex key={key} justify="space-between" align="flex-start" gap={4}>
-                  <Text fontSize="sm" color="gray.600" flexShrink={0}>{key}</Text>
+                <Flex
+                  key={key}
+                  justify="space-between"
+                  align="flex-start"
+                  gap={4}
+                >
+                  <Text fontSize="sm" color="gray.600" flexShrink={0}>
+                    {key}
+                  </Text>
                   <Text
                     fontSize="sm"
                     fontWeight="medium"
@@ -174,7 +212,9 @@ export function ListedProductDetailPage({ id }: Props): React.JSX.Element {
               size="sm"
               variant="outline"
               borderColor="gray.300"
-              onClick={() => router.push(ROUTES.masterProductEdit(product.masterProductId!))}
+              onClick={() =>
+                router.push(ROUTES.masterProductEdit(product.masterProductId!))
+              }
             >
               {t("actions.editMaster")}
             </Button>

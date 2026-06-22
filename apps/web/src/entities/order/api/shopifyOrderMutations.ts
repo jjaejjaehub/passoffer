@@ -25,7 +25,9 @@ export function useShopifyFulfillOrder(orderId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: FulfillOrderInput): Promise<FulfillOrderResult> => {
+    mutationFn: async (
+      input: FulfillOrderInput,
+    ): Promise<FulfillOrderResult> => {
       if (!channelUuid) throw new Error("Shopify 채널이 연결되지 않았습니다.");
       return http.patch<FulfillOrderResult>(
         `/api/orders/${encodeURIComponent(channelUuid)}/${encodeURIComponent(orderId)}/shipment`,
@@ -33,7 +35,9 @@ export function useShopifyFulfillOrder(orderId: string) {
       );
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: shopifyOrderDetailQueryKey(orderId) });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyOrderDetailQueryKey(orderId),
+      });
       void queryClient.invalidateQueries({ queryKey: shopifyOrdersQueryRoot });
     },
   });
@@ -53,7 +57,11 @@ export function useShopifyBulkFulfillOrders() {
 
   return useMutation({
     mutationFn: async (
-      orders: Array<{ orderId: string; carrierId: string; trackingNumber: string }>,
+      orders: Array<{
+        orderId: string;
+        carrierId: string;
+        trackingNumber: string;
+      }>,
     ): Promise<BulkFulfillResult> => {
       if (!channelUuid) throw new Error("Shopify 채널이 연결되지 않았습니다.");
       const results = await Promise.allSettled(
@@ -76,7 +84,12 @@ export function useShopifyBulkFulfillOrders() {
 
 // ─── 주문 취소 ─────────────────────────────────────────────────
 
-export type OrderCancelReason = "CUSTOMER" | "FRAUD" | "INVENTORY" | "DECLINED" | "OTHER";
+export type OrderCancelReason =
+  | "CUSTOMER"
+  | "FRAUD"
+  | "INVENTORY"
+  | "DECLINED"
+  | "OTHER";
 
 export interface CancelOrderInput {
   reason?: OrderCancelReason;
@@ -97,7 +110,9 @@ export function useShopifyCancelOrder(orderId: string) {
       );
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: shopifyOrderDetailQueryKey(orderId) });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyOrderDetailQueryKey(orderId),
+      });
       void queryClient.invalidateQueries({ queryKey: shopifyOrdersQueryRoot });
     },
   });
@@ -118,7 +133,9 @@ export function useShopifyUpdateOrderNote(orderId: string) {
       );
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: shopifyOrderDetailQueryKey(orderId) });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyOrderDetailQueryKey(orderId),
+      });
       void queryClient.invalidateQueries({ queryKey: shopifyOrdersQueryRoot });
     },
   });

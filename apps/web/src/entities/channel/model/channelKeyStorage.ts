@@ -1,4 +1,4 @@
-import type { ChannelApiKeys } from '@/shared/config';
+import type { ChannelApiKeys } from "@/shared/config";
 
 export type {
   Qoo10ApiKeys,
@@ -6,19 +6,22 @@ export type {
   ShopeeApiKeys,
   ShopifyApiKeys,
   ChannelApiKeys,
-} from '@/shared/config';
+} from "@/shared/config";
 
-const STORAGE_KEY = 'oms_channel_api_keys' as const;
+const STORAGE_KEY = "oms_channel_api_keys" as const;
 
 interface ChannelKeyStorage {
   get<K extends keyof ChannelApiKeys>(channelId: K): ChannelApiKeys[K] | null;
-  set<K extends keyof ChannelApiKeys>(channelId: K, keys: ChannelApiKeys[K]): void;
+  set<K extends keyof ChannelApiKeys>(
+    channelId: K,
+    keys: ChannelApiKeys[K],
+  ): void;
   remove(channelId: keyof ChannelApiKeys): void;
   clear(): void;
 }
 
 function readFromStorage(): ChannelApiKeys {
-  if (typeof window === 'undefined') return {};
+  if (typeof window === "undefined") return {};
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
@@ -29,7 +32,7 @@ function readFromStorage(): ChannelApiKeys {
 }
 
 function writeToStorage(data: ChannelApiKeys): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
@@ -52,7 +55,7 @@ export const channelKeyStorage: ChannelKeyStorage = {
     writeToStorage(data);
   },
   clear() {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       window.localStorage.removeItem(STORAGE_KEY);
     }
   },

@@ -127,9 +127,7 @@ export function OrderFilterPanel({
           </Text>
           <select
             value={channelId}
-            onChange={(e) =>
-              patch({ channelId: e.target.value || undefined })
-            }
+            onChange={(e) => patch({ channelId: e.target.value || undefined })}
             style={{
               height: 32,
               padding: "0 8px",

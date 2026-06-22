@@ -86,7 +86,9 @@ export function SendNotificationModal({
       appToaster.create({ title: "수신번호를 입력하세요", type: "error" });
       return;
     }
-    const missing = template.variables.find((v) => !(vars[v.name] ?? "").trim());
+    const missing = template.variables.find(
+      (v) => !(vars[v.name] ?? "").trim(),
+    );
     if (missing) {
       appToaster.create({
         title: `'${missing.label}' 변수를 입력하세요`,
@@ -102,7 +104,8 @@ export function SendNotificationModal({
         recipient: finalRecipient,
         variables: vars,
       });
-      const label = result.result === "ok" ? "발송 완료" : `발송 ${result.result}`;
+      const label =
+        result.result === "ok" ? "발송 완료" : `발송 ${result.result}`;
       appToaster.create({
         title: label,
         description: result.errorMessage ?? result.vendorMessageId ?? undefined,
@@ -256,7 +259,8 @@ export function SendNotificationModal({
               <Input
                 size="sm"
                 placeholder={
-                  defaultRecipient ?? "010-xxxx-xxxx (생략 시 주문 정보에서 추출)"
+                  defaultRecipient ??
+                  "010-xxxx-xxxx (생략 시 주문 정보에서 추출)"
                 }
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}

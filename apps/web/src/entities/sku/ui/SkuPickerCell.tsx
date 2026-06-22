@@ -24,7 +24,12 @@ export function SkuPickerCell({
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const trimmed = query.trim();
-  const { data } = useSkus({ search: trimmed, page: 1, pageSize: 10, enabled: trimmed.length > 0 });
+  const { data } = useSkus({
+    search: trimmed,
+    page: 1,
+    pageSize: 10,
+    enabled: trimmed.length > 0,
+  });
   const results = data?.items ?? [];
   const attachedIds = new Set(attached.map((a) => a.skuId));
 
@@ -34,14 +39,20 @@ export function SkuPickerCell({
         <Stack gap={1} mb={1}>
           {attached.map((s) => (
             <Flex key={s.skuId} align="center" gap={1}>
-              <Text fontSize="xs" flex="1" lineClamp={1}>{s.code}</Text>
+              <Text fontSize="xs" flex="1" lineClamp={1}>
+                {s.code}
+              </Text>
               <Input
                 size="xs"
                 type="number"
                 value={String(s.qty)}
                 onChange={(e) => {
                   const n = Math.max(1, Number(e.target.value) || 1);
-                  onChange(attached.map((a) => (a.skuId === s.skuId ? { ...a, qty: n } : a)));
+                  onChange(
+                    attached.map((a) =>
+                      a.skuId === s.skuId ? { ...a, qty: n } : a,
+                    ),
+                  );
                 }}
                 w="14"
                 min={1}
@@ -50,7 +61,9 @@ export function SkuPickerCell({
                 size="xs"
                 variant="ghost"
                 colorPalette="red"
-                onClick={() => onChange(attached.filter((a) => a.skuId !== s.skuId))}
+                onClick={() =>
+                  onChange(attached.filter((a) => a.skuId !== s.skuId))
+                }
               >
                 ✕
               </Button>
@@ -99,7 +112,10 @@ export function SkuPickerCell({
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (already) return;
-                  onChange([...attached, { skuId: s.id, code: s.code, qty: 1 }]);
+                  onChange([
+                    ...attached,
+                    { skuId: s.id, code: s.code, qty: 1 },
+                  ]);
                   setQuery("");
                   setOpen(false);
                 }}

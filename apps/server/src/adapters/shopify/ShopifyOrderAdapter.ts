@@ -12,10 +12,10 @@ import type {
   StandardClaim,
   StandardOrder,
   StandardOrderItem,
-} from '@oms/types';
-import { StatusRuleEngine } from '../../services/StatusRuleEngine';
+} from "@oms/types";
+import { StatusRuleEngine } from "../../services/StatusRuleEngine";
 
-const SHOPIFY_API_VERSION = '2025-04';
+const SHOPIFY_API_VERSION = "2025-04";
 const PAGE_SIZE = 250;
 
 // ── GraphQL 응답 타입 ─────────────────────────────────────────────────────
@@ -32,9 +32,15 @@ export interface ShopifyOrderNode {
   phone: string | null;
   note: string | null;
   tags: string[];
-  customer: { displayName: string; email: string | null; phone: string | null } | null;
+  customer: {
+    displayName: string;
+    email: string | null;
+    phone: string | null;
+  } | null;
   currentTotalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
-  totalShippingPriceSet: { shopMoney: { amount: string; currencyCode: string } } | null;
+  totalShippingPriceSet: {
+    shopMoney: { amount: string; currencyCode: string };
+  } | null;
   shippingAddress: {
     name: string | null;
     address1: string | null;
@@ -44,7 +50,10 @@ export interface ShopifyOrderNode {
     countryCodeV2: string | null;
     phone: string | null;
   } | null;
-  shippingLine: { title: string | null; carrierIdentifier: string | null } | null;
+  shippingLine: {
+    title: string | null;
+    carrierIdentifier: string | null;
+  } | null;
   fulfillments: Array<{
     id: string;
     status: string;
@@ -58,7 +67,9 @@ export interface ShopifyOrderNode {
       title: string;
       quantity: number;
       sku: string | null;
-      originalUnitPriceSet: { shopMoney: { amount: string; currencyCode: string } };
+      originalUnitPriceSet: {
+        shopMoney: { amount: string; currencyCode: string };
+      };
       originalTotalSet: { shopMoney: { amount: string; currencyCode: string } };
       variant: { id: string | null; sku: string | null } | null;
     }>;
@@ -79,7 +90,9 @@ interface ShopifyReturnNode {
       returnReason: string | null;
       returnReasonNote: string | null;
       customerNote: string | null;
-      fulfillmentLineItem: { lineItem: { title: string; variant: { sku: string | null } | null } } | null;
+      fulfillmentLineItem: {
+        lineItem: { title: string; variant: { sku: string | null } | null };
+      } | null;
     }>;
   };
   refunds: {
@@ -92,7 +105,10 @@ interface ShopifyReturnNode {
       reverseDeliveries: {
         nodes: Array<{
           deliverable: {
-            tracking: { number: string | null; carrierName: string | null } | null;
+            tracking: {
+              number: string | null;
+              carrierName: string | null;
+            } | null;
           } | null;
         }>;
       };
@@ -294,12 +310,12 @@ function parseFloatOrNull(s: string | null | undefined): number | null {
 }
 
 function gidNumericTail(gid: string): string {
-  const i = gid.lastIndexOf('/');
+  const i = gid.lastIndexOf("/");
   return i >= 0 ? gid.slice(i + 1) : gid;
 }
 
 function ensureOrderGid(id: string): string {
-  if (id.startsWith('gid://shopify/Order/')) return id;
+  if (id.startsWith("gid://shopify/Order/")) return id;
   if (/^\d+$/.test(id)) return `gid://shopify/Order/${id}`;
   return id;
 }
@@ -310,15 +326,16 @@ function ensureOrderGid(id: string): string {
 // DECLINED/CANCELED → requires_recheck (운영자 확인 필요)
 function mapReturnStatus(status: string): ClaimStatus {
   const s = status.toUpperCase();
-  if (s === 'CLOSED') return 'return_done';
-  if (s === 'DECLINED' || s === 'CANCELED' || s === 'CANCELLED') return 'requires_recheck';
-  return 'return_requested';
+  if (s === "CLOSED") return "return_done";
+  if (s === "DECLINED" || s === "CANCELED" || s === "CANCELLED")
+    return "requires_recheck";
+  return "return_requested";
 }
 
 // ── 어댑터 ────────────────────────────────────────────────────────────
 
 export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
-  readonly channelKey = 'shopify' as const;
+  readonly channelKey = "shopify" as const;
 
   constructor(
     private readonly channelId: string,
@@ -326,14 +343,17 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
     private readonly accessToken: string,
   ) {}
 
-  private async graphql<T>(query: string, variables?: Record<string, unknown>): Promise<T> {
+  private async graphql<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<T> {
     const res = await fetch(
       `https://${this.shopDomain}/admin/api/${SHOPIFY_API_VERSION}/graphql.json`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': this.accessToken,
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": this.accessToken,
         },
         body: JSON.stringify({ query, variables }),
       },
@@ -348,13 +368,16 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
 
   toStandard(node: ShopifyOrderNode): StandardOrder {
     const money = node.currentTotalPriceSet.shopMoney;
-    const currency = money.currencyCode || 'JPY';
+    const currency = money.currencyCode || "JPY";
     const total = parseFloatOrNull(money.amount);
-    const shippingPrice = parseFloatOrNull(node.totalShippingPriceSet?.shopMoney.amount ?? null);
+    const shippingPrice = parseFloatOrNull(
+      node.totalShippingPriceSet?.shopMoney.amount ?? null,
+    );
 
     // 최신 fulfillment 1건 — 가장 최근 createdAt
-    const fulfillment = [...(node.fulfillments ?? [])]
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
+    const fulfillment = [...(node.fulfillments ?? [])].sort((a, b) =>
+      a.createdAt < b.createdAt ? 1 : -1,
+    )[0];
     const trackingInfo = fulfillment?.trackingInfo?.[0];
     const trackingNo = trimOrNull(trackingInfo?.number ?? null);
     const trackingCarrier =
@@ -372,26 +395,34 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
       cancelledAt: node.cancelledAt,
     });
 
-    const lineItems: StandardOrderItem[] = node.lineItems.nodes.map((li, idx) => {
-      const unit = parseFloatOrNull(li.originalUnitPriceSet?.shopMoney.amount ?? null);
-      const lineTotal = parseFloatOrNull(li.originalTotalSet?.shopMoney.amount ?? null);
-      return {
-        lineNo: idx + 1,
-        channelItemCode: li.variant?.id ? gidNumericTail(li.variant.id) : trimOrNull(li.id),
-        channelItemTitle: trimOrNull(li.title),
-        channelOption: trimOrNull(li.variant?.sku ?? li.sku ?? null),
-        channelOptionCode: trimOrNull(li.variant?.sku ?? li.sku ?? null),
-        orderQty: li.quantity,
-        unitPrice: unit,
-        totalPrice: lineTotal,
-        skuId: null,
-        skuCode: null,
-        skuName: null,
-        outputQty: li.quantity,
-        appliedGifts: [],
-        warehouseId: null,
-      };
-    });
+    const lineItems: StandardOrderItem[] = node.lineItems.nodes.map(
+      (li, idx) => {
+        const unit = parseFloatOrNull(
+          li.originalUnitPriceSet?.shopMoney.amount ?? null,
+        );
+        const lineTotal = parseFloatOrNull(
+          li.originalTotalSet?.shopMoney.amount ?? null,
+        );
+        return {
+          lineNo: idx + 1,
+          channelItemCode: li.variant?.id
+            ? gidNumericTail(li.variant.id)
+            : trimOrNull(li.id),
+          channelItemTitle: trimOrNull(li.title),
+          channelOption: trimOrNull(li.variant?.sku ?? li.sku ?? null),
+          channelOptionCode: trimOrNull(li.variant?.sku ?? li.sku ?? null),
+          orderQty: li.quantity,
+          unitPrice: unit,
+          totalPrice: lineTotal,
+          skuId: null,
+          skuCode: null,
+          skuName: null,
+          outputQty: li.quantity,
+          appliedGifts: [],
+          warehouseId: null,
+        };
+      },
+    );
 
     const buyerName =
       trimOrNull(node.customer?.displayName ?? null) ??
@@ -432,7 +463,10 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
       senderAddress: null,
       // Payment
       orderedAt: node.createdAt,
-      paidAt: node.displayFinancialStatus?.toUpperCase() === 'PAID' ? node.createdAt : null,
+      paidAt:
+        node.displayFinancialStatus?.toUpperCase() === "PAID"
+          ? node.createdAt
+          : null,
       paymentMethod: null,
       currency,
       orderPrice: total,
@@ -488,14 +522,17 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
     let hasNext = true;
 
     while (hasNext) {
-      const res: OrdersGQLResponse = await this.graphql<OrdersGQLResponse>(ORDERS_QUERY, {
-        first: PAGE_SIZE,
-        after: cursor,
-        query: queryStr,
-      });
+      const res: OrdersGQLResponse = await this.graphql<OrdersGQLResponse>(
+        ORDERS_QUERY,
+        {
+          first: PAGE_SIZE,
+          after: cursor,
+          query: queryStr,
+        },
+      );
       if (res.errors?.length) {
         throw new Error(
-          `Shopify pullOrders GQL error: ${res.errors.map((e: { message: string }) => e.message).join('; ')}`,
+          `Shopify pullOrders GQL error: ${res.errors.map((e: { message: string }) => e.message).join("; ")}`,
         );
       }
       const page = res.data?.orders;
@@ -512,10 +549,12 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
 
   async pullOrderDetail(channelOrderId: string): Promise<StandardOrder> {
     const id = ensureOrderGid(channelOrderId);
-    const res = await this.graphql<OrdersGQLResponse>(ORDER_BY_ID_QUERY, { id });
+    const res = await this.graphql<OrdersGQLResponse>(ORDER_BY_ID_QUERY, {
+      id,
+    });
     if (res.errors?.length) {
       throw new Error(
-        `Shopify pullOrderDetail GQL error: ${res.errors.map((e: { message: string }) => e.message).join('; ')}`,
+        `Shopify pullOrderDetail GQL error: ${res.errors.map((e: { message: string }) => e.message).join("; ")}`,
       );
     }
     const node = res.data?.order;
@@ -534,19 +573,26 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
     let cursor: string | null = null;
     let hasNext = true;
 
-    type ReverseFulfillmentOrderNode = ShopifyReturnNode['reverseFulfillmentOrders']['nodes'][number];
-    type ReverseDeliveryNode = ReverseFulfillmentOrderNode['reverseDeliveries']['nodes'][number];
-    type ReverseTracking = NonNullable<ReverseDeliveryNode['deliverable']>['tracking'];
+    type ReverseFulfillmentOrderNode =
+      ShopifyReturnNode["reverseFulfillmentOrders"]["nodes"][number];
+    type ReverseDeliveryNode =
+      ReverseFulfillmentOrderNode["reverseDeliveries"]["nodes"][number];
+    type ReverseTracking = NonNullable<
+      ReverseDeliveryNode["deliverable"]
+    >["tracking"];
 
     while (hasNext) {
-      const res: ReturnsGQLResponse = await this.graphql<ReturnsGQLResponse>(RETURNS_QUERY, {
-        first: PAGE_SIZE,
-        after: cursor,
-        query: queryStr,
-      });
+      const res: ReturnsGQLResponse = await this.graphql<ReturnsGQLResponse>(
+        RETURNS_QUERY,
+        {
+          first: PAGE_SIZE,
+          after: cursor,
+          query: queryStr,
+        },
+      );
       if (res.errors?.length) {
         throw new Error(
-          `Shopify pullClaims GQL error: ${res.errors.map((e: { message: string }) => e.message).join('; ')}`,
+          `Shopify pullClaims GQL error: ${res.errors.map((e: { message: string }) => e.message).join("; ")}`,
         );
       }
       const page = res.data?.returns;
@@ -559,21 +605,28 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
           trimOrNull(firstLi?.returnReasonNote ?? null) ??
           trimOrNull(firstLi?.returnReason ?? null) ??
           trimOrNull(firstLi?.customerNote ?? null);
-        const reverseTracking: ReverseTracking = node.reverseFulfillmentOrders?.nodes
-          ?.flatMap((rfo: ReverseFulfillmentOrderNode) => rfo.reverseDeliveries?.nodes ?? [])
-          ?.map((rd: ReverseDeliveryNode) => rd.deliverable?.tracking ?? null)
-          ?.find((t: ReverseTracking) => t != null && t.number != null) ?? null;
+        const reverseTracking: ReverseTracking =
+          node.reverseFulfillmentOrders?.nodes
+            ?.flatMap(
+              (rfo: ReverseFulfillmentOrderNode) =>
+                rfo.reverseDeliveries?.nodes ?? [],
+            )
+            ?.map((rd: ReverseDeliveryNode) => rd.deliverable?.tracking ?? null)
+            ?.find((t: ReverseTracking) => t != null && t.number != null) ??
+          null;
 
         out.push({
           channelOrderId: gidNumericTail(node.order.id),
           channelPackNo: null,
-          claimType: 'return',
+          claimType: "return",
           claimStatus: mapReturnStatus(node.status),
           claimRequestedAt: toIsoOrNull(node.createdAt),
           claimResolvedAt: toIsoOrNull(node.closedAt),
           claimReason: reason,
           returnTrackingNo: trimOrNull(reverseTracking?.number ?? null),
-          returnDeliveryCompany: trimOrNull(reverseTracking?.carrierName ?? null),
+          returnDeliveryCompany: trimOrNull(
+            reverseTracking?.carrierName ?? null,
+          ),
           incidentType: null,
           incidentSource: null,
           incidentSkipCollection: false,
@@ -594,15 +647,15 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
   // Shopify는 ShippingCompany를 영문/표준명으로 인식하므로 매핑이 필요하다.
   // 매핑 미정의는 원문 그대로 넘기고, Shopify가 free-text로 받게 둔다.
   private static readonly CARRIER_NAME_TO_SHOPIFY: Record<string, string> = {
-    'CJ대한통운': 'CJ Logistics',
-    '롯데택배': 'Lotte Global Logistics',
-    '한진택배': 'Hanjin',
-    '우체국택배': 'Korea Post',
-    '기타': 'Other',
+    CJ대한통운: "CJ Logistics",
+    롯데택배: "Lotte Global Logistics",
+    한진택배: "Hanjin",
+    우체국택배: "Korea Post",
+    기타: "Other",
   };
 
   private resolveCarrierForShopify(raw: string): string {
-    const trimmed = (raw ?? '').trim();
+    const trimmed = (raw ?? "").trim();
     return ShopifyOrderAdapter.CARRIER_NAME_TO_SHOPIFY[trimmed] ?? trimmed;
   }
 
@@ -617,18 +670,21 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
         return {
           ok: false,
           channelOrderId: payload.channelOrderId,
-          message: foRes.errors.map((e: { message: string }) => e.message).join('; '),
+          message: foRes.errors
+            .map((e: { message: string }) => e.message)
+            .join("; "),
         };
       }
-      const fulfillmentOrders = foRes.data?.order?.fulfillmentOrders?.nodes ?? [];
+      const fulfillmentOrders =
+        foRes.data?.order?.fulfillmentOrders?.nodes ?? [];
       const openFos = fulfillmentOrders.filter(
-        (fo) => fo.status === 'OPEN' || fo.status === 'IN_PROGRESS',
+        (fo) => fo.status === "OPEN" || fo.status === "IN_PROGRESS",
       );
       if (openFos.length === 0) {
         return {
           ok: false,
           channelOrderId: payload.channelOrderId,
-          message: 'no open fulfillment orders',
+          message: "no open fulfillment orders",
         };
       }
 
@@ -645,7 +701,7 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
         return {
           ok: false,
           channelOrderId: payload.channelOrderId,
-          message: 'no remaining line items to fulfill',
+          message: "no remaining line items to fulfill",
         };
       }
 
@@ -670,15 +726,15 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
           ok: false,
           channelOrderId: payload.channelOrderId,
           message:
-            res.errors?.map((e: { message: string }) => e.message).join('; ') ??
-            userErrors.map((e: { message: string }) => e.message).join('; '),
+            res.errors?.map((e: { message: string }) => e.message).join("; ") ??
+            userErrors.map((e: { message: string }) => e.message).join("; "),
           raw: res,
         };
       }
       return {
         ok: true,
         channelOrderId: payload.channelOrderId,
-        message: res.data?.fulfillmentCreate?.fulfillment?.id ?? 'ok',
+        message: res.data?.fulfillmentCreate?.fulfillment?.id ?? "ok",
         raw: res,
       };
     } catch (e) {
@@ -693,11 +749,13 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
   // ── pushDispatchDelay ─────────────────────────────────────────────
   // Shopify Admin API에 발송예정일 변경 primitive가 없음 — 채널 미지원.
 
-  async pushDispatchDelay(payload: PushDispatchDelayPayload): Promise<PushResult[]> {
+  async pushDispatchDelay(
+    payload: PushDispatchDelayPayload,
+  ): Promise<PushResult[]> {
     return payload.channelOrderIds.map((id) => ({
       ok: false,
       channelOrderId: id,
-      message: 'not_supported_by_channel',
+      message: "not_supported_by_channel",
     }));
   }
 }

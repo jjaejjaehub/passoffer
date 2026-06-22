@@ -1,4 +1,4 @@
-import { AllOrdersPage } from '@/pages/all-orders';
+import { AllOrdersPage } from "@/pages/all-orders";
 
 export default function Page(): React.JSX.Element {
   return <AllOrdersPage />;

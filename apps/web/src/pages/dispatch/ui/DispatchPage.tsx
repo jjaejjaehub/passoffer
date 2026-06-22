@@ -25,11 +25,7 @@ import { DispatchDelayModal } from "@/features/dispatch-delay";
 import { appToaster } from "@/shared/ui/app-toaster";
 import { PageHeader } from "@/shared/ui";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
-import {
-  DEFAULT_PAGE_SIZE,
-  LS_KEYS,
-  type PageSize,
-} from "@/shared/config";
+import { DEFAULT_PAGE_SIZE, LS_KEYS, type PageSize } from "@/shared/config";
 
 const DISPATCH_PRESET_RANKS = [25, 30, 35, 40];
 
@@ -137,9 +133,7 @@ export function DispatchPage(): React.JSX.Element {
             >
               <Table2 size={14} style={{ marginRight: 6 }} />
               운송장 직접 입력
-              {selectedOrders.length > 0
-                ? ` (${selectedOrders.length})`
-                : ""}
+              {selectedOrders.length > 0 ? ` (${selectedOrders.length})` : ""}
             </Button>
             <Button
               size="sm"
@@ -158,9 +152,7 @@ export function DispatchPage(): React.JSX.Element {
             >
               <Clock size={14} style={{ marginRight: 6 }} />
               배송지연
-              {selectedOrders.length > 0
-                ? ` (${selectedOrders.length})`
-                : ""}
+              {selectedOrders.length > 0 ? ` (${selectedOrders.length})` : ""}
             </Button>
             <OrderSyncButtons />
           </HStack>
@@ -205,11 +197,7 @@ export function DispatchPage(): React.JSX.Element {
                   {t("summary.byCarrierLabel")}
                 </Text>
                 {dispatchSummary.byCarrier.map((c) => (
-                  <Badge
-                    key={c.carrier}
-                    colorPalette="gray"
-                    variant="outline"
-                  >
+                  <Badge key={c.carrier} colorPalette="gray" variant="outline">
                     {c.carrier} {c.count}
                   </Badge>
                 ))}

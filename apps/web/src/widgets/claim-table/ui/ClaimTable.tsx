@@ -76,24 +76,48 @@ export function ClaimTable({
                 }
               />
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.status")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="110px">{t("columns.orderNo")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="110px">{t("columns.cartNo")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="200px">{t("columns.productName")}</Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.status")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="110px">
+              {t("columns.orderNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="110px">
+              {t("columns.cartNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="200px">
+              {t("columns.productName")}
+            </Table.ColumnHeader>
             <Table.ColumnHeader w="60px" textAlign="right">
               {t("columns.quantity")}
             </Table.ColumnHeader>
             <Table.ColumnHeader w="120px" textAlign="right">
               {t("columns.amount")}
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.requestedAt")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.completedAt")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.orderedAt")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">{t("columns.buyer")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">{t("columns.recipient")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="180px">{t("columns.reason")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">{t("columns.shippingCompanyTracking")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">{t("columns.returnShippingCompanyTracking")}</Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.requestedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.completedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.orderedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.buyer")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.recipient")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="180px">
+              {t("columns.reason")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.shippingCompanyTracking")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.returnShippingCompanyTracking")}
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
 

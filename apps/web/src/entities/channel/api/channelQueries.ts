@@ -64,7 +64,8 @@ export function useChannels() {
 export function usePlatformConstraints() {
   return useQuery({
     queryKey: ["platform-constraints"],
-    queryFn: () => http.get<PlatformConstraintsResponse>("/api/platform-constraints"),
+    queryFn: () =>
+      http.get<PlatformConstraintsResponse>("/api/platform-constraints"),
     staleTime: Infinity,
   });
 }

@@ -72,7 +72,8 @@ export function InventoryTable({
     const arr = Array.from(map.values());
     arr.sort((a, b) => {
       const dir = sortDir === "asc" ? 1 : -1;
-      if (sortKey === "quantity") return (a.totalQuantity - b.totalQuantity) * dir;
+      if (sortKey === "quantity")
+        return (a.totalQuantity - b.totalQuantity) * dir;
       return a.sku.localeCompare(b.sku) * dir;
     });
     return arr;
@@ -111,7 +112,8 @@ export function InventoryTable({
           color="blue.800"
           fontSize="sm"
         >
-          이 창고는 LOT 추적을 지원하지 않습니다. LOT 단위 그룹은 비활성화됩니다.
+          이 창고는 LOT 추적을 지원하지 않습니다. LOT 단위 그룹은
+          비활성화됩니다.
         </Box>
       ) : null}
 
@@ -235,7 +237,11 @@ function SortableHeader({
   onClick,
   isNumeric = false,
 }: SortableHeaderProps): ReactElement {
-  const Icon = active ? (dir === "asc" ? ChevronUp : ChevronDown) : ChevronsUpDown;
+  const Icon = active
+    ? dir === "asc"
+      ? ChevronUp
+      : ChevronDown
+    : ChevronsUpDown;
   return (
     <Table.ColumnHeader textAlign={isNumeric ? "right" : undefined}>
       <button

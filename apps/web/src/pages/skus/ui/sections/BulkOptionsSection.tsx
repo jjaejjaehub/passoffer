@@ -1,6 +1,20 @@
-import { Badge, Box, Button, Flex, Input, Stack, Table, Text } from "@chakra-ui/react";
+import {
+  Badge,
+  Box,
+  Button,
+  Flex,
+  Input,
+  Stack,
+  Table,
+  Text,
+} from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
-import { type Dispatch, type KeyboardEvent, type SetStateAction, useState } from "react";
+import {
+  type Dispatch,
+  type KeyboardEvent,
+  type SetStateAction,
+  useState,
+} from "react";
 import { ShopifyFormHelperText as HelperText } from "@/shared/ui/ShopifyFormPrimitives";
 import type { AxisRow } from "../../model/formState";
 import { Field, FormBox } from "./primitives";
@@ -74,7 +88,10 @@ function AxisChipInput({
       borderColor="gray.200"
       borderRadius="md"
       bg="white"
-      _focusWithin={{ borderColor: "blue.400", boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)" }}
+      _focusWithin={{
+        borderColor: "blue.400",
+        boxShadow: "0 0 0 1px var(--chakra-colors-blue-400)",
+      }}
     >
       {chips.map((chip, idx) => (
         <Badge
@@ -122,7 +139,9 @@ function AxisChipInput({
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => commit(draft)}
-        placeholder={chips.length === 0 ? t("form.bulk.chipInputPlaceholder") : ""}
+        placeholder={
+          chips.length === 0 ? t("form.bulk.chipInputPlaceholder") : ""
+        }
       />
     </Flex>
   );
@@ -163,19 +182,32 @@ export function BulkOptionsSection({
 
         <Box>
           <Flex justify="space-between" align="center" mb={2}>
-            <Text fontSize="sm" fontWeight="medium">{t("form.bulk.axesTitle")}</Text>
+            <Text fontSize="sm" fontWeight="medium">
+              {t("form.bulk.axesTitle")}
+            </Text>
             <Text fontSize="xs" color="gray.500">
               {t("form.bulk.axesHelper")}
             </Text>
           </Flex>
 
-          <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
+          <Box
+            borderWidth="1px"
+            borderColor="gray.200"
+            borderRadius="md"
+            overflow="hidden"
+          >
             <Table.Root size="sm">
               <Table.Header bg="gray.50">
                 <Table.Row>
-                  <Table.ColumnHeader w="200px">{t("form.bulk.axisType")}</Table.ColumnHeader>
-                  <Table.ColumnHeader>{t("form.bulk.axisName")}</Table.ColumnHeader>
-                  <Table.ColumnHeader w="80px" textAlign="center">{t("form.bulk.axisManage")}</Table.ColumnHeader>
+                  <Table.ColumnHeader w="200px">
+                    {t("form.bulk.axisType")}
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader>
+                    {t("form.bulk.axisName")}
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader w="80px" textAlign="center">
+                    {t("form.bulk.axisManage")}
+                  </Table.ColumnHeader>
                 </Table.Row>
               </Table.Header>
               <Table.Body>
@@ -189,13 +221,17 @@ export function BulkOptionsSection({
                           size="sm"
                           placeholder={t("form.bulk.axisNamePlaceholder")}
                           value={axis.name}
-                          onChange={(e) => updateAxis(idx, { name: e.target.value })}
+                          onChange={(e) =>
+                            updateAxis(idx, { name: e.target.value })
+                          }
                         />
                       </Table.Cell>
                       <Table.Cell verticalAlign="top">
                         <AxisChipInput
                           chips={chips}
-                          onChange={(next) => updateAxis(idx, { values: joinChips(next) })}
+                          onChange={(next) =>
+                            updateAxis(idx, { values: joinChips(next) })
+                          }
                         />
                       </Table.Cell>
                       <Table.Cell verticalAlign="top" textAlign="center">
@@ -236,25 +272,41 @@ export function BulkOptionsSection({
             {t("form.bulk.previewTitle", { count: bulkPreview.length })}
           </Text>
           {bulkPreview.length === 0 ? (
-            <Text fontSize="sm" color="gray.500">{t("form.bulk.previewEmpty")}</Text>
+            <Text fontSize="sm" color="gray.500">
+              {t("form.bulk.previewEmpty")}
+            </Text>
           ) : (
-            <Box maxH="240px" overflowY="auto" borderWidth="1px" borderColor="gray.200" borderRadius="md">
+            <Box
+              maxH="240px"
+              overflowY="auto"
+              borderWidth="1px"
+              borderColor="gray.200"
+              borderRadius="md"
+            >
               <Table.Root size="sm">
                 <Table.Header>
                   <Table.Row>
-                    <Table.ColumnHeader>{t("form.bulk.previewCode")}</Table.ColumnHeader>
-                    <Table.ColumnHeader>{t("form.bulk.previewAttrs")}</Table.ColumnHeader>
+                    <Table.ColumnHeader>
+                      {t("form.bulk.previewCode")}
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader>
+                      {t("form.bulk.previewAttrs")}
+                    </Table.ColumnHeader>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
                   {bulkPreview.map((row) => (
                     <Table.Row key={row.code}>
                       <Table.Cell>
-                        <Text fontSize="sm" fontFamily="mono">{row.code}</Text>
+                        <Text fontSize="sm" fontFamily="mono">
+                          {row.code}
+                        </Text>
                       </Table.Cell>
                       <Table.Cell>
                         <Text fontSize="xs" color="gray.600">
-                          {Object.entries(row.attrs).map(([k, v]) => `${k}=${v}`).join(", ")}
+                          {Object.entries(row.attrs)
+                            .map(([k, v]) => `${k}=${v}`)
+                            .join(", ")}
                         </Text>
                       </Table.Cell>
                     </Table.Row>
@@ -265,9 +317,7 @@ export function BulkOptionsSection({
           )}
         </Box>
 
-        <HelperText>
-          {t("form.bulk.finalHelper")}
-        </HelperText>
+        <HelperText>{t("form.bulk.finalHelper")}</HelperText>
       </Stack>
     </FormBox>
   );

@@ -51,7 +51,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (!shopDomain || !clientId || !clientSecret) {
     return NextResponse.json(
-      { error: "MISSING_FIELDS", message: "shopDomain, clientId, clientSecret 모두 필요합니다." },
+      {
+        error: "MISSING_FIELDS",
+        message: "shopDomain, clientId, clientSecret 모두 필요합니다.",
+      },
       { status: 400 },
     );
   }

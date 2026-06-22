@@ -43,7 +43,10 @@ export function OrderSyncButtons({
           동기화
         </Button>
       </Flex>
-      <CollectOrdersModal open={collectOpen} onClose={() => setCollectOpen(false)} />
+      <CollectOrdersModal
+        open={collectOpen}
+        onClose={() => setCollectOpen(false)}
+      />
       <SyncOrdersModal open={syncOpen} onClose={() => setSyncOpen(false)} />
     </>
   );

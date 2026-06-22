@@ -1,9 +1,9 @@
-import type { FastifyInstance } from 'fastify';
-import { and, desc, eq } from 'drizzle-orm';
-import type { INotificationAdapter, NotificationChannel } from '@oms/types';
-import { MockSmsAdapter } from '../adapters/notifications/MockSmsAdapter';
-import { MockKakaoAdapter } from '../adapters/notifications/MockKakaoAdapter';
-import { notificationEvents } from '../db/schema';
+import type { FastifyInstance } from "fastify";
+import { and, desc, eq } from "drizzle-orm";
+import type { INotificationAdapter, NotificationChannel } from "@oms/types";
+import { MockSmsAdapter } from "../adapters/notifications/MockSmsAdapter";
+import { MockKakaoAdapter } from "../adapters/notifications/MockKakaoAdapter";
+import { notificationEvents } from "../db/schema";
 
 export interface SendNotificationInput {
   userId: string;
@@ -16,7 +16,7 @@ export interface SendNotificationInput {
 }
 
 function pickAdapter(channel: NotificationChannel): INotificationAdapter {
-  return channel === 'sms' ? new MockSmsAdapter() : new MockKakaoAdapter();
+  return channel === "sms" ? new MockSmsAdapter() : new MockKakaoAdapter();
 }
 
 export class NotificationService {
@@ -33,7 +33,7 @@ export class NotificationService {
         variables: input.variables,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'unknown error';
+      const message = err instanceof Error ? err.message : "unknown error";
       const [row] = await this.app.db
         .insert(notificationEvents)
         .values({
@@ -43,7 +43,7 @@ export class NotificationService {
           template: input.template,
           recipient: input.recipient,
           payload: (input.variables ?? {}) as Record<string, unknown>,
-          result: 'error',
+          result: "error",
           errorMessage: message,
         })
         .returning();
@@ -73,7 +73,10 @@ export class NotificationService {
       .select()
       .from(notificationEvents)
       .where(
-        and(eq(notificationEvents.userId, userId), eq(notificationEvents.orderId, orderId)),
+        and(
+          eq(notificationEvents.userId, userId),
+          eq(notificationEvents.orderId, orderId),
+        ),
       )
       .orderBy(desc(notificationEvents.sentAt));
   }

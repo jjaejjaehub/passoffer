@@ -48,7 +48,13 @@ export function useUpdateMatchingRule(id: string) {
 export function useToggleMatchingRule() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }): Promise<void> =>
+    mutationFn: ({
+      id,
+      isActive,
+    }: {
+      id: string;
+      isActive: boolean;
+    }): Promise<void> =>
       http.patch<void>(`/api/matching-rules/${id}/toggle`, { isActive }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: matchingRulesQueryRoot });
@@ -71,7 +77,9 @@ export function useDeleteManyMatchingRules() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (ids: string[]): Promise<{ deleted: number }> =>
-      http.post<{ deleted: number }>("/api/matching-rules/delete-many", { ids }),
+      http.post<{ deleted: number }>("/api/matching-rules/delete-many", {
+        ids,
+      }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: matchingRulesQueryRoot });
     },

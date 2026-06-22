@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { http } from '@/shared/api';
+import { useQuery } from "@tanstack/react-query";
+import { http } from "@/shared/api";
 
 export interface NewOrderItem {
   id: string;
@@ -19,13 +19,13 @@ export interface NewOrderItemsResult {
 }
 
 export const newOrderItemsQueries = {
-  all: () => ['new-order-items'] as const,
-  detail: (orderId: string) => ['new-order-items', orderId] as const,
+  all: () => ["new-order-items"] as const,
+  detail: (orderId: string) => ["new-order-items", orderId] as const,
 };
 
 export function useNewOrderItems(orderId: string | null) {
   return useQuery({
-    queryKey: newOrderItemsQueries.detail(orderId ?? ''),
+    queryKey: newOrderItemsQueries.detail(orderId ?? ""),
     queryFn: async (): Promise<NewOrderItemsResult> =>
       await http.get<NewOrderItemsResult>(`/api/new-orders/${orderId}/items`),
     enabled: !!orderId,

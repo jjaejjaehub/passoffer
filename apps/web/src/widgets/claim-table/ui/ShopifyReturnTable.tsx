@@ -7,10 +7,7 @@ import type { ShopifyReturnItem } from "@/entities/order";
 
 // ─── 상태 색상 ─────────────────────────────────────────────────
 
-const RETURN_STATUS_COLOR: Record<
-  string,
-  { bg: string; color: string }
-> = {
+const RETURN_STATUS_COLOR: Record<string, { bg: string; color: string }> = {
   OPEN: { bg: "blue.50", color: "blue.700" },
   REQUESTED: { bg: "orange.50", color: "orange.700" },
   DECLINED: { bg: "red.50", color: "red.700" },
@@ -18,7 +15,13 @@ const RETURN_STATUS_COLOR: Record<
   CANCELLED: { bg: "gray.100", color: "gray.600" },
 };
 
-const STATUS_KEYS = new Set(["OPEN", "REQUESTED", "DECLINED", "CLOSED", "CANCELLED"]);
+const STATUS_KEYS = new Set([
+  "OPEN",
+  "REQUESTED",
+  "DECLINED",
+  "CLOSED",
+  "CANCELLED",
+]);
 const REASON_KEYS = new Set([
   "UNKNOWN",
   "SIZE_TOO_SMALL",
@@ -37,7 +40,10 @@ const REASON_KEYS = new Set([
 function ReturnStatusBadge({ status }: { status: string }): React.JSX.Element {
   const t = useTranslations("widgets.shopifyReturnTable.statuses");
   const label = STATUS_KEYS.has(status) ? t(status) : status;
-  const colors = RETURN_STATUS_COLOR[status] ?? { bg: "gray.100", color: "gray.600" };
+  const colors = RETURN_STATUS_COLOR[status] ?? {
+    bg: "gray.100",
+    color: "gray.600",
+  };
   return (
     <Box
       display="inline-flex"
@@ -75,8 +81,10 @@ export function ShopifyReturnTable({
 }: ShopifyReturnTableProps): React.JSX.Element {
   const t = useTranslations("widgets.shopifyReturnTable");
   const tReasons = useTranslations("widgets.shopifyReturnTable.reasons");
-  const isAllSelected = returns.length > 0 && selectedIds.length === returns.length;
-  const isIndeterminate = selectedIds.length > 0 && selectedIds.length < returns.length;
+  const isAllSelected =
+    returns.length > 0 && selectedIds.length === returns.length;
+  const isIndeterminate =
+    selectedIds.length > 0 && selectedIds.length < returns.length;
 
   const handleSelectAll = (checked: boolean): void => {
     onSelectionChange(checked ? returns.map((r) => r.returnId) : []);
@@ -121,16 +129,36 @@ export function ShopifyReturnTable({
                 }
               />
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">{t("columns.status")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.returnNo")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.orderNo")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="200px">{t("columns.productName")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="60px" textAlign="right">{t("columns.quantity")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px" textAlign="right">{t("columns.refundAmount")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="160px">{t("columns.reason")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.requestedAt")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">{t("columns.completedAt")}</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">{t("columns.buyer")}</Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.status")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.returnNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.orderNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="200px">
+              {t("columns.productName")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="60px" textAlign="right">
+              {t("columns.quantity")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px" textAlign="right">
+              {t("columns.refundAmount")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="160px">
+              {t("columns.reason")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.requestedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.completedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.buyer")}
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
 
@@ -141,9 +169,14 @@ export function ShopifyReturnTable({
             const extraCount = ret.lineItems.length - 1;
             const firstReason = firstLineItem?.returnReason;
             const reasonLabel = firstReason
-              ? (REASON_KEYS.has(firstReason) ? tReasons(firstReason) : firstReason)
+              ? REASON_KEYS.has(firstReason)
+                ? tReasons(firstReason)
+                : firstReason
               : null;
-            const reasonNote = firstLineItem?.returnReasonNote ?? firstLineItem?.customerNote ?? null;
+            const reasonNote =
+              firstLineItem?.returnReasonNote ??
+              firstLineItem?.customerNote ??
+              null;
 
             return (
               <Table.Row
@@ -243,7 +276,9 @@ export function ShopifyReturnTable({
                     </Text>
                   )}
                   {!reasonLabel && !reasonNote && (
-                    <Text fontSize="xs" color="gray.400">—</Text>
+                    <Text fontSize="xs" color="gray.400">
+                      —
+                    </Text>
                   )}
                 </Table.Cell>
 

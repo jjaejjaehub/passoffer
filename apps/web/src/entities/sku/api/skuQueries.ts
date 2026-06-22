@@ -2,7 +2,12 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { http } from "@/shared/api";
-import type { Sku, SkuDetail, SkusResponse, ListedProductSkuMapping } from "../model/types";
+import type {
+  Sku,
+  SkuDetail,
+  SkusResponse,
+  ListedProductSkuMapping,
+} from "../model/types";
 
 export const skusQueryRoot = ["skus"] as const;
 

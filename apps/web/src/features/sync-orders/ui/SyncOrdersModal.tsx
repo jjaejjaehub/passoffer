@@ -11,7 +11,10 @@ import {
 } from "@chakra-ui/react";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useChannels, type ChannelRecord } from "@/entities/channel/api/channelQueries";
+import {
+  useChannels,
+  type ChannelRecord,
+} from "@/entities/channel/api/channelQueries";
 import {
   useSyncOrders,
   type ChannelOpResult,
@@ -41,7 +44,10 @@ function shiftDate(base: Date, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function SyncOrdersModal({ open, onClose }: Props): React.JSX.Element | null {
+export function SyncOrdersModal({
+  open,
+  onClose,
+}: Props): React.JSX.Element | null {
   const { data: channels, isLoading: channelsLoading } = useChannels();
   const { data: settings } = useOrderSettings();
   const sync = useSyncOrders();
@@ -89,7 +95,10 @@ export function SyncOrdersModal({ open, onClose }: Props): React.JSX.Element | n
 
   const handleRun = async (): Promise<void> => {
     if (selectedIds.size === 0) {
-      appToaster.create({ title: "채널을 1개 이상 선택하세요", type: "warning" });
+      appToaster.create({
+        title: "채널을 1개 이상 선택하세요",
+        type: "warning",
+      });
       return;
     }
     try {
@@ -162,7 +171,9 @@ export function SyncOrdersModal({ open, onClose }: Props): React.JSX.Element | n
                     px={2}
                     py={1.5}
                     borderWidth="1px"
-                    borderColor={selectedIds.has(c.id) ? "blue.300" : "gray.200"}
+                    borderColor={
+                      selectedIds.has(c.id) ? "blue.300" : "gray.200"
+                    }
                     borderRadius="md"
                     cursor="pointer"
                     onClick={() => toggle(c.id)}
@@ -243,7 +254,11 @@ export function SyncOrdersModal({ open, onClose }: Props): React.JSX.Element | n
   );
 }
 
-function ResultPanel({ channels }: { channels: ChannelOpResult[] }): React.JSX.Element {
+function ResultPanel({
+  channels,
+}: {
+  channels: ChannelOpResult[];
+}): React.JSX.Element {
   return (
     <Box
       borderWidth="1px"

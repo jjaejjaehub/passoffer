@@ -16,7 +16,9 @@ interface AuthGuardProps {
   children: ReactNode;
 }
 
-export function AuthGuard({ children }: AuthGuardProps): React.JSX.Element | null {
+export function AuthGuard({
+  children,
+}: AuthGuardProps): React.JSX.Element | null {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

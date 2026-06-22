@@ -18,7 +18,8 @@ export const paymentsQueries = {
 
 function buildParams(params: OrderListParams): Record<string, string> {
   const out: Record<string, string> = {};
-  if (params.status && params.status.length > 0) out.status = params.status.join(",");
+  if (params.status && params.status.length > 0)
+    out.status = params.status.join(",");
   if (params.dateField) out.dateField = params.dateField;
   if (params.dateFrom) out.dateFrom = params.dateFrom;
   if (params.dateTo) out.dateTo = params.dateTo;
@@ -40,7 +41,9 @@ export function usePayments(params: OrderListParams) {
   const query = useQuery({
     queryKey: paymentsQueries.list(params),
     queryFn: () =>
-      http.get<PaymentListResponse>("/api/payments", { params: buildParams(params) }),
+      http.get<PaymentListResponse>("/api/payments", {
+        params: buildParams(params),
+      }),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });

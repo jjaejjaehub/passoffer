@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { http } from '@/shared/api';
+import { useQuery } from "@tanstack/react-query";
+import { http } from "@/shared/api";
 
 export interface OrderItemForMatching {
   id: string;
@@ -23,7 +23,7 @@ export interface OrderItemsForMatchingResult {
 }
 
 export const orderItemsForMatchingQueries = {
-  all: () => ['order-items-for-matching'] as const,
+  all: () => ["order-items-for-matching"] as const,
   byOrder: (orderId: string) =>
     [...orderItemsForMatchingQueries.all(), orderId] as const,
 };
@@ -32,7 +32,7 @@ export function useOrderItemsForMatching(orderId: string | null) {
   return useQuery({
     queryKey: orderId
       ? orderItemsForMatchingQueries.byOrder(orderId)
-      : ([...orderItemsForMatchingQueries.all(), 'none'] as const),
+      : ([...orderItemsForMatchingQueries.all(), "none"] as const),
     queryFn: () =>
       http.get<OrderItemsForMatchingResult>(`/api/orders/${orderId}/items`),
     enabled: Boolean(orderId),

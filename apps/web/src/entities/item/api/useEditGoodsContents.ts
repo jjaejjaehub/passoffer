@@ -79,7 +79,12 @@ export function useEditGoodsContents(): {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ["products", "detail", variables.itemCode, variables.sellerCode ?? ""],
+        queryKey: [
+          "products",
+          "detail",
+          variables.itemCode,
+          variables.sellerCode ?? "",
+        ],
       });
     },
     onError: (error: unknown) => {

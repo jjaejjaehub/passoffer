@@ -5,10 +5,7 @@ import { useTranslations } from "next-intl";
 import { Badge, Box, Flex, HStack } from "@chakra-ui/react";
 
 import { useAllOrders } from "@/entities/all-orders";
-import type {
-  OrderListItem,
-  OrderListParams,
-} from "@/entities/order";
+import type { OrderListItem, OrderListParams } from "@/entities/order";
 import { OrderCounter } from "@/widgets/order-counter";
 import { OrderFilterPanel } from "@/widgets/order-filter-panel";
 import { OrderTableV2 } from "@/widgets/order-table-v2";
@@ -17,11 +14,7 @@ import { OrderDetailModal } from "@/features/order-detail-modal";
 import { OrderSyncButtons } from "@/features/sync-orders";
 import { PageHeader } from "@/shared/ui";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
-import {
-  DEFAULT_PAGE_SIZE,
-  LS_KEYS,
-  type PageSize,
-} from "@/shared/config";
+import { DEFAULT_PAGE_SIZE, LS_KEYS, type PageSize } from "@/shared/config";
 
 function buildInitialParams(pageSize: PageSize): OrderListParams {
   return {

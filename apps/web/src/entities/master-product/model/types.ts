@@ -1,4 +1,4 @@
-export type ListedProductSyncStatus = 'SYNCED' | 'PENDING' | 'ERROR';
+export type ListedProductSyncStatus = "SYNCED" | "PENDING" | "ERROR";
 
 export interface MasterProduct {
   id: string;
@@ -46,7 +46,8 @@ export interface MasterProductOptionGroup {
   values: Array<{ id: string; value: string; position: number }>;
 }
 
-export interface MasterProductDetail extends Omit<MasterProduct, 'variantCount' | 'listedChannelCount'> {
+export interface MasterProductDetail
+  extends Omit<MasterProduct, "variantCount" | "listedChannelCount"> {
   variants: MasterProductVariant[];
   optionGroups: MasterProductOptionGroup[];
   listedProducts: Array<{

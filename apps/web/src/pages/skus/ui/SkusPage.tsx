@@ -56,8 +56,13 @@ function SkusTab({
       await deleteSku(confirmDeleteId);
       appToaster.create({ title: t("toasts.deleteSuccess"), type: "success" });
     } catch (err) {
-      const message = err instanceof Error ? err.message : t("toasts.deleteFailed");
-      appToaster.create({ title: t("toasts.deleteFailed"), description: message, type: "error" });
+      const message =
+        err instanceof Error ? err.message : t("toasts.deleteFailed");
+      appToaster.create({
+        title: t("toasts.deleteFailed"),
+        description: message,
+        type: "error",
+      });
     } finally {
       setConfirmDeleteId(null);
     }
@@ -72,7 +77,13 @@ function SkusTab({
   }
 
   return (
-    <Box position="relative" display="flex" flexDirection="column" flex="1" minH={0}>
+    <Box
+      position="relative"
+      display="flex"
+      flexDirection="column"
+      flex="1"
+      minH={0}
+    >
       {pendingHref !== null && (
         <Box
           position="absolute"
@@ -95,7 +106,9 @@ function SkusTab({
               <Table.ColumnHeader>{t("table.codeName")}</Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.barcode")}</Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.stock")}</Table.ColumnHeader>
-              <Table.ColumnHeader>{t("table.masterVariantMapping")}</Table.ColumnHeader>
+              <Table.ColumnHeader>
+                {t("table.masterVariantMapping")}
+              </Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.salesMapping")}</Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.updatedAt")}</Table.ColumnHeader>
               <Table.ColumnHeader />
@@ -105,7 +118,12 @@ function SkusTab({
             {items.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={7}>
-                  <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
+                  <Text
+                    textAlign="center"
+                    color="gray.500"
+                    py={6}
+                    fontSize="sm"
+                  >
                     {t("table.empty")}
                   </Text>
                 </Table.Cell>
@@ -120,15 +138,21 @@ function SkusTab({
                 >
                   <Table.Cell>
                     <Stack gap={0.5}>
-                      <Text fontSize="sm" fontWeight="medium">{item.code}</Text>
-                      <Text fontSize="xs" color="gray.500">{item.name ?? "-"}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {item.code}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {item.name ?? "-"}
+                      </Text>
                     </Stack>
                   </Table.Cell>
                   <Table.Cell>
                     <Text fontSize="sm">{item.barcode ?? "-"}</Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Text fontSize="sm" fontWeight="medium">{item.stock}</Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {item.stock}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell>
                     <Text fontSize="sm">{item.masterVariantCount}</Text>
@@ -176,7 +200,10 @@ function SkusTab({
                           variant="outline"
                           colorPalette="red"
                           onClick={() => setConfirmDeleteId(item.id)}
-                          disabled={item.masterVariantCount > 0 || item.listedSkuCount > 0}
+                          disabled={
+                            item.masterVariantCount > 0 ||
+                            item.listedSkuCount > 0
+                          }
                         >
                           {t("actions.delete")}
                         </Button>
@@ -245,10 +272,7 @@ function SkusPageContent(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%" minH={0}>
       <Flex align="flex-start" justify="space-between" mb={4} flexShrink={0}>
-        <PageHeader
-          title={t("title")}
-          description={t("description")}
-        />
+        <PageHeader title={t("title")} description={t("description")} />
         <Button
           bg="gray.900"
           color="white"

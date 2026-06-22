@@ -30,7 +30,9 @@ export function useOrderSettings() {
 export function useUpdateOrderSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (patch: Partial<OrderSettings>): Promise<OrderSettings> => {
+    mutationFn: async (
+      patch: Partial<OrderSettings>,
+    ): Promise<OrderSettings> => {
       return await http.put<OrderSettings>("/api/user-settings/orders", patch);
     },
     onSuccess: (next) => {

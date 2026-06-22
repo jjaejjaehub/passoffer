@@ -1,1 +1,1 @@
-export * from './ui/PaymentsPage';
+export * from "./ui/PaymentsPage";

@@ -18,7 +18,8 @@ export const newOrdersQueries = {
 
 function buildParams(params: OrderListParams): Record<string, string> {
   const out: Record<string, string> = {};
-  if (params.status && params.status.length > 0) out.status = params.status.join(",");
+  if (params.status && params.status.length > 0)
+    out.status = params.status.join(",");
   if (params.dateField) out.dateField = params.dateField;
   if (params.dateFrom) out.dateFrom = params.dateFrom;
   if (params.dateTo) out.dateTo = params.dateTo;
@@ -43,7 +44,9 @@ export function useNewOrders(params: OrderListParams) {
   const query = useQuery({
     queryKey: newOrdersQueries.list(params),
     queryFn: () =>
-      http.get<NewOrderListResponse>("/api/new-orders", { params: buildParams(params) }),
+      http.get<NewOrderListResponse>("/api/new-orders", {
+        params: buildParams(params),
+      }),
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000,
   });

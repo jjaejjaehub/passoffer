@@ -8,9 +8,9 @@
 //     3) normalizeName 로 채널 타이틀/옵션 정규화
 //   StatusRuleEngine 기본 매핑 후 resolveStatusOverride 로 사용자 정의 override 적용.
 
-import type { FastifyInstance } from 'fastify';
-import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
-import type { AppliedGift, ClaimStatus, FulfillmentRank } from '@oms/types';
+import type { FastifyInstance } from "fastify";
+import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import type { AppliedGift, ClaimStatus, FulfillmentRank } from "@oms/types";
 import {
   channelCapabilities,
   giftRules,
@@ -18,7 +18,7 @@ import {
   nameRules,
   skus,
   statusRuleOverrides,
-} from '../db/schema';
+} from "../db/schema";
 
 // ---------------------------------------------------------------------------
 // 입출력 타입
@@ -35,7 +35,7 @@ export interface SkuMatchResult {
   skuId: string;
   skuCode: string;
   skuName: string;
-  matchedBy: 'rule';
+  matchedBy: "rule";
   ruleId: string;
 }
 
@@ -47,7 +47,7 @@ export interface GiftLineInput {
 export interface NameNormalizeInput {
   userId: string;
   channelId: string;
-  fieldType: 'item_title' | 'option_name';
+  fieldType: "item_title" | "option_name";
   input: string;
 }
 
@@ -99,7 +99,10 @@ export class RuleEngineService {
       eq(matchRules.isActive, true),
       eq(matchRules.channelId, channelId),
       eq(matchRules.channelItemCode, channelItemCode),
-      or(isNull(matchRules.activeFrom), sql`${matchRules.activeFrom} <= ${now}`),
+      or(
+        isNull(matchRules.activeFrom),
+        sql`${matchRules.activeFrom} <= ${now}`,
+      ),
       or(isNull(matchRules.activeTo), sql`${matchRules.activeTo} >= ${now}`),
     );
 
@@ -121,8 +124,8 @@ export class RuleEngineService {
         return {
           skuId: rows[0].skuId,
           skuCode: rows[0].skuCode,
-          skuName: rows[0].skuName ?? '',
-          matchedBy: 'rule',
+          skuName: rows[0].skuName ?? "",
+          matchedBy: "rule",
           ruleId: rows[0].id,
         };
       }
@@ -146,8 +149,8 @@ export class RuleEngineService {
         return {
           skuId: rows[0].skuId,
           skuCode: rows[0].skuCode,
-          skuName: rows[0].skuName ?? '',
-          matchedBy: 'rule',
+          skuName: rows[0].skuName ?? "",
+          matchedBy: "rule",
           ruleId: rows[0].id,
         };
       }
@@ -164,15 +167,21 @@ export class RuleEngineService {
         })
         .from(matchRules)
         .innerJoin(skus, eq(skus.id, matchRules.skuId))
-        .where(and(activeFilter, isNull(matchRules.optionCode), isNull(matchRules.optionName)))
+        .where(
+          and(
+            activeFilter,
+            isNull(matchRules.optionCode),
+            isNull(matchRules.optionName),
+          ),
+        )
         .orderBy(asc(matchRules.priority))
         .limit(1);
       if (rows[0]) {
         return {
           skuId: rows[0].skuId,
           skuCode: rows[0].skuCode,
-          skuName: rows[0].skuName ?? '',
-          matchedBy: 'rule',
+          skuName: rows[0].skuName ?? "",
+          matchedBy: "rule",
           ruleId: rows[0].id,
         };
       }
@@ -200,7 +209,10 @@ export class RuleEngineService {
         and(
           eq(giftRules.userId, userId),
           eq(giftRules.isActive, true),
-          or(isNull(giftRules.activeFrom), sql`${giftRules.activeFrom} <= ${now}`),
+          or(
+            isNull(giftRules.activeFrom),
+            sql`${giftRules.activeFrom} <= ${now}`,
+          ),
           or(isNull(giftRules.activeTo), sql`${giftRules.activeTo} >= ${now}`),
         ),
       )
@@ -212,16 +224,24 @@ export class RuleEngineService {
     for (const rule of rules) {
       const payload = rule.conditionPayload as GiftConditionPayload;
 
-      if (rule.conditionType === 'amount') {
+      if (rule.conditionType === "amount") {
         const minAmount = (payload as { minAmount: number }).minAmount;
-        if (typeof minAmount === 'number' && totalAmount >= minAmount && buckets.length > 0) {
+        if (
+          typeof minAmount === "number" &&
+          totalAmount >= minAmount &&
+          buckets.length > 0
+        ) {
           // 주문 전체 단위 사은품 — 1번 라인에 부착
-          buckets[0].push({ ruleId: rule.id, skuId: rule.giftSkuId, qty: rule.giftQty });
+          buckets[0].push({
+            ruleId: rule.id,
+            skuId: rule.giftSkuId,
+            qty: rule.giftQty,
+          });
         }
         continue;
       }
 
-      if (rule.conditionType === 'sku') {
+      if (rule.conditionType === "sku") {
         const targetSkuId = (payload as { skuId: string }).skuId;
         if (!targetSkuId) continue;
         lineItems.forEach((line, idx) => {
@@ -264,10 +284,10 @@ export class RuleEngineService {
 
     let out = text;
     for (const rule of rules) {
-      if (rule.scope !== fieldType && rule.scope !== 'both') continue;
+      if (rule.scope !== fieldType && rule.scope !== "both") continue;
       if (rule.isRegex) {
         try {
-          out = out.replace(new RegExp(rule.pattern, 'g'), rule.replacement);
+          out = out.replace(new RegExp(rule.pattern, "g"), rule.replacement);
         } catch {
           // 잘못된 regex 는 무시 — UI 검증 책임
         }

@@ -43,7 +43,8 @@ export function useGiftRules(
       const params = new URLSearchParams();
       if (distributionMode) params.set("distributionMode", distributionMode);
       if (conditionType) params.set("conditionType", conditionType);
-      if (typeof isActive === "boolean") params.set("isActive", String(isActive));
+      if (typeof isActive === "boolean")
+        params.set("isActive", String(isActive));
       if (search) params.set("search", search);
       params.set("page", String(page));
       params.set("pageSize", String(pageSize));

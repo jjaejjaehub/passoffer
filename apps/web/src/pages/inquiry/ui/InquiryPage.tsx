@@ -1,31 +1,25 @@
-'use client';
+"use client";
 
-import { Suspense, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-  Textarea,
-} from '@chakra-ui/react';
-import { KeyIcon, MessageCircle } from 'lucide-react';
+import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Box, Button, Flex, Text, Textarea } from "@chakra-ui/react";
+import { KeyIcon, MessageCircle } from "lucide-react";
 
-import { useChannelApiKey } from '@/entities/channel';
-import { useQoo10Inquiries, useQoo10ReplyInquiry } from '@/entities/inquiry';
-import type { InquiryFilter, InquiryItem } from '@/entities/inquiry';
-import { PageHeader, TableSkeleton } from '@/shared/ui';
-import { EmptyState } from '@/shared/ui/EmptyState';
-import { appToaster } from '@/shared/ui';
+import { useChannelApiKey } from "@/entities/channel";
+import { useQoo10Inquiries, useQoo10ReplyInquiry } from "@/entities/inquiry";
+import type { InquiryFilter, InquiryItem } from "@/entities/inquiry";
+import { PageHeader, TableSkeleton } from "@/shared/ui";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { appToaster } from "@/shared/ui";
 
 // ─── 필터 탭 ──────────────────────────────────────────────────
 
-const FILTER_VALUES: InquiryFilter[] = ['ALL', 'N', 'Y'];
-const FILTER_KEYS: Record<InquiryFilter, 'all' | 'unanswered' | 'answered'> = {
-  ALL: 'all',
-  N: 'unanswered',
-  Y: 'answered',
+const FILTER_VALUES: InquiryFilter[] = ["ALL", "N", "Y"];
+const FILTER_KEYS: Record<InquiryFilter, "all" | "unanswered" | "answered"> = {
+  ALL: "all",
+  N: "unanswered",
+  Y: "answered",
 };
 
 // ─── 답변 입력 폼 ──────────────────────────────────────────────
@@ -37,7 +31,7 @@ function ReplyForm({
   item: InquiryItem;
   onClose: () => void;
 }): React.JSX.Element {
-  const t = useTranslations('pages.inquiry');
+  const t = useTranslations("pages.inquiry");
   const [answer, setAnswer] = useState(item.answer);
   const reply = useQoo10ReplyInquiry();
 
@@ -45,22 +39,29 @@ function ReplyForm({
     if (!answer.trim()) return;
     try {
       await reply.mutateAsync({ qnaNo: item.qnaNo, answer: answer.trim() });
-      appToaster.create({ type: 'success', title: t('reply.successToast') });
+      appToaster.create({ type: "success", title: t("reply.successToast") });
       onClose();
     } catch {
-      appToaster.create({ type: 'error', title: t('reply.errorToast') });
+      appToaster.create({ type: "error", title: t("reply.errorToast") });
     }
   };
 
   return (
-    <Box mt={3} p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+    <Box
+      mt={3}
+      p={3}
+      bg="blue.50"
+      borderRadius="md"
+      borderWidth="1px"
+      borderColor="blue.200"
+    >
       <Text fontSize="xs" fontWeight="semibold" color="blue.700" mb={2}>
-        {t('reply.title')}
+        {t("reply.title")}
       </Text>
       <Textarea
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
-        placeholder={t('reply.placeholder')}
+        placeholder={t("reply.placeholder")}
         size="sm"
         rows={4}
         bg="white"
@@ -68,19 +69,19 @@ function ReplyForm({
       />
       <Flex mt={2} gap={2} justify="flex-end">
         <Button size="sm" variant="ghost" onClick={onClose}>
-          {t('reply.cancel')}
+          {t("reply.cancel")}
         </Button>
         <Button
           size="sm"
           colorScheme="blue"
           bg="gray.900"
           color="white"
-          _hover={{ bg: 'gray.700' }}
+          _hover={{ bg: "gray.700" }}
           loading={reply.isPending}
           disabled={!answer.trim()}
           onClick={() => void handleSubmit()}
         >
-          {item.isAnswered ? t('reply.submitEdit') : t('reply.submitNew')}
+          {item.isAnswered ? t("reply.submitEdit") : t("reply.submitNew")}
         </Button>
       </Flex>
     </Box>
@@ -90,16 +91,11 @@ function ReplyForm({
 // ─── 문의 행 ──────────────────────────────────────────────────
 
 function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
-  const t = useTranslations('pages.inquiry');
+  const t = useTranslations("pages.inquiry");
   const [isReplying, setIsReplying] = useState(false);
 
   return (
-    <Box
-      borderTopWidth="1px"
-      borderColor="gray.100"
-      px={4}
-      py={3}
-    >
+    <Box borderTopWidth="1px" borderColor="gray.100" px={4} py={3}>
       {/* 메타 정보 */}
       <Flex align="center" gap={2} mb={1}>
         <Box
@@ -109,12 +105,12 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
           borderRadius="sm"
           fontSize="xs"
           fontWeight="medium"
-          bg={item.isAnswered ? 'green.50' : 'orange.50'}
-          color={item.isAnswered ? 'green.700' : 'orange.700'}
+          bg={item.isAnswered ? "green.50" : "orange.50"}
+          color={item.isAnswered ? "green.700" : "orange.700"}
           borderWidth="1px"
-          borderColor={item.isAnswered ? 'green.200' : 'orange.200'}
+          borderColor={item.isAnswered ? "green.200" : "orange.200"}
         >
-          {t(item.isAnswered ? 'status.answered' : 'status.unanswered')}
+          {t(item.isAnswered ? "status.answered" : "status.unanswered")}
         </Box>
         <Text fontSize="xs" color="gray.500">
           {item.buyerNick}
@@ -136,7 +132,7 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
       {item.isAnswered && item.answer && !isReplying && (
         <Box mt={2} pl={3} borderLeftWidth="2px" borderColor="blue.200">
           <Text fontSize="xs" color="gray.500" mb={0.5}>
-            {t('reply.sellerLabel', { date: item.answerDate })}
+            {t("reply.sellerLabel", { date: item.answerDate })}
           </Text>
           <Text fontSize="sm" color="gray.700" whiteSpace="pre-wrap">
             {item.answer}
@@ -155,7 +151,7 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
             borderColor="gray.300"
             onClick={() => setIsReplying(true)}
           >
-            {t(item.isAnswered ? 'reply.buttonEdit' : 'reply.buttonNew')}
+            {t(item.isAnswered ? "reply.buttonEdit" : "reply.buttonNew")}
           </Button>
         </Flex>
       )}
@@ -166,10 +162,10 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
 // ─── 메인 콘텐츠 ──────────────────────────────────────────────
 
 function InquiryPageContent(): React.JSX.Element {
-  const t = useTranslations('pages.inquiry');
+  const t = useTranslations("pages.inquiry");
   const router = useRouter();
-  const { hasKey } = useChannelApiKey('qoo10');
-  const [filter, setFilter] = useState<InquiryFilter>('ALL');
+  const { hasKey } = useChannelApiKey("qoo10");
+  const [filter, setFilter] = useState<InquiryFilter>("ALL");
   const [page, setPage] = useState(1);
 
   const PAGE_SIZE = 20;
@@ -185,20 +181,19 @@ function InquiryPageContent(): React.JSX.Element {
     return (
       <EmptyState
         icon={<KeyIcon />}
-        title={t('noApiKey.title')}
-        description={t('noApiKey.description')}
-        action={{ label: t('noApiKey.action'), onClick: () => router.push('/settings/channels') }}
+        title={t("noApiKey.title")}
+        description={t("noApiKey.description")}
+        action={{
+          label: t("noApiKey.action"),
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
-      <PageHeader
-        title={t('title')}
-        description={t('description')}
-        mb={2}
-      />
+      <PageHeader title={t("title")} description={t("description")} mb={2} />
 
       {/* 필터 탭 */}
       <Flex
@@ -216,12 +211,15 @@ function InquiryPageContent(): React.JSX.Element {
             <Button
               key={value}
               size="sm"
-              variant={filter === value ? 'solid' : 'ghost'}
-              bg={filter === value ? 'gray.100' : 'transparent'}
-              color={filter === value ? 'gray.900' : 'gray.500'}
-              _hover={{ bg: filter === value ? 'gray.100' : 'gray.50' }}
+              variant={filter === value ? "solid" : "ghost"}
+              bg={filter === value ? "gray.100" : "transparent"}
+              color={filter === value ? "gray.900" : "gray.500"}
+              _hover={{ bg: filter === value ? "gray.100" : "gray.50" }}
               borderRadius="md"
-              onClick={() => { setFilter(value); setPage(1); }}
+              onClick={() => {
+                setFilter(value);
+                setPage(1);
+              }}
             >
               {label}
             </Button>
@@ -231,8 +229,17 @@ function InquiryPageContent(): React.JSX.Element {
 
       {/* 에러 */}
       {error && (
-        <Box p={3} borderRadius="md" borderWidth="1px" borderColor="red.200" bg="red.50" mb={3}>
-          <Text fontSize="sm" color="red.700">{error.message}</Text>
+        <Box
+          p={3}
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="red.200"
+          bg="red.50"
+          mb={3}
+        >
+          <Text fontSize="sm" color="red.700">
+            {error.message}
+          </Text>
         </Box>
       )}
 
@@ -243,8 +250,8 @@ function InquiryPageContent(): React.JSX.Element {
       {!isLoading && !error && items.length === 0 && (
         <EmptyState
           icon={<MessageCircle />}
-          title={t('empty.title')}
-          description={t('empty.description')}
+          title={t("empty.title")}
+          description={t("empty.description")}
         />
       )}
 
@@ -273,7 +280,7 @@ function InquiryPageContent(): React.JSX.Element {
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
-            {t('pagination.prev')}
+            {t("pagination.prev")}
           </Button>
           <Text fontSize="sm" color="gray.600">
             {page} / {totalPages}
@@ -284,7 +291,7 @@ function InquiryPageContent(): React.JSX.Element {
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           >
-            {t('pagination.next')}
+            {t("pagination.next")}
           </Button>
         </Flex>
       )}

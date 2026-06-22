@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { newOrdersQueries } from './newOrdersQueries';
-import { dispatchQueries } from './dispatchQueries';
-import { ordersQueries } from './ordersQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { newOrdersQueries } from "./newOrdersQueries";
+import { dispatchQueries } from "./dispatchQueries";
+import { ordersQueries } from "./ordersQueries";
 
 export interface DispatchResultItem {
   orderId: string;
@@ -33,8 +33,13 @@ function invalidateOrderViews(qc: ReturnType<typeof useQueryClient>): void {
 export function useDispatchOrders() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: DispatchOrdersInput): Promise<DispatchOrdersResult> => {
-      return await http.post<DispatchOrdersResult>('/api/new-orders/dispatch', input);
+    mutationFn: async (
+      input: DispatchOrdersInput,
+    ): Promise<DispatchOrdersResult> => {
+      return await http.post<DispatchOrdersResult>(
+        "/api/new-orders/dispatch",
+        input,
+      );
     },
     onSuccess: () => invalidateOrderViews(qc),
   });
@@ -51,7 +56,7 @@ export function useCopyOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CopyOrderInput): Promise<CopyOrderResult> => {
-      return await http.post<CopyOrderResult>('/api/new-orders/copy', input);
+      return await http.post<CopyOrderResult>("/api/new-orders/copy", input);
     },
     onSuccess: () => invalidateOrderViews(qc),
   });
@@ -70,8 +75,13 @@ export interface DeleteOrdersResult {
 export function useDeleteOrders() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: DeleteOrdersInput): Promise<DeleteOrdersResult> => {
-      return await http.post<DeleteOrdersResult>('/api/new-orders/delete', input);
+    mutationFn: async (
+      input: DeleteOrdersInput,
+    ): Promise<DeleteOrdersResult> => {
+      return await http.post<DeleteOrdersResult>(
+        "/api/new-orders/delete",
+        input,
+      );
     },
     onSuccess: () => invalidateOrderViews(qc),
   });
@@ -90,7 +100,7 @@ export function useSplitOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: SplitOrderInput): Promise<SplitOrderResult> => {
-      return await http.post<SplitOrderResult>('/api/new-orders/split', input);
+      return await http.post<SplitOrderResult>("/api/new-orders/split", input);
     },
     onSuccess: () => invalidateOrderViews(qc),
   });
@@ -108,8 +118,13 @@ export interface BundleOrdersResult {
 export function useBundleOrders() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: BundleOrdersInput): Promise<BundleOrdersResult> => {
-      return await http.post<BundleOrdersResult>('/api/new-orders/bundle', input);
+    mutationFn: async (
+      input: BundleOrdersInput,
+    ): Promise<BundleOrdersResult> => {
+      return await http.post<BundleOrdersResult>(
+        "/api/new-orders/bundle",
+        input,
+      );
     },
     onSuccess: () => invalidateOrderViews(qc),
   });

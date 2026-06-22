@@ -2,28 +2,39 @@
 // 채널 응답은 결정론적 룩업표를 거쳐 본 인터페이스로 정규화된다.
 // docs/api/qoo10/orders/CONVERT_RULES.md §2.
 
-export type ClaimType = 'cancel' | 'return' | 'exchange' | 'swap';
+export type ClaimType = "cancel" | "return" | "exchange" | "swap";
 
 export type ClaimStatus =
-  | 'cancel_requested'
-  | 'cancel_done'
-  | 'return_requested'
-  | 'return_in_progress'
-  | 'return_collected'
-  | 'return_done'
-  | 'exchange_requested'
-  | 'exchange_in_progress'
-  | 'exchange_collected'
-  | 'exchange_done'
-  | 'swap_requested'
-  | 'swap_done'
-  | 'requires_recheck';
+  | "cancel_requested"
+  | "cancel_done"
+  | "return_requested"
+  | "return_in_progress"
+  | "return_collected"
+  | "return_done"
+  | "exchange_requested"
+  | "exchange_in_progress"
+  | "exchange_collected"
+  | "exchange_done"
+  | "swap_requested"
+  | "swap_done"
+  | "requires_recheck";
 
-export type OrderMatchedBy = 'auto' | 'manual' | 'rule';
+export type OrderMatchedBy = "auto" | "manual" | "rule";
 
 // fulfillment rank: 10 결제완료 / 20 신규주문 / 25 주문보류 / 30 출고대기 / 35 출고보류 /
 // 40 운송장출력 / 50 출고완료 / 60 배송중 / 70 배송완료 / 80 구매결정 / 90 판매완료(불가침)
-export type FulfillmentRank = 10 | 20 | 25 | 30 | 35 | 40 | 50 | 60 | 70 | 80 | 90;
+export type FulfillmentRank =
+  | 10
+  | 20
+  | 25
+  | 30
+  | 35
+  | 40
+  | 50
+  | 60
+  | 70
+  | 80
+  | 90;
 
 export interface StandardOrderItem {
   // 라인 식별
@@ -78,7 +89,7 @@ export interface StandardOrder {
   address1: string | null;
   address2: string | null;
   receiverCountry: string | null;
-  desiredDeliveryDate: string | null;       // ISO UTC
+  desiredDeliveryDate: string | null; // ISO UTC
   // ── Sender (5) ───────────────────────────────────────────────
   senderName: string | null;
   senderTel: string | null;
@@ -86,10 +97,10 @@ export interface StandardOrder {
   senderZipCode: string | null;
   senderAddress: string | null;
   // ── Payment (9) ──────────────────────────────────────────────
-  orderedAt: string;                        // ISO UTC, required
+  orderedAt: string; // ISO UTC, required
   paidAt: string | null;
   paymentMethod: string | null;
-  currency: string;                         // default JPY
+  currency: string; // default JPY
   orderPrice: number | null;
   discount: number | null;
   cartDiscountSeller: number | null;
@@ -99,8 +110,8 @@ export interface StandardOrder {
   shippingWay: string | null;
   shippingMessage: string | null;
   shippingRate: number | null;
-  shippingRateType: string | null;          // Free | Charge | Free on condition
-  shippingDueDate: string | null;           // EstimatedShippingDate
+  shippingRateType: string | null; // Free | Charge | Free on condition
+  shippingDueDate: string | null; // EstimatedShippingDate
   shippedAt: string | null;
   deliveredAt: string | null;
   trackingCarrier: string | null;
@@ -135,8 +146,8 @@ export interface StandardOrder {
 // 2축 모델: claimType(처리흐름) ⊥ incident(원인, 선택적).
 //   Qoo10 claimStatus 14/15 (미수취 환불/부분환불) → claimType='return' + incidentType='undelivered'.
 //   Qoo10 claimStatus 16 (미납주문 취소) → claimType='cancel' + incidentType=null + requires_recheck.
-export type IncidentType = 'undelivered' | 'damaged' | 'lost' | 'misdelivered';
-export type IncidentSource = 'buyer_report' | 'channel_flag' | 'operator';
+export type IncidentType = "undelivered" | "damaged" | "lost" | "misdelivered";
+export type IncidentSource = "buyer_report" | "channel_flag" | "operator";
 
 export interface StandardClaim {
   channelOrderId: string;
@@ -208,7 +219,7 @@ export interface PushResult {
 
 export interface IOrderAdapter<TRaw = unknown> {
   /** 채널 식별자 (DB channels.id 가 아닌 어댑터 키) */
-  readonly channelKey: 'qoo10' | 'shopify' | 'shopee' | 'rakuten';
+  readonly channelKey: "qoo10" | "shopify" | "shopee" | "rakuten";
   /** 채널 응답 1건을 StandardOrder 로 결정론적 변환 (LLM 호출 금지) */
   toStandard(payload: TRaw): StandardOrder | StandardOrder[];
   /** 분 단위 폴링 — sinceDate 이후 갱신/신규 주문 */

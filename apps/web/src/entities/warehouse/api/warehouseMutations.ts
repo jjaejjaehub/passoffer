@@ -26,7 +26,8 @@ export function useCreateWarehouse() {
 export function useDeleteWarehouse() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => http.delete<{ ok: boolean }>(`/api/warehouses/${id}`),
+    mutationFn: (id: string) =>
+      http.delete<{ ok: boolean }>(`/api/warehouses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.list() });
     },
@@ -42,7 +43,9 @@ export function useCreateInboundOrder(warehouseId: string) {
         batch,
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: warehouseKeys.inbound(warehouseId) });
+      queryClient.invalidateQueries({
+        queryKey: warehouseKeys.inbound(warehouseId),
+      });
     },
   });
 }
@@ -56,7 +59,9 @@ export function useRequestAdjustment(warehouseId: string) {
         req,
       ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: warehouseKeys.inventory(warehouseId) });
+      queryClient.invalidateQueries({
+        queryKey: warehouseKeys.inventory(warehouseId),
+      });
     },
   });
 }

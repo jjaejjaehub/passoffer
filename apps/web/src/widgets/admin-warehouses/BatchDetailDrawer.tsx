@@ -11,7 +11,11 @@ import {
   Text,
 } from "@chakra-ui/react";
 import type { ReactElement } from "react";
-import type { ParsedBatch, ParsedRow, ParsedRowError } from "@/entities/inbound-batch";
+import type {
+  ParsedBatch,
+  ParsedRow,
+  ParsedRowError,
+} from "@/entities/inbound-batch";
 
 interface BatchDetailDrawerProps {
   batch: ParsedBatch | null;
@@ -57,7 +61,8 @@ export function BatchDetailDrawer({
 }: BatchDetailDrawerProps): ReactElement {
   const isOpen = batch !== null;
   const total = batch?.rows.length ?? 0;
-  const validCount = batch?.rows.filter((r) => r.errors.length === 0).length ?? 0;
+  const validCount =
+    batch?.rows.filter((r) => r.errors.length === 0).length ?? 0;
   const errorCount = total - validCount;
   const sorted = batch ? rowsByErrorFirst(batch.rows) : [];
   const canDispatch =
@@ -132,11 +137,18 @@ export function BatchDetailDrawer({
                   overflowY="auto"
                 >
                   <Table.Root size="sm" variant="line">
-                    <Table.Header bg="gray.50" position="sticky" top={0} zIndex={1}>
+                    <Table.Header
+                      bg="gray.50"
+                      position="sticky"
+                      top={0}
+                      zIndex={1}
+                    >
                       <Table.Row>
                         <Table.ColumnHeader w="60px">행</Table.ColumnHeader>
                         <Table.ColumnHeader>SKU</Table.ColumnHeader>
-                        <Table.ColumnHeader textAlign="right">수량</Table.ColumnHeader>
+                        <Table.ColumnHeader textAlign="right">
+                          수량
+                        </Table.ColumnHeader>
                         <Table.ColumnHeader>예정일</Table.ColumnHeader>
                         <Table.ColumnHeader>로트</Table.ColumnHeader>
                         <Table.ColumnHeader>상태/오류</Table.ColumnHeader>

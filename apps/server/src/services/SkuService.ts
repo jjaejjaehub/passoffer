@@ -1,5 +1,15 @@
-import type { FastifyInstance } from 'fastify';
-import { and, asc, count, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import type { FastifyInstance } from "fastify";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   listedProductSkus,
   masterProductVariants,
@@ -7,7 +17,7 @@ import {
   masterStockLedger,
   masterVariantSkus,
   skus,
-} from '../db/schema';
+} from "../db/schema";
 
 type SkuInsert = typeof skus.$inferInsert;
 
@@ -62,7 +72,7 @@ export interface SkuCreateInput extends SkuPlayautoFields {
   attributes?: Record<string, unknown>;
 }
 
-export type SkuUpdateInput = Partial<Omit<SkuCreateInput, 'stock'>>;
+export type SkuUpdateInput = Partial<Omit<SkuCreateInput, "stock">>;
 
 export interface SkuBulkCreateInput {
   items: SkuCreateInput[];
@@ -109,20 +119,21 @@ export class SkuService {
     ]);
 
     const ids = items.map((s) => s.id);
-    const [variantUsage, listedUsage] = ids.length === 0
-      ? [[], []]
-      : await Promise.all([
-          this.app.db
-            .select({ skuId: masterVariantSkus.skuId, cnt: count() })
-            .from(masterVariantSkus)
-            .where(inArray(masterVariantSkus.skuId, ids))
-            .groupBy(masterVariantSkus.skuId),
-          this.app.db
-            .select({ skuId: listedProductSkus.skuId, cnt: count() })
-            .from(listedProductSkus)
-            .where(inArray(listedProductSkus.skuId, ids))
-            .groupBy(listedProductSkus.skuId),
-        ]);
+    const [variantUsage, listedUsage] =
+      ids.length === 0
+        ? [[], []]
+        : await Promise.all([
+            this.app.db
+              .select({ skuId: masterVariantSkus.skuId, cnt: count() })
+              .from(masterVariantSkus)
+              .where(inArray(masterVariantSkus.skuId, ids))
+              .groupBy(masterVariantSkus.skuId),
+            this.app.db
+              .select({ skuId: listedProductSkus.skuId, cnt: count() })
+              .from(listedProductSkus)
+              .where(inArray(listedProductSkus.skuId, ids))
+              .groupBy(listedProductSkus.skuId),
+          ]);
 
     const variantMap = new Map(variantUsage.map((r) => [r.skuId, r.cnt]));
     const listedMap = new Map(listedUsage.map((r) => [r.skuId, r.cnt]));
@@ -218,7 +229,7 @@ export class SkuService {
       return { items: rows };
     } catch (err) {
       if (this.isUniqueViolation(err)) {
-        throw new Error('이미 존재하는 SKU 코드가 포함되어 있습니다.');
+        throw new Error("이미 존재하는 SKU 코드가 포함되어 있습니다.");
       }
       throw err;
     }
@@ -229,10 +240,10 @@ export class SkuService {
   async updateSku(id: string, input: SkuUpdateInput) {
     await this.assertOwnership(id);
     const patch: Partial<SkuInsert> = { updatedAt: new Date() };
-    this.assignField(patch, input, 'code');
-    this.assignField(patch, input, 'name');
-    this.assignField(patch, input, 'barcode');
-    this.assignField(patch, input, 'attributes');
+    this.assignField(patch, input, "code");
+    this.assignField(patch, input, "name");
+    this.assignField(patch, input, "barcode");
+    this.assignField(patch, input, "attributes");
     this.assignPlayautoFields(patch, input);
     try {
       const [row] = await this.app.db
@@ -282,9 +293,9 @@ export class SkuService {
         .select({ id: skus.id, stock: skus.stock })
         .from(skus)
         .where(and(eq(skus.id, id), eq(skus.userId, this.userId)))
-        .for('update')
+        .for("update")
         .limit(1);
-      if (!sku) throw new Error('SKU 를 찾을 수 없습니다.');
+      if (!sku) throw new Error("SKU 를 찾을 수 없습니다.");
 
       const prev = sku.stock;
       const next = prev + qtyDelta;
@@ -303,13 +314,13 @@ export class SkuService {
         await tx.insert(masterStockLedger).values({
           userId: this.userId,
           variantId: variantRow.variantId,
-          type: 'MANUAL_ADJUST',
+          type: "MANUAL_ADJUST",
           qtyDelta,
           prevStock: prev,
           newStock: next,
-          refType: 'USER',
+          refType: "USER",
           refId: this.userId,
-          note: note ?? 'SKU 수동 재고 조정',
+          note: note ?? "SKU 수동 재고 조정",
         });
       }
 
@@ -325,7 +336,12 @@ export class SkuService {
   // ─── 마스터 variant 매핑 ─────────────────────────────────────
   // BOM 한 행 추가 (qty 기본 1). 동일 (variant, sku) 중복은 onConflictDoNothing.
 
-  async attachToMasterVariant(skuId: string, masterVariantId: string, qty = 1, position = 0) {
+  async attachToMasterVariant(
+    skuId: string,
+    masterVariantId: string,
+    qty = 1,
+    position = 0,
+  ) {
     await this.assertOwnership(skuId);
     await this.assertVariantOwnership(masterVariantId);
     await this.app.db
@@ -354,7 +370,7 @@ export class SkuService {
       .select({ id: skus.id })
       .from(skus)
       .where(and(eq(skus.id, skuId), eq(skus.userId, this.userId)));
-    if (!row) throw new Error('SKU 를 찾을 수 없습니다.');
+    if (!row) throw new Error("SKU 를 찾을 수 없습니다.");
   }
 
   private async assertVariantOwnership(masterVariantId: string) {
@@ -371,7 +387,7 @@ export class SkuService {
           eq(masterProducts.userId, this.userId),
         ),
       );
-    if (!row) throw new Error('마스터 variant 를 찾을 수 없습니다.');
+    if (!row) throw new Error("마스터 variant 를 찾을 수 없습니다.");
   }
 
   private toInsertValues(input: SkuCreateInput): SkuInsert {
@@ -401,25 +417,25 @@ export class SkuService {
       depthCm: input.depthCm ?? null,
       weightKg: input.weightKg ?? null,
       inboundUnit: input.inboundUnit ?? null,
-      inboundUnitType: input.inboundUnitType ?? 'EA',
-      purchaseCost: input.purchaseCost ?? '0',
-      purchaseFreight: input.purchaseFreight ?? '0',
-      deliveryFee: input.deliveryFee ?? '0',
-      adCost: input.adCost ?? '0',
-      etcCost: input.etcCost ?? '0',
+      inboundUnitType: input.inboundUnitType ?? "EA",
+      purchaseCost: input.purchaseCost ?? "0",
+      purchaseFreight: input.purchaseFreight ?? "0",
+      deliveryFee: input.deliveryFee ?? "0",
+      adCost: input.adCost ?? "0",
+      etcCost: input.etcCost ?? "0",
       supplyPrice: input.supplyPrice ?? null,
       salePrice: input.salePrice ?? null,
-      currency: input.currency ?? 'KRW',
+      currency: input.currency ?? "KRW",
       // 추가정보
       originCountry: input.originCountry ?? null,
-      originExtras: (input.originExtras as SkuInsert['originExtras']) ?? [],
+      originExtras: (input.originExtras as SkuInsert["originExtras"]) ?? [],
       requiresCaution: input.requiresCaution ?? false,
-      taxType: input.taxType ?? 'GENERAL',
+      taxType: input.taxType ?? "GENERAL",
       brand: input.brand ?? null,
       manufacturer: input.manufacturer ?? null,
       manufacturerEn: input.manufacturerEn ?? null,
       ageGroup: input.ageGroup ?? null,
-      infoNotice: (input.infoNotice as SkuInsert['infoNotice']) ?? {},
+      infoNotice: (input.infoNotice as SkuInsert["infoNotice"]) ?? {},
       mainImage: input.mainImage ?? null,
       descriptionHtml: input.descriptionHtml ?? null,
     };
@@ -436,15 +452,48 @@ export class SkuService {
     }
   }
 
-  private assignPlayautoFields(patch: Partial<SkuInsert>, input: SkuUpdateInput): void {
+  private assignPlayautoFields(
+    patch: Partial<SkuInsert>,
+    input: SkuUpdateInput,
+  ): void {
     const keys: (keyof SkuPlayautoFields)[] = [
-      'warehouseText', 'isPrimaryWarehouse', 'vendorText', 'leadTimeDays', 'safetyStock',
-      'modelName', 'inventoryCode', 'image', 'standardCode', 'hsCode', 'isbn',
-      'isBundlable', 'widthCm', 'heightCm', 'depthCm', 'weightKg', 'inboundUnit', 'inboundUnitType',
-      'purchaseCost', 'purchaseFreight', 'deliveryFee', 'adCost', 'etcCost',
-      'supplyPrice', 'salePrice', 'currency',
-      'originCountry', 'originExtras', 'requiresCaution', 'taxType', 'brand',
-      'manufacturer', 'manufacturerEn', 'ageGroup', 'infoNotice', 'mainImage', 'descriptionHtml',
+      "warehouseText",
+      "isPrimaryWarehouse",
+      "vendorText",
+      "leadTimeDays",
+      "safetyStock",
+      "modelName",
+      "inventoryCode",
+      "image",
+      "standardCode",
+      "hsCode",
+      "isbn",
+      "isBundlable",
+      "widthCm",
+      "heightCm",
+      "depthCm",
+      "weightKg",
+      "inboundUnit",
+      "inboundUnitType",
+      "purchaseCost",
+      "purchaseFreight",
+      "deliveryFee",
+      "adCost",
+      "etcCost",
+      "supplyPrice",
+      "salePrice",
+      "currency",
+      "originCountry",
+      "originExtras",
+      "requiresCaution",
+      "taxType",
+      "brand",
+      "manufacturer",
+      "manufacturerEn",
+      "ageGroup",
+      "infoNotice",
+      "mainImage",
+      "descriptionHtml",
     ];
     for (const k of keys) {
       const v = (input as Record<string, unknown>)[k];
@@ -457,9 +506,9 @@ export class SkuService {
   private isUniqueViolation(err: unknown): boolean {
     return (
       !!err &&
-      typeof err === 'object' &&
-      'code' in err &&
-      (err as { code: string }).code === '23505'
+      typeof err === "object" &&
+      "code" in err &&
+      (err as { code: string }).code === "23505"
     );
   }
 }

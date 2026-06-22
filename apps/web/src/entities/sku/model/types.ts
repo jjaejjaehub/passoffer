@@ -1,4 +1,4 @@
-export type SkuTaxType = 'GENERAL' | 'ZERO' | 'EXEMPT';
+export type SkuTaxType = "GENERAL" | "ZERO" | "EXEMPT";
 
 export interface SkuPlayautoFields {
   // 기본정보
@@ -73,7 +73,8 @@ export interface SkuListedMapping {
   qty: number;
 }
 
-export interface SkuDetail extends Omit<Sku, 'masterVariantCount' | 'listedSkuCount'> {
+export interface SkuDetail
+  extends Omit<Sku, "masterVariantCount" | "listedSkuCount"> {
   masterVariants: SkuMasterVariantMapping[];
   listedSkus: SkuListedMapping[];
 }

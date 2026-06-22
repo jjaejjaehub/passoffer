@@ -15,4 +15,4 @@ export interface InquiryListResult {
   totalCount: number;
 }
 
-export type InquiryFilter = 'ALL' | 'Y' | 'N';
+export type InquiryFilter = "ALL" | "Y" | "N";

@@ -12,7 +12,10 @@ import {
 import { appToaster } from "@/shared/ui/app-toaster";
 import { EmptyState, ErrorState } from "@/shared/ui";
 import { ShopeeProductDetailModal } from "@/features/view-product-detail";
-import { DeleteConfirmDialog, StatusChangeConfirmDialog } from "@/features/edit-item-status";
+import {
+  DeleteConfirmDialog,
+  StatusChangeConfirmDialog,
+} from "@/features/edit-item-status";
 
 const SHOPEE_STATUS_LABEL: Record<string, string> = {
   NORMAL: "판매중",
@@ -37,15 +40,21 @@ export function ShopeeProductsContent({
 }: ShopeeProductsContentProps): React.JSX.Element {
   const router = useRouter();
   const [shopeeOffset, setShopeeOffset] = useState<number>(0);
-  const [selectedShopeeItemId, setSelectedShopeeItemId] = useState<number | null>(null);
-  
-  const [shopeeStatusDialogOpen, setShopeeStatusDialogOpen] = useState<boolean>(false);
+  const [selectedShopeeItemId, setSelectedShopeeItemId] = useState<
+    number | null
+  >(null);
+
+  const [shopeeStatusDialogOpen, setShopeeStatusDialogOpen] =
+    useState<boolean>(false);
   const [shopeeStatusTarget, setShopeeStatusTarget] = useState<{
     itemId: number;
     unlist: boolean;
   } | null>(null);
-  const [shopeeDeleteDialogOpen, setShopeeDeleteDialogOpen] = useState<boolean>(false);
-  const [shopeeDeleteTargetId, setShopeeDeleteTargetId] = useState<number | null>(null);
+  const [shopeeDeleteDialogOpen, setShopeeDeleteDialogOpen] =
+    useState<boolean>(false);
+  const [shopeeDeleteTargetId, setShopeeDeleteTargetId] = useState<
+    number | null
+  >(null);
 
   const { mutateAsync: unlistItemAsync } = useShopeeUnlistItem();
   const { mutateAsync: deleteItemAsync } = useShopeeDeleteItem();
@@ -169,20 +178,22 @@ export function ShopeeProductsContent({
         <Box as="table" width="100%" fontSize="sm" borderCollapse="collapse">
           <Box as="thead">
             <Box as="tr" borderBottomWidth="1px" borderColor="gray.200">
-              {["Item ID", "상품명", "SKU", "상태", "가격", "재고", "작업"].map((h) => (
-                <Box
-                  key={h}
-                  as="th"
-                  px={3}
-                  py={2}
-                  textAlign="left"
-                  fontWeight="semibold"
-                  color="gray.600"
-                  whiteSpace="nowrap"
-                >
-                  {h}
-                </Box>
-              ))}
+              {["Item ID", "상품명", "SKU", "상태", "가격", "재고", "작업"].map(
+                (h) => (
+                  <Box
+                    key={h}
+                    as="th"
+                    px={3}
+                    py={2}
+                    textAlign="left"
+                    fontWeight="semibold"
+                    color="gray.600"
+                    whiteSpace="nowrap"
+                  >
+                    {h}
+                  </Box>
+                ),
+              )}
             </Box>
           </Box>
           <Box as="tbody">
@@ -215,8 +226,12 @@ export function ShopeeProductsContent({
                     fontSize="xs"
                     borderRadius="sm"
                     borderWidth="1px"
-                    borderColor={item.itemStatus === "NORMAL" ? "gray.900" : "gray.300"}
-                    borderStyle={item.itemStatus === "NORMAL" ? "solid" : "dashed"}
+                    borderColor={
+                      item.itemStatus === "NORMAL" ? "gray.900" : "gray.300"
+                    }
+                    borderStyle={
+                      item.itemStatus === "NORMAL" ? "solid" : "dashed"
+                    }
                     color="gray.800"
                   >
                     {SHOPEE_STATUS_LABEL[item.itemStatus] ?? item.itemStatus}
@@ -243,7 +258,10 @@ export function ShopeeProductsContent({
                         color="gray.700"
                         _hover={{ bg: "gray.50" }}
                         onClick={() => {
-                          setShopeeStatusTarget({ itemId: item.itemId, unlist: true });
+                          setShopeeStatusTarget({
+                            itemId: item.itemId,
+                            unlist: true,
+                          });
                           setShopeeStatusDialogOpen(true);
                         }}
                       >
@@ -258,7 +276,10 @@ export function ShopeeProductsContent({
                         color="gray.700"
                         _hover={{ bg: "gray.50" }}
                         onClick={() => {
-                          setShopeeStatusTarget({ itemId: item.itemId, unlist: false });
+                          setShopeeStatusTarget({
+                            itemId: item.itemId,
+                            unlist: false,
+                          });
                           setShopeeStatusDialogOpen(true);
                         }}
                       >
@@ -310,8 +331,12 @@ export function ShopeeProductsContent({
           setShopeeStatusTarget(null);
         }}
         onConfirm={handleShopeeStatusConfirm}
-        itemCodes={shopeeStatusTarget ? [String(shopeeStatusTarget.itemId)] : []}
-        actionLabel={shopeeStatusTarget?.unlist ? "판매중지" : "판매중으로 변경"}
+        itemCodes={
+          shopeeStatusTarget ? [String(shopeeStatusTarget.itemId)] : []
+        }
+        actionLabel={
+          shopeeStatusTarget?.unlist ? "판매중지" : "판매중으로 변경"
+        }
       />
 
       {/* Shopee 삭제 확인 다이얼로그 */}
@@ -322,7 +347,9 @@ export function ShopeeProductsContent({
           setShopeeDeleteTargetId(null);
         }}
         onConfirm={handleShopeeDeleteConfirm}
-        itemCodes={shopeeDeleteTargetId !== null ? [String(shopeeDeleteTargetId)] : []}
+        itemCodes={
+          shopeeDeleteTargetId !== null ? [String(shopeeDeleteTargetId)] : []
+        }
       />
     </>
   );

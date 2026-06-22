@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   Box,
   Button,
@@ -9,10 +9,10 @@ import {
   Input,
   Text,
   VStack,
-} from '@chakra-ui/react';
-import { CheckCircle2, X } from 'lucide-react';
+} from "@chakra-ui/react";
+import { CheckCircle2, X } from "lucide-react";
 
-import { appToaster } from '@/shared/ui/app-toaster';
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export interface ConfirmOrdersModalProps {
   open: boolean;
@@ -25,29 +25,29 @@ export interface ConfirmOrdersModalProps {
 }
 
 const DELAY_OPTIONS: Array<{ value: 1 | 2 | 3 | 4; label: string }> = [
-  { value: 1, label: '상품준비중' },
-  { value: 2, label: '고객요청' },
-  { value: 3, label: '배송사 지연' },
-  { value: 4, label: '재고부족' },
+  { value: 1, label: "상품준비중" },
+  { value: 2, label: "고객요청" },
+  { value: 3, label: "배송사 지연" },
+  { value: 4, label: "재고부족" },
 ];
 
 function todayJst(): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+  const fmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
   return fmt.format(new Date());
 }
 
 function addDaysYmd(ymd: string, days: number): string {
-  const [y, m, d] = ymd.split('-').map((s) => Number.parseInt(s, 10));
+  const [y, m, d] = ymd.split("-").map((s) => Number.parseInt(s, 10));
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
   const yy = dt.getUTCFullYear();
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
   return `${yy}-${mm}-${dd}`;
 }
 
@@ -66,10 +66,10 @@ export function ConfirmOrdersModal({
   const [error, setError] = useState<string | undefined>();
 
   const quickDateOptions: Array<{ label: string; days: number }> = [
-    { label: '내일', days: 1 },
-    { label: '모레', days: 2 },
-    { label: '3일 후', days: 3 },
-    { label: '일주일 후', days: 7 },
+    { label: "내일", days: 1 },
+    { label: "모레", days: 2 },
+    { label: "3일 후", days: 3 },
+    { label: "일주일 후", days: 7 },
   ];
 
   if (!open) return null;
@@ -77,7 +77,7 @@ export function ConfirmOrdersModal({
   const submit = async (): Promise<void> => {
     setError(undefined);
     if (!estDate || estDate <= todayYmd) {
-      setError('발송예정일은 오늘 이후 날짜만 선택할 수 있습니다.');
+      setError("발송예정일은 오늘 이후 날짜만 선택할 수 있습니다.");
       return;
     }
     setSubmitting(true);
@@ -85,8 +85,8 @@ export function ConfirmOrdersModal({
       await onConfirm({ estimatedShippingDate: estDate, delayType });
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : '주문확인 처리에 실패했습니다.';
-      appToaster.create({ title: message, type: 'error' });
+        err instanceof Error ? err.message : "주문확인 처리에 실패했습니다.";
+      appToaster.create({ title: message, type: "error" });
     } finally {
       setSubmitting(false);
     }
@@ -108,7 +108,7 @@ export function ConfirmOrdersModal({
         top="50%"
         left="50%"
         transform="translate(-50%, -50%)"
-        w={{ base: 'calc(100% - 32px)', md: '480px' }}
+        w={{ base: "calc(100% - 32px)", md: "480px" }}
         bg="white"
         zIndex={1001}
         borderRadius="xl"
@@ -133,7 +133,8 @@ export function ConfirmOrdersModal({
                 주문확인 (결제완료 → 신규주문)
               </Text>
               <Text fontSize="xs" color="gray.500" mt={0.5}>
-                선택된 {orderCount.toLocaleString()}건 주문을 Qoo10에 확인 처리합니다
+                선택된 {orderCount.toLocaleString()}건 주문을 Qoo10에 확인
+                처리합니다
               </Text>
             </Box>
           </Flex>
@@ -142,12 +143,12 @@ export function ConfirmOrdersModal({
             onClick={onClose}
             disabled={submitting}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#718096',
-              background: 'transparent',
-              border: 'none',
-              cursor: submitting ? 'not-allowed' : 'pointer',
+              display: "flex",
+              alignItems: "center",
+              color: "#718096",
+              background: "transparent",
+              border: "none",
+              cursor: submitting ? "not-allowed" : "pointer",
               padding: 0,
             }}
             aria-label="닫기"
@@ -181,8 +182,8 @@ export function ConfirmOrdersModal({
                       key={option.days}
                       type="button"
                       size="xs"
-                      variant={isSelected ? 'solid' : 'outline'}
-                      colorScheme={isSelected ? 'blue' : 'gray'}
+                      variant={isSelected ? "solid" : "outline"}
+                      colorScheme={isSelected ? "blue" : "gray"}
                       onClick={() => setEstDate(dateValue)}
                     >
                       {option.label}
@@ -219,13 +220,13 @@ export function ConfirmOrdersModal({
               </Text>
               <select
                 style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '14px',
-                  color: '#1a202c',
-                  backgroundColor: 'white',
+                  width: "100%",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #e2e8f0",
+                  fontSize: "14px",
+                  color: "#1a202c",
+                  backgroundColor: "white",
                 }}
                 value={delayType}
                 onChange={(e) =>

@@ -82,7 +82,10 @@ export class OrderService {
 
   async collectOrders(params: CollectParams): Promise<CollectResult> {
     const settings = await this.loadUserOrderSettings(params.userId);
-    const channelRows = await this.loadChannels(params.userId, params.channelIds);
+    const channelRows = await this.loadChannels(
+      params.userId,
+      params.channelIds,
+    );
 
     const results: ChannelOpResult[] = [];
     for (const row of channelRows) {
@@ -100,9 +103,16 @@ export class OrderService {
       };
 
       try {
-        const adapter = await this.buildAdapter(params.userId, row.id, channelKey);
+        const adapter = await this.buildAdapter(
+          params.userId,
+          row.id,
+          channelKey,
+        );
         if (!adapter) {
-          result.errors.push({ channelOrderId: "", message: "adapter_unavailable" });
+          result.errors.push({
+            channelOrderId: "",
+            message: "adapter_unavailable",
+          });
           await this.logEvent(this.app.db, {
             userId: params.userId,
             channelId: row.id,
@@ -194,7 +204,10 @@ export class OrderService {
   }
 
   async syncOrders(params: SyncParams): Promise<SyncResult> {
-    const channelRows = await this.loadChannels(params.userId, params.channelIds);
+    const channelRows = await this.loadChannels(
+      params.userId,
+      params.channelIds,
+    );
     const results: ChannelOpResult[] = [];
 
     for (const row of channelRows) {
@@ -212,9 +225,16 @@ export class OrderService {
       };
 
       try {
-        const adapter = await this.buildAdapter(params.userId, row.id, channelKey);
+        const adapter = await this.buildAdapter(
+          params.userId,
+          row.id,
+          channelKey,
+        );
         if (!adapter) {
-          result.errors.push({ channelOrderId: "", message: "adapter_unavailable" });
+          result.errors.push({
+            channelOrderId: "",
+            message: "adapter_unavailable",
+          });
           await this.logEvent(this.app.db, {
             userId: params.userId,
             channelId: row.id,
@@ -235,7 +255,12 @@ export class OrderService {
         for (const std of pulled) {
           result.processed += 1;
           try {
-            const changed = await this.syncOne(params.userId, row.id, std, channelKey);
+            const changed = await this.syncOne(
+              params.userId,
+              row.id,
+              std,
+              channelKey,
+            );
             if (changed) result.updated += 1;
             else result.skipped += 1;
           } catch (err) {
@@ -371,7 +396,11 @@ export class OrderService {
       // Shopify는 주문확인 개념 없음 → 즉시 rank 전환만 수행
       if (channelKey === "shopify") {
         for (const r of group) {
-          await this.transitionPaidToNew(r.id, channelId, "shopify_auto_confirm");
+          await this.transitionPaidToNew(
+            r.id,
+            channelId,
+            "shopify_auto_confirm",
+          );
           allResults.push({
             orderId: r.id,
             channelOrderId: r.channelOrderId,
@@ -382,7 +411,11 @@ export class OrderService {
         continue;
       }
 
-      const adapter = await this.buildAdapter(params.userId, channelId, channelKey);
+      const adapter = await this.buildAdapter(
+        params.userId,
+        channelId,
+        channelKey,
+      );
       if (!adapter || !adapter.confirmOrders) {
         for (const r of group) {
           allResults.push({
@@ -740,7 +773,9 @@ export class OrderService {
 
     // 운송장 등록 가능 rank: 30(출고대기) / 35(출고보류) / 40(운송장출력)
     const ELIGIBLE_RANKS: ReadonlySet<number> = new Set([30, 35, 40]);
-    const eligible = rows.filter((r) => ELIGIBLE_RANKS.has(r.fulfillmentStatus));
+    const eligible = rows.filter((r) =>
+      ELIGIBLE_RANKS.has(r.fulfillmentStatus),
+    );
     const skipped = rows.length - eligible.length;
 
     const byChannel = new Map<string, typeof eligible>();
@@ -774,7 +809,11 @@ export class OrderService {
       // Shopify는 FulfillmentOrder 기반 fulfillmentCreate를 주문별로 순차 호출.
       // Bulk primitive가 없음 — pushTracking을 per-order로 적용.
       if (channelKey === "shopify") {
-        const adapter = await this.buildAdapter(params.userId, channelId, channelKey);
+        const adapter = await this.buildAdapter(
+          params.userId,
+          channelId,
+          channelKey,
+        );
         if (!adapter || !adapter.pushTracking) {
           for (const r of group) {
             allResults.push({
@@ -848,7 +887,11 @@ export class OrderService {
         continue;
       }
 
-      const adapter = await this.buildAdapter(params.userId, channelId, channelKey);
+      const adapter = await this.buildAdapter(
+        params.userId,
+        channelId,
+        channelKey,
+      );
       if (!adapter || !adapter.pushTrackingBulk) {
         for (const r of group) {
           allResults.push({
@@ -1029,7 +1072,8 @@ export class OrderService {
 
     const giftService = new GiftRuleService(this.app, params.userId);
 
-    const results: Array<{ orderId: string; ok: boolean; message?: string }> = [];
+    const results: Array<{ orderId: string; ok: boolean; message?: string }> =
+      [];
     for (const r of eligible) {
       try {
         await db.transaction(async (tx) => {
@@ -1087,7 +1131,9 @@ export class OrderService {
     const srcRows = await db
       .select()
       .from(orders)
-      .where(and(eq(orders.userId, params.userId), eq(orders.id, params.orderId)))
+      .where(
+        and(eq(orders.userId, params.userId), eq(orders.id, params.orderId)),
+      )
       .limit(1);
     const src = srcRows[0];
     if (!src) throw new Error("order_not_found");
@@ -1167,10 +1213,7 @@ export class OrderService {
   }
 
   // ── delete: hard delete (우리 DB만, 채널엔 영향 없음) ──────────
-  async deleteOrders(params: {
-    userId: string;
-    orderIds: string[];
-  }): Promise<{
+  async deleteOrders(params: { userId: string; orderIds: string[] }): Promise<{
     totalRequested: number;
     totalDeleted: number;
     skipped: number;
@@ -1190,7 +1233,8 @@ export class OrderService {
         ),
       );
 
-    const results: Array<{ orderId: string; ok: boolean; message?: string }> = [];
+    const results: Array<{ orderId: string; ok: boolean; message?: string }> =
+      [];
     const toDelete: string[] = [];
     for (const r of rows) {
       // 90(판매완료) 불가침
@@ -1327,7 +1371,8 @@ export class OrderService {
     primaryOrderId?: string; // 미지정 시 첫번째
   }): Promise<{ bundleNumber: string; orderIds: string[] }> {
     const db: DbLike = this.app.db;
-    if (params.orderIds.length < 2) throw new Error("at_least_two_orders_required");
+    if (params.orderIds.length < 2)
+      throw new Error("at_least_two_orders_required");
 
     const rows = await db
       .select({
@@ -1385,7 +1430,9 @@ export class OrderService {
 
   // ── internal ──────────────────────────────────────────────────
 
-  private async loadUserOrderSettings(userId: string): Promise<UserOrderSettings> {
+  private async loadUserOrderSettings(
+    userId: string,
+  ): Promise<UserOrderSettings> {
     const db: DbLike = this.app.db;
     const rows = await db
       .select({ orders: userSettings.orders })
@@ -1408,7 +1455,9 @@ export class OrderService {
         channelType: channels.channelType,
       })
       .from(channels)
-      .where(and(eq(channels.userId, userId), inArray(channels.id, channelIds)));
+      .where(
+        and(eq(channels.userId, userId), inArray(channels.id, channelIds)),
+      );
   }
 
   private async loadAllChannelIds(userId: string): Promise<string[]> {
@@ -1628,7 +1677,10 @@ export class OrderService {
         }
       }
 
-      await txDb.update(orders).set(toUpdate).where(eq(orders.id, existingRow.id));
+      await txDb
+        .update(orders)
+        .set(toUpdate)
+        .where(eq(orders.id, existingRow.id));
 
       if (!guard.ignored && guard.next !== currentRank) {
         await txDb.insert(orderStatusHistory).values({
@@ -1659,7 +1711,7 @@ export class OrderService {
     for (const line of lines) {
       const ifKey = {
         channelId,
-        channelItemCode: line.channelItemCode ?? '',
+        channelItemCode: line.channelItemCode ?? "",
         channelItemTitle: line.channelItemTitle ?? null,
         optionCode: line.channelOptionCode ?? null,
         optionName: line.channelOption ?? null,
@@ -1670,7 +1722,7 @@ export class OrderService {
         ? await ruleSvc.resolve(ifKey, txDb)
         : null;
 
-      let matchedBy: 'auto' | 'manual' | 'rule' | null = null;
+      let matchedBy: "auto" | "manual" | "rule" | null = null;
       let matchRuleId: string | null = null;
       let resolvedSkuId: string | null = null;
       let resolvedSkuCode: string | null = null;
@@ -1686,7 +1738,7 @@ export class OrderService {
       };
 
       if (ruleHit) {
-        matchedBy = 'rule';
+        matchedBy = "rule";
         matchRuleId = ruleHit.ruleId;
         resolvedSkuId = ruleHit.skuId;
         resolvedSkuCode = ruleHit.skuCode;
@@ -1697,7 +1749,7 @@ export class OrderService {
         // 2) 규칙 미적중 → SKU 직매칭
         autoMatched = await this.autoMatchSku(txDb, userId, line);
         if (autoMatched.skuId) {
-          matchedBy = 'auto';
+          matchedBy = "auto";
           resolvedSkuId = autoMatched.skuId;
           resolvedSkuCode = autoMatched.skuCode;
           resolvedSkuName = autoMatched.skuName;
@@ -1733,7 +1785,7 @@ export class OrderService {
         ruleSvc.recordHit(ruleHit.ruleId, txDb).catch((err) => {
           this.app.log.warn(
             { err, ruleId: ruleHit.ruleId },
-            'match_rules recordHit failed',
+            "match_rules recordHit failed",
           );
         });
         await this.logEvent(txDb, {
@@ -1741,11 +1793,11 @@ export class OrderService {
           channelId,
           orderId,
           orderItemId,
-          eventType: 'auto_match_success',
-          result: 'ok',
+          eventType: "auto_match_success",
+          result: "ok",
           message: `규칙 매칭 성공: ${ruleHit.skuCode}`,
           detail: {
-            via: 'rule',
+            via: "rule",
             ruleId: ruleHit.ruleId,
             skuCode: ruleHit.skuCode,
             skuName: ruleHit.skuName,
@@ -1760,12 +1812,15 @@ export class OrderService {
             channelId,
             orderId,
             orderItemId,
-            eventType: 'duplicate_suspect',
-            result: 'warn',
+            eventType: "duplicate_suspect",
+            result: "warn",
             message: `SKU 후보 ${autoMatched.matches.length}건 발견 — 첫 번째(${autoMatched.skuCode})를 사용`,
             detail: {
               candidates: autoMatched.candidates,
-              matches: autoMatched.matches.map((m) => ({ code: m.code, name: m.name })),
+              matches: autoMatched.matches.map((m) => ({
+                code: m.code,
+                name: m.name,
+              })),
               chosen: autoMatched.skuCode,
               channelItemCode: line.channelItemCode,
               channelOptionCode: line.channelOptionCode,
@@ -1777,11 +1832,11 @@ export class OrderService {
             channelId,
             orderId,
             orderItemId,
-            eventType: 'auto_match_success',
-            result: 'ok',
+            eventType: "auto_match_success",
+            result: "ok",
             message: `SKU 매칭 성공: ${autoMatched.skuCode}`,
             detail: {
-              via: 'auto',
+              via: "auto",
               skuCode: autoMatched.skuCode,
               skuName: autoMatched.skuName,
               channelItemCode: line.channelItemCode,
@@ -1791,19 +1846,23 @@ export class OrderService {
           // 자동학습 — IF 키가 성립하는 경우에만 (channelItemCode 필수)
           if (ifKey.channelItemCode) {
             try {
-              const learned = await ruleSvc.autoLearn(ifKey, autoMatched.skuId, {
-                outputQty: line.outputQty ?? 1,
-                warehouseId: line.warehouseId ?? null,
-                txDb,
-              });
+              const learned = await ruleSvc.autoLearn(
+                ifKey,
+                autoMatched.skuId,
+                {
+                  outputQty: line.outputQty ?? 1,
+                  warehouseId: line.warehouseId ?? null,
+                  txDb,
+                },
+              );
               if (learned.created && learned.id) {
                 await this.logEvent(txDb, {
                   userId,
                   channelId,
                   orderId,
                   orderItemId,
-                  eventType: 'rule_auto_learned',
-                  result: 'ok',
+                  eventType: "rule_auto_learned",
+                  result: "ok",
                   message: `매칭규칙 자동저장: ${autoMatched.skuCode}`,
                   detail: {
                     ruleId: learned.id,
@@ -1817,8 +1876,13 @@ export class OrderService {
               }
             } catch (err) {
               this.app.log.warn(
-                { err, userId, channelId, channelItemCode: line.channelItemCode },
-                'match_rules autoLearn failed',
+                {
+                  err,
+                  userId,
+                  channelId,
+                  channelItemCode: line.channelItemCode,
+                },
+                "match_rules autoLearn failed",
               );
             }
           }
@@ -1828,12 +1892,12 @@ export class OrderService {
             channelId,
             orderId,
             orderItemId,
-            eventType: 'auto_match_failed',
-            result: 'warn',
+            eventType: "auto_match_failed",
+            result: "warn",
             message:
               autoMatched.candidates.length === 0
-                ? '매칭할 코드가 비어있음'
-                : `SKU 미발견: ${autoMatched.candidates.join(', ')}`,
+                ? "매칭할 코드가 비어있음"
+                : `SKU 미발견: ${autoMatched.candidates.join(", ")}`,
             detail: {
               candidates: autoMatched.candidates,
               channelItemCode: line.channelItemCode,
@@ -1962,7 +2026,11 @@ export class OrderService {
 
       const currentRank = row.fulfillmentStatus as FulfillmentRank;
       const candidate = candidateRank(channelKey, std);
-      const guard = StatusRuleEngine.applyRankGuard(currentRank, candidate, "sync");
+      const guard = StatusRuleEngine.applyRankGuard(
+        currentRank,
+        candidate,
+        "sync",
+      );
 
       if (guard.ignored || guard.next === currentRank) {
         const trackingChanged =
@@ -2146,7 +2214,10 @@ function computeSinceDate(lookbackDays: number): string {
   return d.toISOString();
 }
 
-function computeBundleNumber(std: StandardOrder, bundleKey: string[]): string | null {
+function computeBundleNumber(
+  std: StandardOrder,
+  bundleKey: string[],
+): string | null {
   if (!std.bundleable) return null;
   const parts = bundleKey
     .map((k) => {
@@ -2200,7 +2271,10 @@ function computeDispatchDelayed(
   return Date.now() - due > thresholdDays * 24 * 60 * 60 * 1000;
 }
 
-function candidateRank(channelKey: ChannelKey, std: StandardOrder): FulfillmentRank {
+function candidateRank(
+  channelKey: ChannelKey,
+  std: StandardOrder,
+): FulfillmentRank {
   if (channelKey === "qoo10") {
     return StatusRuleEngine.qoo10.toFulfillment({
       trackingNo: std.trackingNo,

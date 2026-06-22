@@ -1,22 +1,24 @@
-import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
-import NextTopLoader from 'nextjs-toploader';
-import { Providers } from '@/app/_providers/Providers';
-import { AppShell } from '@/widgets/app-shell';
-import { AppToasterHost } from '@/shared/ui/app-toaster';
+import type { Metadata } from "next";
+import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import NextTopLoader from "nextjs-toploader";
+import { Providers } from "@/app/_providers/Providers";
+import { AppShell } from "@/widgets/app-shell";
+import { AppToasterHost } from "@/shared/ui/app-toaster";
 
 export const metadata: Metadata = {
-  title: 'passoffer',
-  description: 'passoffer application',
+  title: "passoffer",
+  description: "passoffer application",
 };
 
 interface RootLayoutProps {
   readonly children: ReactNode;
 }
 
-export async function RootLayout({ children }: RootLayoutProps): Promise<React.JSX.Element> {
+export async function RootLayout({
+  children,
+}: RootLayoutProps): Promise<React.JSX.Element> {
   const locale = await getLocale();
   const messages = await getMessages();
 
@@ -34,4 +36,3 @@ export async function RootLayout({ children }: RootLayoutProps): Promise<React.J
     </html>
   );
 }
-

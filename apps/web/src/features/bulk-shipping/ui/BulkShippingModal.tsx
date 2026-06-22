@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
@@ -12,16 +12,16 @@ import {
   Text,
   Textarea,
   VStack,
-} from '@chakra-ui/react';
-import { Truck, X } from 'lucide-react';
+} from "@chakra-ui/react";
+import { Truck, X } from "lucide-react";
 
 import {
   useBulkSetSendingInfo,
   type BulkSetSendingInfoItem,
   type BulkSetSendingInfoResultItem,
   type OrderListItem,
-} from '@/entities/order';
-import { appToaster } from '@/shared/ui/app-toaster';
+} from "@/entities/order";
+import { appToaster } from "@/shared/ui/app-toaster";
 
 export interface BulkShippingModalProps {
   open: boolean;
@@ -38,27 +38,32 @@ interface Row {
   trackingNo: string;
 }
 
-type Mode = 'direct' | 'paste';
+type Mode = "direct" | "paste";
 
 const CARRIER_PRESETS = [
-  '日本郵便',
-  'ヤマト運輸',
-  '佐川急便',
-  '西濃運輸',
-  '福山通運',
-  'EMS',
-  'DHL',
-  'FedEx',
-  'UPS',
+  "日本郵便",
+  "ヤマト運輸",
+  "佐川急便",
+  "西濃運輸",
+  "福山通運",
+  "EMS",
+  "DHL",
+  "FedEx",
+  "UPS",
 ];
 
-function parsePasteText(text: string): Map<string, { shippingCorp: string; trackingNo: string }> {
+function parsePasteText(
+  text: string,
+): Map<string, { shippingCorp: string; trackingNo: string }> {
   const map = new Map<string, { shippingCorp: string; trackingNo: string }>();
   const lines = text.split(/\r?\n/);
   for (const raw of lines) {
     const line = raw.trim();
     if (!line) continue;
-    const cols = line.split(/[\t,]/).map((c) => c.trim()).filter(Boolean);
+    const cols = line
+      .split(/[\t,]/)
+      .map((c) => c.trim())
+      .filter(Boolean);
     if (cols.length < 3) continue;
     const [channelOrderId, shippingCorp, trackingNo] = cols;
     if (!channelOrderId || !shippingCorp || !trackingNo) continue;
@@ -73,11 +78,13 @@ export function BulkShippingModal({
   orders,
   onCompleted,
 }: BulkShippingModalProps): React.JSX.Element | null {
-  const [mode, setMode] = useState<Mode>('direct');
+  const [mode, setMode] = useState<Mode>("direct");
   const [rows, setRows] = useState<Row[]>([]);
-  const [pasteText, setPasteText] = useState('');
-  const [defaultCarrier, setDefaultCarrier] = useState('');
-  const [results, setResults] = useState<BulkSetSendingInfoResultItem[] | null>(null);
+  const [pasteText, setPasteText] = useState("");
+  const [defaultCarrier, setDefaultCarrier] = useState("");
+  const [results, setResults] = useState<BulkSetSendingInfoResultItem[] | null>(
+    null,
+  );
 
   const mutation = useBulkSetSendingInfo();
 
@@ -88,18 +95,19 @@ export function BulkShippingModal({
         orderId: o.id,
         channelOrderId: o.channelOrderId,
         receiverName: o.receiverName,
-        shippingCorp: '',
-        trackingNo: '',
+        shippingCorp: "",
+        trackingNo: "",
       })),
     );
-    setPasteText('');
-    setDefaultCarrier('');
+    setPasteText("");
+    setDefaultCarrier("");
     setResults(null);
-    setMode('direct');
+    setMode("direct");
   }, [open, orders]);
 
   const filledCount = useMemo(
-    () => rows.filter((r) => r.shippingCorp.trim() && r.trackingNo.trim()).length,
+    () =>
+      rows.filter((r) => r.shippingCorp.trim() && r.trackingNo.trim()).length,
     [rows],
   );
 
@@ -112,7 +120,9 @@ export function BulkShippingModal({
     setRows((prev) =>
       prev.map((r) => ({
         ...r,
-        shippingCorp: r.shippingCorp.trim() ? r.shippingCorp : defaultCarrier.trim(),
+        shippingCorp: r.shippingCorp.trim()
+          ? r.shippingCorp
+          : defaultCarrier.trim(),
       })),
     );
   };
@@ -121,8 +131,8 @@ export function BulkShippingModal({
     const parsed = parsePasteText(pasteText);
     if (parsed.size === 0) {
       appToaster.create({
-        title: '붙여넣은 데이터에서 유효한 행을 찾지 못했습니다.',
-        type: 'warning',
+        title: "붙여넣은 데이터에서 유효한 행을 찾지 못했습니다.",
+        type: "warning",
       });
       return;
     }
@@ -132,18 +142,27 @@ export function BulkShippingModal({
         const hit = parsed.get(r.channelOrderId);
         if (!hit) return r;
         matched += 1;
-        return { ...r, shippingCorp: hit.shippingCorp, trackingNo: hit.trackingNo };
+        return {
+          ...r,
+          shippingCorp: hit.shippingCorp,
+          trackingNo: hit.trackingNo,
+        };
       }),
     );
     appToaster.create({
       title: `${matched}건 매칭 완료 (${parsed.size}건 입력 중)`,
-      type: matched > 0 ? 'success' : 'warning',
+      type: matched > 0 ? "success" : "warning",
     });
-    setMode('direct');
+    setMode("direct");
   };
 
-  const updateRow = (orderId: string, patch: Partial<Pick<Row, 'shippingCorp' | 'trackingNo'>>): void => {
-    setRows((prev) => prev.map((r) => (r.orderId === orderId ? { ...r, ...patch } : r)));
+  const updateRow = (
+    orderId: string,
+    patch: Partial<Pick<Row, "shippingCorp" | "trackingNo">>,
+  ): void => {
+    setRows((prev) =>
+      prev.map((r) => (r.orderId === orderId ? { ...r, ...patch } : r)),
+    );
   };
 
   const submit = async (): Promise<void> => {
@@ -156,8 +175,8 @@ export function BulkShippingModal({
       }));
     if (items.length === 0) {
       appToaster.create({
-        title: '입력된 운송장 정보가 없습니다.',
-        type: 'warning',
+        title: "입력된 운송장 정보가 없습니다.",
+        type: "warning",
       });
       return;
     }
@@ -165,11 +184,13 @@ export function BulkShippingModal({
       const result = await mutation.mutateAsync({ items });
       setResults(result.results);
       const parts: string[] = [`${result.totalSent.toLocaleString()}건 전송`];
-      if (result.totalFailed > 0) parts.push(`${result.totalFailed.toLocaleString()}건 실패`);
-      if (result.skipped > 0) parts.push(`${result.skipped.toLocaleString()}건 스킵`);
+      if (result.totalFailed > 0)
+        parts.push(`${result.totalFailed.toLocaleString()}건 실패`);
+      if (result.skipped > 0)
+        parts.push(`${result.skipped.toLocaleString()}건 스킵`);
       appToaster.create({
-        title: parts.join(' / '),
-        type: result.totalFailed > 0 ? 'warning' : 'success',
+        title: parts.join(" / "),
+        type: result.totalFailed > 0 ? "warning" : "success",
       });
       if (result.totalFailed === 0) {
         onCompleted?.();
@@ -177,8 +198,8 @@ export function BulkShippingModal({
       }
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : '운송장 전송에 실패했습니다.';
-      appToaster.create({ title: message, type: 'error' });
+        err instanceof Error ? err.message : "운송장 전송에 실패했습니다.";
+      appToaster.create({ title: message, type: "error" });
     }
   };
 
@@ -198,7 +219,7 @@ export function BulkShippingModal({
         top="50%"
         left="50%"
         transform="translate(-50%, -50%)"
-        w={{ base: 'calc(100% - 32px)', md: '900px' }}
+        w={{ base: "calc(100% - 32px)", md: "900px" }}
         bg="white"
         zIndex={1001}
         borderRadius="xl"
@@ -223,7 +244,8 @@ export function BulkShippingModal({
                 운송장 일괄 전송
               </Text>
               <Text fontSize="xs" color="gray.500" mt={0.5}>
-                선택된 {orders.length.toLocaleString()}건 중 입력된 {filledCount.toLocaleString()}건이 전송됩니다
+                선택된 {orders.length.toLocaleString()}건 중 입력된{" "}
+                {filledCount.toLocaleString()}건이 전송됩니다
               </Text>
             </Box>
           </Flex>
@@ -232,12 +254,12 @@ export function BulkShippingModal({
             onClick={onClose}
             disabled={submitting}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: '#718096',
-              background: 'transparent',
-              border: 'none',
-              cursor: submitting ? 'not-allowed' : 'pointer',
+              display: "flex",
+              alignItems: "center",
+              color: "#718096",
+              background: "transparent",
+              border: "none",
+              cursor: submitting ? "not-allowed" : "pointer",
               padding: 0,
             }}
             aria-label="닫기"
@@ -252,32 +274,35 @@ export function BulkShippingModal({
               <Button
                 type="button"
                 size="sm"
-                variant={mode === 'direct' ? 'solid' : 'outline'}
-                colorScheme={mode === 'direct' ? 'blue' : 'gray'}
-                onClick={() => setMode('direct')}
+                variant={mode === "direct" ? "solid" : "outline"}
+                colorScheme={mode === "direct" ? "blue" : "gray"}
+                onClick={() => setMode("direct")}
               >
                 직접 입력
               </Button>
               <Button
                 type="button"
                 size="sm"
-                variant={mode === 'paste' ? 'solid' : 'outline'}
-                colorScheme={mode === 'paste' ? 'blue' : 'gray'}
-                onClick={() => setMode('paste')}
+                variant={mode === "paste" ? "solid" : "outline"}
+                colorScheme={mode === "paste" ? "blue" : "gray"}
+                onClick={() => setMode("paste")}
               >
                 엑셀/CSV 붙여넣기
               </Button>
             </HStack>
 
-            {mode === 'paste' ? (
+            {mode === "paste" ? (
               <Box>
                 <Text fontSize="sm" color="gray.700" mb={1}>
-                  채널주문번호, 택배사, 운송장번호 순서로 한 줄에 한 건씩 (탭 또는 쉼표 구분)
+                  채널주문번호, 택배사, 운송장번호 순서로 한 줄에 한 건씩 (탭
+                  또는 쉼표 구분)
                 </Text>
                 <Textarea
                   value={pasteText}
                   onChange={(e) => setPasteText(e.target.value)}
-                  placeholder={'JP123456789\t日本郵便\t12345678\nJP987654321,ヤマト運輸,98765432'}
+                  placeholder={
+                    "JP123456789\t日本郵便\t12345678\nJP987654321,ヤマト運輸,98765432"
+                  }
                   rows={8}
                   fontFamily="mono"
                   fontSize="sm"
@@ -323,7 +348,12 @@ export function BulkShippingModal({
                     빈 행에 적용
                   </Button>
                 </HStack>
-                <Box borderWidth="1px" borderRadius="md" maxH="380px" overflowY="auto">
+                <Box
+                  borderWidth="1px"
+                  borderRadius="md"
+                  maxH="380px"
+                  overflowY="auto"
+                >
                   <Table.Root size="sm" stickyHeader variant="line">
                     <Table.Header>
                       <Table.Row bg="gray.50">
@@ -338,22 +368,27 @@ export function BulkShippingModal({
                     </Table.Header>
                     <Table.Body>
                       {rows.map((row) => {
-                        const result = results?.find((r) => r.orderId === row.orderId);
-                        const filled = row.shippingCorp.trim() && row.trackingNo.trim();
+                        const result = results?.find(
+                          (r) => r.orderId === row.orderId,
+                        );
+                        const filled =
+                          row.shippingCorp.trim() && row.trackingNo.trim();
                         return (
                           <Table.Row key={row.orderId}>
                             <Table.Cell fontSize="xs" fontFamily="mono">
                               {row.channelOrderId}
                             </Table.Cell>
                             <Table.Cell fontSize="xs">
-                              {row.receiverName ?? '-'}
+                              {row.receiverName ?? "-"}
                             </Table.Cell>
                             <Table.Cell>
                               <Input
                                 size="xs"
                                 value={row.shippingCorp}
                                 onChange={(e) =>
-                                  updateRow(row.orderId, { shippingCorp: e.target.value })
+                                  updateRow(row.orderId, {
+                                    shippingCorp: e.target.value,
+                                  })
                                 }
                                 placeholder="日本郵便"
                                 list="carrier-presets"
@@ -364,7 +399,9 @@ export function BulkShippingModal({
                                 size="xs"
                                 value={row.trackingNo}
                                 onChange={(e) =>
-                                  updateRow(row.orderId, { trackingNo: e.target.value })
+                                  updateRow(row.orderId, {
+                                    trackingNo: e.target.value,
+                                  })
                                 }
                                 placeholder="12345678"
                               />
@@ -372,19 +409,27 @@ export function BulkShippingModal({
                             <Table.Cell textAlign="center">
                               {result ? (
                                 <Badge
-                                  colorPalette={result.ok ? 'green' : 'red'}
+                                  colorPalette={result.ok ? "green" : "red"}
                                   variant="solid"
                                   fontSize="xs"
                                   title={result.message}
                                 >
-                                  {result.ok ? '성공' : '실패'}
+                                  {result.ok ? "성공" : "실패"}
                                 </Badge>
                               ) : filled ? (
-                                <Badge colorPalette="blue" variant="subtle" fontSize="xs">
+                                <Badge
+                                  colorPalette="blue"
+                                  variant="subtle"
+                                  fontSize="xs"
+                                >
                                   대기
                                 </Badge>
                               ) : (
-                                <Badge colorPalette="gray" variant="subtle" fontSize="xs">
+                                <Badge
+                                  colorPalette="gray"
+                                  variant="subtle"
+                                  fontSize="xs"
+                                >
                                   미입력
                                 </Badge>
                               )}
@@ -409,7 +454,8 @@ export function BulkShippingModal({
               <Text fontSize="xs" color="blue.800">
                 Qoo10 SetSendingInfoBulk(15773)로 500건씩 일괄 호출됩니다.
                 <br />
-                출고대기/배송보류/송장출력 상태 주문만 처리되며, 그 외 상태는 스킵됩니다.
+                출고대기/배송보류/송장출력 상태 주문만 처리되며, 그 외 상태는
+                스킵됩니다.
               </Text>
             </Box>
 

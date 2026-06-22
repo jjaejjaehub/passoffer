@@ -52,8 +52,9 @@ export const shopifyProductsQueryRoot = ["shopify", "products"] as const;
 
 export const shopifyProductQueries = {
   all: () => shopifyProductsQueryRoot,
-  list: (params: Pick<ShopifyProductsQueryParams, "status" | "page" | "mergeAll">) =>
-    [...shopifyProductsQueryRoot, params] as const,
+  list: (
+    params: Pick<ShopifyProductsQueryParams, "status" | "page" | "mergeAll">,
+  ) => [...shopifyProductsQueryRoot, params] as const,
 };
 
 // ─── 에러 파싱 ─────────────────────────────────────────────────
@@ -94,7 +95,8 @@ export function useShopifyProducts(
           response: {
             data: {
               error: "NO_API_KEY",
-              message: "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
+              message:
+                "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
             },
           },
         });
@@ -129,6 +131,8 @@ export function useShopifyProducts(
     isLoading: query.isLoading && hasKey,
     error: query.error ? parseShopifyProductError(query.error) : null,
     hasApiKey: hasKey,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

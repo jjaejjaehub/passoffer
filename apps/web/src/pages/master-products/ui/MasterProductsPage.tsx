@@ -16,7 +16,11 @@ import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useDeleteMasterProduct, useMasterProducts, type MasterProduct } from "@/entities/master-product";
+import {
+  useDeleteMasterProduct,
+  useMasterProducts,
+  type MasterProduct,
+} from "@/entities/master-product";
 import { BulkListToChannelModal } from "@/features/list-to-channel";
 import { ROUTES } from "@/shared/config";
 import { PageHeader } from "@/shared/ui";
@@ -34,7 +38,11 @@ function MasterProductsTab({
   const t = useTranslations("pages.masterProducts");
   const router = useRouter();
   const pathname = usePathname();
-  const { data, isLoading, refetch } = useMasterProducts({ search, page, pageSize: 20 });
+  const { data, isLoading, refetch } = useMasterProducts({
+    search,
+    page,
+    pageSize: 20,
+  });
   const { mutateAsync: deleteMasterProduct } = useDeleteMasterProduct();
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -70,8 +78,10 @@ function MasterProductsTab({
     }
   };
 
-  const allChecked = items.length > 0 && items.every((item) => selectedIds.has(item.id));
-  const indeterminate = !allChecked && items.some((item) => selectedIds.has(item.id));
+  const allChecked =
+    items.length > 0 && items.every((item) => selectedIds.has(item.id));
+  const indeterminate =
+    !allChecked && items.some((item) => selectedIds.has(item.id));
 
   const toggleAll = (): void => {
     if (allChecked) {
@@ -90,7 +100,9 @@ function MasterProductsTab({
     });
   };
 
-  const selectedProducts: MasterProduct[] = items.filter((item) => selectedIds.has(item.id));
+  const selectedProducts: MasterProduct[] = items.filter((item) =>
+    selectedIds.has(item.id),
+  );
 
   if (isLoading) {
     return (
@@ -101,7 +113,13 @@ function MasterProductsTab({
   }
 
   return (
-    <Box position="relative" display="flex" flexDirection="column" flex="1" minH={0}>
+    <Box
+      position="relative"
+      display="flex"
+      flexDirection="column"
+      flex="1"
+      minH={0}
+    >
       {pendingHref !== null && (
         <Box
           position="absolute"
@@ -130,7 +148,9 @@ function MasterProductsTab({
           color="white"
           flexShrink={0}
         >
-          <Text fontSize="sm" fontWeight="medium">{t("bulk.selected", { count: selectedIds.size })}</Text>
+          <Text fontSize="sm" fontWeight="medium">
+            {t("bulk.selected", { count: selectedIds.size })}
+          </Text>
           <Flex gap={2}>
             <Button
               size="xs"
@@ -173,7 +193,9 @@ function MasterProductsTab({
               <Table.ColumnHeader>{t("table.brand")}</Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.retailPrice")}</Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.variantCount")}</Table.ColumnHeader>
-              <Table.ColumnHeader>{t("table.listedChannelCount")}</Table.ColumnHeader>
+              <Table.ColumnHeader>
+                {t("table.listedChannelCount")}
+              </Table.ColumnHeader>
               <Table.ColumnHeader>{t("table.createdAt")}</Table.ColumnHeader>
               <Table.ColumnHeader />
             </Table.Row>
@@ -182,7 +204,12 @@ function MasterProductsTab({
             {items.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={8}>
-                  <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
+                  <Text
+                    textAlign="center"
+                    color="gray.500"
+                    py={6}
+                    fontSize="sm"
+                  >
                     {t("table.empty")}
                   </Text>
                 </Table.Cell>
@@ -196,7 +223,12 @@ function MasterProductsTab({
                   bg={selectedIds.has(item.id) ? "blue.50" : undefined}
                   onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
                 >
-                  <Table.Cell onClick={(e) => { e.stopPropagation(); toggleOne(item.id); }}>
+                  <Table.Cell
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOne(item.id);
+                    }}
+                  >
                     <Checkbox.Root
                       checked={selectedIds.has(item.id)}
                       onCheckedChange={() => toggleOne(item.id)}
@@ -208,16 +240,20 @@ function MasterProductsTab({
                   </Table.Cell>
                   <Table.Cell>
                     <Stack gap={0.5}>
-                      <Text fontSize="sm" fontWeight="medium">{item.title}</Text>
-                      <Text fontSize="xs" color="gray.500">{item.code}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {item.title}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {item.code}
+                      </Text>
                     </Stack>
                   </Table.Cell>
                   <Table.Cell>
                     <Text fontSize="sm">
                       {(() => {
-                        const common = (item.attributes as Record<string, unknown> | undefined)?.common as
-                          | Record<string, unknown>
-                          | undefined;
+                        const common = (
+                          item.attributes as Record<string, unknown> | undefined
+                        )?.common as Record<string, unknown> | undefined;
                         const b = common?.brand;
                         return typeof b === "string" && b ? b : "-";
                       })()}
@@ -226,9 +262,9 @@ function MasterProductsTab({
                   <Table.Cell>
                     <Text fontSize="sm">
                       {(() => {
-                        const common = (item.attributes as Record<string, unknown> | undefined)?.common as
-                          | Record<string, unknown>
-                          | undefined;
+                        const common = (
+                          item.attributes as Record<string, unknown> | undefined
+                        )?.common as Record<string, unknown> | undefined;
                         const p = common?.retailPrice;
                         if (typeof p === "string" && p) return p;
                         if (typeof p === "number") return String(p);
@@ -243,14 +279,18 @@ function MasterProductsTab({
                     <Text fontSize="sm">{item.listedChannelCount}</Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Text fontSize="sm">{new Date(item.createdAt).toLocaleDateString("ko-KR")}</Text>
+                    <Text fontSize="sm">
+                      {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell onClick={(e) => e.stopPropagation()}>
                     <Flex gap={2}>
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
+                        onClick={() =>
+                          navigateTo(ROUTES.masterProductEdit(item.id))
+                        }
                       >
                         {t("actions.edit")}
                       </Button>
@@ -358,10 +398,7 @@ function MasterProductsPageContent(): React.JSX.Element {
   return (
     <Box display="flex" flexDirection="column" height="100%" minH={0}>
       <Flex align="flex-start" justify="space-between" mb={4} flexShrink={0}>
-        <PageHeader
-          title={t("title")}
-          description={t("description")}
-        />
+        <PageHeader title={t("title")} description={t("description")} />
         <Button
           bg="gray.900"
           color="white"

@@ -1,8 +1,13 @@
 // ─── Channel 관련 ─────────────────────────────────────────────
 
-export type ChannelType = 'QOO10_JP' | 'SHOPEE' | 'RAKUTEN' | 'SHOPIFY' | 'CUSTOM';
-export type ChannelStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
-export type CredentialType = 'API_KEY' | 'COOKIE' | 'OAUTH';
+export type ChannelType =
+  | "QOO10_JP"
+  | "SHOPEE"
+  | "RAKUTEN"
+  | "SHOPIFY"
+  | "CUSTOM";
+export type ChannelStatus = "ACTIVE" | "INACTIVE" | "PENDING";
+export type CredentialType = "API_KEY" | "COOKIE" | "OAUTH";
 
 export interface Channel {
   id: string;
@@ -34,25 +39,25 @@ export interface ChannelCredential {
  *   반품→RETURNED
  */
 export type OrderStatus =
-  | 'PENDING'
-  | 'PAID'
-  | 'PREPARING'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'CLAIMED'
-  | 'RETURNED';
+  | "PENDING"
+  | "PAID"
+  | "PREPARING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "CLAIMED"
+  | "RETURNED";
 
 export type CarrierId =
-  | 'yamato'
-  | 'sagawa'
-  | 'japanpost'
-  | 'seino'
-  | 'cj'
-  | 'lotte'
-  | 'hanjin'
-  | 'epost'
-  | 'etc';
+  | "yamato"
+  | "sagawa"
+  | "japanpost"
+  | "seino"
+  | "cj"
+  | "lotte"
+  | "hanjin"
+  | "epost"
+  | "etc";
 
 export interface BuyerInfo {
   name: string;
@@ -77,7 +82,7 @@ export interface ShippingInfo {
 }
 
 export interface PaymentInfo {
-  currency: 'KRW' | 'JPY' | 'USD';
+  currency: "KRW" | "JPY" | "USD";
   orderPrice?: number;
   discount?: number;
   totalAmount: number;
@@ -158,8 +163,8 @@ export interface Order {
 
 // ─── Product 관련 ─────────────────────────────────────────────
 
-export type ProductStatus = 'active' | 'inactive';
-export type AvailableDateType = 'same_day' | 'prep' | 'release' | 'normal';
+export type ProductStatus = "active" | "inactive";
+export type AvailableDateType = "same_day" | "prep" | "release" | "normal";
 
 export interface Product {
   id: string;
@@ -180,7 +185,7 @@ export interface Product {
     sub2: { code: string; name: string };
   };
   origin: {
-    type: '국내' | '해외' | '기타';
+    type: "국내" | "해외" | "기타";
     place: string;
   };
   shippingNo: string;
@@ -327,7 +332,10 @@ export interface ApproveReturnData {
   claimId?: string;
 }
 
-export type ReturnDeclineReason = 'FINAL_SALE' | 'NO_RETURN_IN_TIMEFRAME' | 'OTHER';
+export type ReturnDeclineReason =
+  | "FINAL_SALE"
+  | "NO_RETURN_IN_TIMEFRAME"
+  | "OTHER";
 
 export interface DeclineReturnData {
   returnId: string;
@@ -393,10 +401,19 @@ export interface AdjustInventoryData {
   currentQuantity: number;
 }
 
-export type ChannelVendor = 'QOO10_JP' | 'SHOPIFY' | 'SHOPEE' | 'RAKUTEN';
-export type SyncMode = 'realtime' | 'polling_5m' | 'polling_1h' | 'daily_batch' | 'manual';
-export type ConnectionStatus = 'connected' | 'degraded' | 'disconnected' | 'pending';
-export type Freshness = 'fresh' | 'stale' | 'unknown';
+export type ChannelVendor = "QOO10_JP" | "SHOPIFY" | "SHOPEE" | "RAKUTEN";
+export type SyncMode =
+  | "realtime"
+  | "polling_5m"
+  | "polling_1h"
+  | "daily_batch"
+  | "manual";
+export type ConnectionStatus =
+  | "connected"
+  | "degraded"
+  | "disconnected"
+  | "pending";
+export type Freshness = "fresh" | "stale" | "unknown";
 
 export interface ChannelCapabilities {
   supportsOrderFetch: boolean;
@@ -425,11 +442,20 @@ export interface ConnectionHealth {
 
 // ─── WMS 타입 ────────────────────────────────────────────────────
 
-export type WMSVendor = 'self' | 'cj_logistics' | 'hanjin' | 'sftp_batch' | 'custom';
-export type WMSStatus = 'ACTIVE' | 'INACTIVE' | 'PENDING';
-export type InboundStatus = 'pending_dispatch' | 'instructed' | 'received' | 'canceled';
-export type MovementType = 'inbound' | 'outbound' | 'transfer' | 'adjustment';
-export type MovementStatus = 'applied' | 'pending_external' | 'failed';
+export type WMSVendor =
+  | "self"
+  | "cj_logistics"
+  | "hanjin"
+  | "sftp_batch"
+  | "custom";
+export type WMSStatus = "ACTIVE" | "INACTIVE" | "PENDING";
+export type InboundStatus =
+  | "pending_dispatch"
+  | "instructed"
+  | "received"
+  | "canceled";
+export type MovementType = "inbound" | "outbound" | "transfer" | "adjustment";
+export type MovementStatus = "applied" | "pending_external" | "failed";
 
 export interface WMSCapabilities {
   supportsRealtimeStock: boolean;
@@ -481,13 +507,13 @@ export interface InboundBatch {
   note?: string;
 }
 
-export type AdjustmentReason = 'damage' | 'relocate' | 'audit' | 'return';
+export type AdjustmentReason = "damage" | "relocate" | "audit" | "return";
 
 export const DEFAULT_ADJUSTMENT_REASONS: Record<AdjustmentReason, string> = {
-  damage: '손상',
-  relocate: '재배치',
-  audit: '실사 조정',
-  return: '반품',
+  damage: "손상",
+  relocate: "재배치",
+  audit: "실사 조정",
+  return: "반품",
 };
 
 export interface AdjustmentRequest {
@@ -521,8 +547,12 @@ export interface IWMSAdapter {
   testConnection(): Promise<ConnectionHealth>;
   fetchInventory(filter?: InventoryFilter): Promise<InventoryRow[]>;
   fetchLocations(): Promise<LocationNode[]>;
-  pushInboundInstruction(batch: InboundBatch): Promise<{ ack: boolean; vendorRef?: string }>;
-  requestAdjustment(req: AdjustmentRequest): Promise<{ status: 'applied' | 'pending_external'; vendorRef?: string }>;
+  pushInboundInstruction(
+    batch: InboundBatch,
+  ): Promise<{ ack: boolean; vendorRef?: string }>;
+  requestAdjustment(
+    req: AdjustmentRequest,
+  ): Promise<{ status: "applied" | "pending_external"; vendorRef?: string }>;
   fetchHistory(range: DateRange): Promise<HistoryEvent[]>;
 }
 
@@ -565,7 +595,7 @@ export interface UpdateSellerCodeResult {
   channelVariantId: string;
   oldCode: string;
   newCode: string;
-  status: 'OK' | 'FAILED';
+  status: "OK" | "FAILED";
   error?: string;
 }
 
@@ -588,24 +618,39 @@ export interface IChannelAdapter {
   declineReturn?(data: DeclineReturnData): Promise<void>;
   refundReturn?(data: RefundReturnData): Promise<void>;
   updateOrderNote?(data: UpdateOrderNoteData): Promise<void>;
-  registerProduct?(data: unknown): Promise<{ productId: string; title: string }>;
+  registerProduct?(
+    data: unknown,
+  ): Promise<{ productId: string; title: string }>;
   updateProductStatus?(productId: string, status: string): Promise<void>;
-  deleteProduct?(productId: string): Promise<{ deletedProductId: string | null }>;
+  deleteProduct?(
+    productId: string,
+  ): Promise<{ deletedProductId: string | null }>;
   unlistProduct?(itemId: number, unlist: boolean): Promise<void>;
-  getInventory?(params: GetInventoryParams): Promise<ShopifyInventoryApiResponse>;
+  getInventory?(
+    params: GetInventoryParams,
+  ): Promise<ShopifyInventoryApiResponse>;
   adjustInventory?(data: AdjustInventoryData): Promise<void>;
   // ─── link-only 모델용 정규화 메서드 ───────────────────────────
-  listChannelProducts?(params: ListChannelProductsParams): Promise<ListChannelProductsResult>;
+  listChannelProducts?(
+    params: ListChannelProductsParams,
+  ): Promise<ListChannelProductsResult>;
   getChannelProduct?(channelItemId: string): Promise<ChannelProduct>;
-  updateSellerCode?(channelVariantId: string, newCode: string): Promise<UpdateSellerCodeResult>;
-  pushVariantStock?(channelItemId: string, channelVariantId: string, newQty: number): Promise<void>;
+  updateSellerCode?(
+    channelVariantId: string,
+    newCode: string,
+  ): Promise<UpdateSellerCodeResult>;
+  pushVariantStock?(
+    channelItemId: string,
+    channelVariantId: string,
+    newQty: number,
+  ): Promise<void>;
 }
 
 // ─── Notification (SMS/카카오 알림톡) ───────────────────────────
 
-export type NotificationChannel = 'sms' | 'kakao';
-export type NotificationVendor = 'mock_sms' | 'mock_kakao';
-export type NotificationResult = 'ok' | 'warn' | 'error';
+export type NotificationChannel = "sms" | "kakao";
+export type NotificationVendor = "mock_sms" | "mock_kakao";
+export type NotificationResult = "ok" | "warn" | "error";
 
 export interface NotificationSendInput {
   recipient: string;
@@ -630,4 +675,4 @@ export interface INotificationAdapter {
 }
 
 // StandardOrder v2 (Canonical 주문 모델) — 별도 파일에 정의
-export * from './standard-order';
+export * from "./standard-order";

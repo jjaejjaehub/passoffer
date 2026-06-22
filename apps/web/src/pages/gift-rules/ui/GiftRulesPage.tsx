@@ -114,7 +114,8 @@ export default function GiftRulesPage(): React.JSX.Element {
   const deleteManyMut = useDeleteManyGiftRules();
   const distributeMut = useDistributeGiftsManually();
 
-  const allChecked = items.length > 0 && items.every((r) => selectedIds.has(r.id));
+  const allChecked =
+    items.length > 0 && items.every((r) => selectedIds.has(r.id));
   const someChecked = items.some((r) => selectedIds.has(r.id));
 
   function toggleAll() {
@@ -276,22 +277,22 @@ export default function GiftRulesPage(): React.JSX.Element {
           </HStack>
 
           <HStack gap={1}>
-            {(
-              ["all", "sku", "category", "amount", "qty"] as CondFilter[]
-            ).map((k) => (
-              <Button
-                key={k}
-                size="sm"
-                variant={condFilter === k ? "solid" : "ghost"}
-                colorPalette={condFilter === k ? "pink" : "gray"}
-                onClick={() => {
-                  setCondFilter(k);
-                  setPage(1);
-                }}
-              >
-                {k === "all" ? "전체조건" : conditionLabel(k)}
-              </Button>
-            ))}
+            {(["all", "sku", "category", "amount", "qty"] as CondFilter[]).map(
+              (k) => (
+                <Button
+                  key={k}
+                  size="sm"
+                  variant={condFilter === k ? "solid" : "ghost"}
+                  colorPalette={condFilter === k ? "pink" : "gray"}
+                  onClick={() => {
+                    setCondFilter(k);
+                    setPage(1);
+                  }}
+                >
+                  {k === "all" ? "전체조건" : conditionLabel(k)}
+                </Button>
+              ),
+            )}
           </HStack>
 
           <Box ml="auto">
@@ -471,7 +472,13 @@ export default function GiftRulesPage(): React.JSX.Element {
                     <Box as="td" px={3} py={2} textAlign="right">
                       {rule.giftQty}
                     </Box>
-                    <Box as="td" px={3} py={2} textAlign="right" color="gray.600">
+                    <Box
+                      as="td"
+                      px={3}
+                      py={2}
+                      textAlign="right"
+                      color="gray.600"
+                    >
                       {rule.appliedCount} / {rule.maxApplyCount ?? "∞"}
                     </Box>
                     <Box as="td" px={3} py={2} textAlign="center">

@@ -14,44 +14,39 @@
  *   - 재실행 시 channelOrderId 충돌(unique uq_orders_channel_order) → 기존 SEED-* 행 먼저 삭제
  */
 
-import 'dotenv/config';
-import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { and, eq, like } from 'drizzle-orm';
-import {
-  channels,
-  orders,
-  orderItems,
-  orderStatusHistory,
-} from './schema';
+import "dotenv/config";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { and, eq, like } from "drizzle-orm";
+import { channels, orders, orderItems, orderStatusHistory } from "./schema";
 
 type Rank = 10 | 20 | 25 | 30 | 35 | 40 | 50 | 60 | 70 | 80 | 90;
 
 const DAY = 24 * 60 * 60 * 1000;
 // 결정론적 시드 — Date.now() 고정 기준.
-const BASE = new Date('2026-06-15T09:00:00Z').getTime();
+const BASE = new Date("2026-06-15T09:00:00Z").getTime();
 const daysAgo = (n: number) => new Date(BASE - n * DAY);
 
 type OrderSpec = {
   rank: Rank;
-  hold?: 'order_hold' | 'dispatch_hold';
+  hold?: "order_hold" | "dispatch_hold";
   heldFromStatus?: Rank;
   claim?: {
-    type: 'cancel' | 'return' | 'exchange' | 'swap';
+    type: "cancel" | "return" | "exchange" | "swap";
     status:
-      | 'cancel_requested'
-      | 'cancel_done'
-      | 'return_requested'
-      | 'return_in_progress'
-      | 'return_collected'
-      | 'return_done'
-      | 'exchange_requested'
-      | 'exchange_in_progress'
-      | 'exchange_collected'
-      | 'exchange_done'
-      | 'swap_requested'
-      | 'swap_done'
-      | 'requires_recheck';
+      | "cancel_requested"
+      | "cancel_done"
+      | "return_requested"
+      | "return_in_progress"
+      | "return_collected"
+      | "return_done"
+      | "exchange_requested"
+      | "exchange_in_progress"
+      | "exchange_collected"
+      | "exchange_done"
+      | "swap_requested"
+      | "swap_done"
+      | "requires_recheck";
     reason: string;
   };
   syncLocked?: boolean;
@@ -71,9 +66,9 @@ const SPECS: OrderSpec[] = [
     ...(i === 0
       ? {
           claim: {
-            type: 'cancel' as const,
-            status: 'cancel_requested' as const,
-            reason: '구매자 변심',
+            type: "cancel" as const,
+            status: "cancel_requested" as const,
+            reason: "구매자 변심",
           },
         }
       : {}),
@@ -81,22 +76,22 @@ const SPECS: OrderSpec[] = [
   // rank 25 주문보류 (3) — heldFromStatus = 20 (신규주문에서 보류)
   ...repeat(3, () => ({
     rank: 25 as Rank,
-    hold: 'order_hold' as const,
+    hold: "order_hold" as const,
     heldFromStatus: 20 as Rank,
   })),
   // rank 30 출고대기 (8) — 그중 1건 묶음 primary
   ...repeat(8, (i) => ({
     rank: 30 as Rank,
     ...(i === 0
-      ? { bundleNumber: 'BUNDLE-001', bundlePrimary: true }
+      ? { bundleNumber: "BUNDLE-001", bundlePrimary: true }
       : i === 1
-        ? { bundleNumber: 'BUNDLE-001' }
+        ? { bundleNumber: "BUNDLE-001" }
         : {}),
   })),
   // rank 35 출고보류 (3) — heldFromStatus = 30
   ...repeat(3, () => ({
     rank: 35 as Rank,
-    hold: 'dispatch_hold' as const,
+    hold: "dispatch_hold" as const,
     heldFromStatus: 30 as Rank,
   })),
   // rank 40 운송장출력 (4)
@@ -108,9 +103,9 @@ const SPECS: OrderSpec[] = [
       ? {
           syncLocked: true,
           claim: {
-            type: 'cancel' as const,
-            status: 'requires_recheck' as const,
-            reason: '채널 응답과 로컬 상태 불일치 — 운영자 확인 필요',
+            type: "cancel" as const,
+            status: "requires_recheck" as const,
+            reason: "채널 응답과 로컬 상태 불일치 — 운영자 확인 필요",
           },
         }
       : {}),
@@ -121,9 +116,9 @@ const SPECS: OrderSpec[] = [
     ...(i === 0
       ? {
           claim: {
-            type: 'return' as const,
-            status: 'return_in_progress' as const,
-            reason: '오배송 — 회수 진행 중',
+            type: "return" as const,
+            status: "return_in_progress" as const,
+            reason: "오배송 — 회수 진행 중",
           },
         }
       : {}),
@@ -136,9 +131,9 @@ const SPECS: OrderSpec[] = [
     ...(i === 0
       ? {
           claim: {
-            type: 'exchange' as const,
-            status: 'exchange_done' as const,
-            reason: '사이즈 교환 완료',
+            type: "exchange" as const,
+            status: "exchange_done" as const,
+            reason: "사이즈 교환 완료",
           },
         }
       : {}),
@@ -152,24 +147,69 @@ function repeat<T>(n: number, fn: (i: number) => T): T[] {
 }
 
 function pad(n: number, width = 4): string {
-  return String(n).padStart(width, '0');
+  return String(n).padStart(width, "0");
 }
 
 const BUYERS = [
-  { name: '田中 太郎', kana: 'タナカ タロウ', tel: '03-1234-0001', email: 'tanaka@example.jp' },
-  { name: '佐藤 花子', kana: 'サトウ ハナコ', tel: '03-1234-0002', email: 'sato@example.jp' },
-  { name: '鈴木 一郎', kana: 'スズキ イチロウ', tel: '03-1234-0003', email: 'suzuki@example.jp' },
-  { name: '高橋 美咲', kana: 'タカハシ ミサキ', tel: '03-1234-0004', email: 'takahashi@example.jp' },
-  { name: '伊藤 健', kana: 'イトウ ケン', tel: '03-1234-0005', email: 'ito@example.jp' },
+  {
+    name: "田中 太郎",
+    kana: "タナカ タロウ",
+    tel: "03-1234-0001",
+    email: "tanaka@example.jp",
+  },
+  {
+    name: "佐藤 花子",
+    kana: "サトウ ハナコ",
+    tel: "03-1234-0002",
+    email: "sato@example.jp",
+  },
+  {
+    name: "鈴木 一郎",
+    kana: "スズキ イチロウ",
+    tel: "03-1234-0003",
+    email: "suzuki@example.jp",
+  },
+  {
+    name: "高橋 美咲",
+    kana: "タカハシ ミサキ",
+    tel: "03-1234-0004",
+    email: "takahashi@example.jp",
+  },
+  {
+    name: "伊藤 健",
+    kana: "イトウ ケン",
+    tel: "03-1234-0005",
+    email: "ito@example.jp",
+  },
 ];
 
 const ITEMS = [
-  { code: 'ITEM-A001', title: 'プレミアム緑茶 100g', option: '味:抹茶', price: 1280 },
-  { code: 'ITEM-B002', title: 'オーガニックコーヒー豆 200g', option: '焙煎:中煎り', price: 1850 },
-  { code: 'ITEM-C003', title: '高級和菓子セット', option: '個数:8個', price: 2400 },
-  { code: 'ITEM-D004', title: '京都漆器 茶碗', option: '色:黒', price: 4500 },
-  { code: 'ITEM-E005', title: '日本酒 720ml', option: '銘柄:獺祭', price: 3200 },
-  { code: 'ITEM-F006', title: '備前焼 湯呑', option: 'サイズ:M', price: 1980 },
+  {
+    code: "ITEM-A001",
+    title: "プレミアム緑茶 100g",
+    option: "味:抹茶",
+    price: 1280,
+  },
+  {
+    code: "ITEM-B002",
+    title: "オーガニックコーヒー豆 200g",
+    option: "焙煎:中煎り",
+    price: 1850,
+  },
+  {
+    code: "ITEM-C003",
+    title: "高級和菓子セット",
+    option: "個数:8個",
+    price: 2400,
+  },
+  { code: "ITEM-D004", title: "京都漆器 茶碗", option: "色:黒", price: 4500 },
+  {
+    code: "ITEM-E005",
+    title: "日本酒 720ml",
+    option: "銘柄:獺祭",
+    price: 3200,
+  },
+  { code: "ITEM-F006", title: "備前焼 湯呑", option: "サイズ:M", price: 1980 },
 ];
 
 function buyerFor(i: number) {
@@ -188,7 +228,7 @@ async function seed() {
     const existing = await db
       .select({ id: channels.id })
       .from(channels)
-      .where(eq(channels.channelType, 'QOO10_JP'))
+      .where(eq(channels.channelType, "QOO10_JP"))
       .limit(1);
 
     let channelId: string;
@@ -199,10 +239,10 @@ async function seed() {
       const [created] = await db
         .insert(channels)
         .values({
-          channelType: 'QOO10_JP',
-          name: 'Qoo10 JP (seed)',
-          adapterVersion: '1.0.0',
-          status: 'PENDING',
+          channelType: "QOO10_JP",
+          name: "Qoo10 JP (seed)",
+          adapterVersion: "1.0.0",
+          status: "PENDING",
         })
         .returning({ id: channels.id });
       channelId = created.id;
@@ -212,10 +252,17 @@ async function seed() {
     // 2) 기존 SEED-* 주문 정리 (재실행 가능하게)
     const deleted = await db
       .delete(orders)
-      .where(and(eq(orders.channelId, channelId), like(orders.channelOrderId, 'SEED-%')))
+      .where(
+        and(
+          eq(orders.channelId, channelId),
+          like(orders.channelOrderId, "SEED-%"),
+        ),
+      )
       .returning({ id: orders.id });
     if (deleted.length > 0) {
-      console.log(`✓ 기존 SEED-* 주문 ${deleted.length}건 삭제 (cascade로 items/history 함께)`);
+      console.log(
+        `✓ 기존 SEED-* 주문 ${deleted.length}건 삭제 (cascade로 items/history 함께)`,
+      );
     }
 
     // 3) 50건 INSERT
@@ -229,9 +276,10 @@ async function seed() {
       const orderedAt = daysAgo(SPECS.length - i); // 옛것부터 최근으로
       const paidAt = spec.rank >= 10 ? orderedAt : null;
       const shippedAt = spec.rank >= 50 ? daysAgo(SPECS.length - i - 1) : null;
-      const deliveredAt = spec.rank >= 70 ? daysAgo(SPECS.length - i - 3) : null;
+      const deliveredAt =
+        spec.rank >= 70 ? daysAgo(SPECS.length - i - 3) : null;
       const trackingNo = spec.rank >= 40 ? `TRK${pad(i + 1, 6)}` : null;
-      const trackingCarrier = spec.rank >= 40 ? 'YAMATO' : null;
+      const trackingCarrier = spec.rank >= 40 ? "YAMATO" : null;
 
       const lines = spec.lines ?? 1;
       let orderTotal = 0;
@@ -273,28 +321,34 @@ async function seed() {
           buyerKana: buyer.kana,
           buyerTel: buyer.tel,
           buyerEmail: buyer.email,
-          buyerLanguage: 'ja',
+          buyerLanguage: "ja",
           receiverName: buyer.name,
           receiverKana: buyer.kana,
           receiverTel: buyer.tel,
           zipCode: `100-${pad((i % 9999) + 1)}`,
           shippingAddress: `東京都千代田区丸の内1-${(i % 30) + 1}-${(i % 10) + 1}`,
-          address1: '東京都千代田区',
+          address1: "東京都千代田区",
           address2: `丸の内1-${(i % 30) + 1}-${(i % 10) + 1}`,
-          receiverCountry: 'JP',
+          receiverCountry: "JP",
           orderedAt,
           paidAt,
-          paymentMethod: i % 3 === 0 ? 'CREDIT_CARD' : i % 3 === 1 ? 'KONBINI' : 'BANK_TRANSFER',
-          currency: 'JPY',
+          paymentMethod:
+            i % 3 === 0
+              ? "CREDIT_CARD"
+              : i % 3 === 1
+                ? "KONBINI"
+                : "BANK_TRANSFER",
+          currency: "JPY",
           orderPrice: String(orderTotal),
-          discount: '0',
-          cartDiscountSeller: '0',
-          cartDiscountChannel: '0',
+          discount: "0",
+          cartDiscountSeller: "0",
+          cartDiscountChannel: "0",
           total: String(grandTotal),
-          shippingWay: 'YAMATO_EXPRESS',
+          shippingWay: "YAMATO_EXPRESS",
           shippingRate: String(shippingRate),
-          shippingRateType: 'Charge',
-          shippingDueDate: spec.rank < 50 ? daysAgo(SPECS.length - i - 5) : null,
+          shippingRateType: "Charge",
+          shippingDueDate:
+            spec.rank < 50 ? daysAgo(SPECS.length - i - 5) : null,
           shippedAt,
           deliveredAt,
           trackingCarrier,
@@ -305,15 +359,18 @@ async function seed() {
           claimReason: spec.claim?.reason ?? null,
           claimRequestedAt: spec.claim ? daysAgo(SPECS.length - i - 1) : null,
           claimResolvedAt:
-            spec.claim?.status?.endsWith('_done') ?? false ? daysAgo(SPECS.length - i - 2) : null,
+            (spec.claim?.status?.endsWith("_done") ?? false)
+              ? daysAgo(SPECS.length - i - 2)
+              : null,
           syncLocked: spec.syncLocked ?? false,
           holdStatus: spec.hold ?? null,
           heldFromStatus: spec.heldFromStatus ?? null,
-          dispatchHoldReason: spec.hold === 'dispatch_hold' ? '재고 부족 — 입고 대기' : null,
+          dispatchHoldReason:
+            spec.hold === "dispatch_hold" ? "재고 부족 — 입고 대기" : null,
           bundleNumber: spec.bundleNumber ?? null,
           bundleRoleIsPrimary: spec.bundlePrimary ?? false,
           autoMatched: i % 4 !== 0,
-          matchedBy: i % 4 === 0 ? null : i % 2 === 0 ? 'auto' : 'rule',
+          matchedBy: i % 4 === 0 ? null : i % 2 === 0 ? "auto" : "rule",
           rawData: { seed: true, idx: i + 1 },
         })
         .returning({ id: orders.id });
@@ -342,9 +399,9 @@ async function seed() {
           orderId: created.id,
           fromFulfillment: 10,
           toFulfillment: spec.rank,
-          actor: 'system',
-          actorId: 'seed',
-          reason: 'seed initial transition',
+          actor: "system",
+          actorId: "seed",
+          reason: "seed initial transition",
         });
         insertedHistory++;
       }
@@ -354,9 +411,10 @@ async function seed() {
           orderId: created.id,
           fromFulfillment: spec.heldFromStatus,
           toFulfillment: spec.rank,
-          actor: 'user',
-          actorId: 'seed-operator',
-          reason: spec.hold === 'order_hold' ? '주문 보류 처리' : '출고 보류 처리',
+          actor: "user",
+          actorId: "seed-operator",
+          reason:
+            spec.hold === "order_hold" ? "주문 보류 처리" : "출고 보류 처리",
         });
         insertedHistory++;
       }
@@ -365,24 +423,31 @@ async function seed() {
         await db.insert(orderStatusHistory).values({
           orderId: created.id,
           toClaim: spec.claim.status,
-          actor: spec.claim.status === 'requires_recheck' ? 'system' : 'channel',
-          actorId: spec.claim.status === 'requires_recheck' ? 'sync-guard' : 'qoo10',
+          actor:
+            spec.claim.status === "requires_recheck" ? "system" : "channel",
+          actorId:
+            spec.claim.status === "requires_recheck" ? "sync-guard" : "qoo10",
           reason: spec.claim.reason,
         });
         insertedHistory++;
       }
     }
 
-    console.log(`✓ orders ${insertedOrders}건 / items ${insertedItems}건 / history ${insertedHistory}건 INSERT 완료`);
+    console.log(
+      `✓ orders ${insertedOrders}건 / items ${insertedItems}건 / history ${insertedHistory}건 INSERT 완료`,
+    );
 
     // 검증 쿼리
-    const counts = await pool.query<{ fulfillment_status: number; count: string }>(
+    const counts = await pool.query<{
+      fulfillment_status: number;
+      count: string;
+    }>(
       `SELECT fulfillment_status, count(*)::int as count
        FROM orders WHERE channel_id = $1 AND channel_order_id LIKE 'SEED-%'
        GROUP BY fulfillment_status ORDER BY fulfillment_status`,
       [channelId],
     );
-    console.log('\n--- fulfillment_status 분포 ---');
+    console.log("\n--- fulfillment_status 분포 ---");
     for (const r of counts.rows) {
       console.log(`  rank ${r.fulfillment_status}: ${r.count}건`);
     }
@@ -394,7 +459,7 @@ async function seed() {
       [channelId],
     );
     if (claims.rows.length > 0) {
-      console.log('\n--- claim_status 분포 ---');
+      console.log("\n--- claim_status 분포 ---");
       for (const r of claims.rows) {
         console.log(`  ${r.claim_status}: ${r.count}건`);
       }
@@ -407,7 +472,7 @@ async function seed() {
       [channelId],
     );
     if (holds.rows.length > 0) {
-      console.log('\n--- hold_status 분포 ---');
+      console.log("\n--- hold_status 분포 ---");
       for (const r of holds.rows) {
         console.log(`  ${r.hold_status}: ${r.count}건`);
       }

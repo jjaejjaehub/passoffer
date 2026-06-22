@@ -68,7 +68,11 @@ export function useEditGoodsImage(): {
 } {
   const queryClient = useQueryClient();
 
-  const mutation = useMutation<EditGoodsResponse, unknown, EditGoodsImageRequest>({
+  const mutation = useMutation<
+    EditGoodsResponse,
+    unknown,
+    EditGoodsImageRequest
+  >({
     mutationFn: async (
       params: EditGoodsImageRequest,
     ): Promise<EditGoodsResponse> => {
@@ -76,7 +80,12 @@ export function useEditGoodsImage(): {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ["products", "detail", variables.itemCode, variables.sellerCode ?? ""],
+        queryKey: [
+          "products",
+          "detail",
+          variables.itemCode,
+          variables.sellerCode ?? "",
+        ],
       });
     },
     onError: (error: unknown) => {

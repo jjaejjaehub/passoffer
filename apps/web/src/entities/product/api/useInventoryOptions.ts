@@ -42,7 +42,11 @@ function isInventoryResponse(value: unknown): value is InventoryResponse {
   if (value.type !== "inventory" && value.type !== "none") {
     return false;
   }
-  if ("items" in value && value.items !== undefined && !Array.isArray(value.items)) {
+  if (
+    "items" in value &&
+    value.items !== undefined &&
+    !Array.isArray(value.items)
+  ) {
     return false;
   }
   return true;
@@ -76,10 +80,7 @@ export function useInventoryOptions(
 
   const query = useQuery({
     queryKey: ["products", "inventory-options", channelId, trimmedCode],
-    enabled:
-      channelId === "qoo10" &&
-      trimmedCode.length > 0 &&
-      hasQoo10Key,
+    enabled: channelId === "qoo10" && trimmedCode.length > 0 && hasQoo10Key,
     queryFn: async (): Promise<InventoryOptionData> => {
       const raw = await http.get<unknown>(
         `/api/qoo10/items/${encodeURIComponent(trimmedCode)}/inventory`,

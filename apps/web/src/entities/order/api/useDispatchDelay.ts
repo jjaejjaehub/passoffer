@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { shippingQueries } from './shippingQueries';
-import { paymentsQueries } from './paymentsQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { shippingQueries } from "./shippingQueries";
+import { paymentsQueries } from "./paymentsQueries";
 
 export interface DispatchDelayInput {
   orderIds: string[];
@@ -33,8 +33,13 @@ export function useDispatchDelay() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: DispatchDelayInput): Promise<DispatchDelayResult> => {
-      return await http.post<DispatchDelayResult>('/api/shipping/dispatch-delay', input);
+    mutationFn: async (
+      input: DispatchDelayInput,
+    ): Promise<DispatchDelayResult> => {
+      return await http.post<DispatchDelayResult>(
+        "/api/shipping/dispatch-delay",
+        input,
+      );
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shippingQueries.all() });

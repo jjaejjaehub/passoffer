@@ -1,5 +1,5 @@
-export { BarcodeScanVerify } from './ui/BarcodeScanVerify';
+export { BarcodeScanVerify } from "./ui/BarcodeScanVerify";
 export type {
   BarcodeScanVerifyProps,
   BarcodeScanRecord,
-} from './ui/BarcodeScanVerify';
+} from "./ui/BarcodeScanVerify";

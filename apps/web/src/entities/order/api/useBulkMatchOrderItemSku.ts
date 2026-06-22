@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { ordersQueries } from './ordersQueries';
-import { dispatchQueries } from './dispatchQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { ordersQueries } from "./ordersQueries";
+import { dispatchQueries } from "./dispatchQueries";
 
 export interface BulkMatchOrderItemSkuItem {
   orderId: string;
@@ -29,7 +29,7 @@ export function useBulkMatchOrderItemSku() {
       input: BulkMatchOrderItemSkuInput,
     ): Promise<BulkMatchOrderItemSkuResult> => {
       return await http.post<BulkMatchOrderItemSkuResult>(
-        '/api/orders/items/bulk-sku',
+        "/api/orders/items/bulk-sku",
         input,
       );
     },

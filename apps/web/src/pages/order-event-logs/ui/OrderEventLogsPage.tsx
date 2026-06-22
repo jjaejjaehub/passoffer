@@ -111,11 +111,7 @@ export function OrderEventLogsPage(): React.JSX.Element {
               <RefreshCw size={14} />
               {t("actions.refresh")}
             </Button>
-            <Button
-              size="sm"
-              colorPalette="blue"
-              asChild
-            >
+            <Button size="sm" colorPalette="blue" asChild>
               <a href={csvUrl} download>
                 <Download size={14} />
                 {t("actions.downloadCsv")}
@@ -242,7 +238,8 @@ export function OrderEventLogsPage(): React.JSX.Element {
         <TableSkeleton rows={8} cols={6} />
       ) : isError ? (
         <Box p={4} bg="red.50" color="red.700" borderRadius="md">
-          {t("errors.loadFailed")}: {error instanceof Error ? error.message : ""}
+          {t("errors.loadFailed")}:{" "}
+          {error instanceof Error ? error.message : ""}
         </Box>
       ) : items.length === 0 ? (
         <EmptyState
@@ -255,8 +252,12 @@ export function OrderEventLogsPage(): React.JSX.Element {
             <Table.Root size="sm" variant="line">
               <Table.Header>
                 <Table.Row bg="gray.50">
-                  <Table.ColumnHeader>{t("table.createdAt")}</Table.ColumnHeader>
-                  <Table.ColumnHeader>{t("table.eventType")}</Table.ColumnHeader>
+                  <Table.ColumnHeader>
+                    {t("table.createdAt")}
+                  </Table.ColumnHeader>
+                  <Table.ColumnHeader>
+                    {t("table.eventType")}
+                  </Table.ColumnHeader>
                   <Table.ColumnHeader>{t("table.result")}</Table.ColumnHeader>
                   <Table.ColumnHeader>{t("table.channel")}</Table.ColumnHeader>
                   <Table.ColumnHeader>{t("table.order")}</Table.ColumnHeader>

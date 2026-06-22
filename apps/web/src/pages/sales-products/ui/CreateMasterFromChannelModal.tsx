@@ -34,10 +34,7 @@ import {
 import { brandQueries } from "@/entities/brand";
 import { shippingTemplateQueries } from "@/entities/shipping-template";
 import { categoryQueries } from "@/entities/category";
-import {
-  PLATFORM_DEFS,
-  type PlatformDef,
-} from "@/shared/config";
+import { PLATFORM_DEFS, type PlatformDef } from "@/shared/config";
 import {
   ShopifyFormLabel as Label,
   ShopifyFormHelperText as HelperText,
@@ -133,8 +130,11 @@ function checkPlatformReadiness(
 ): { ready: boolean; missing: string[] } {
   const missing: string[] = [];
   const platformDescriptionKey =
-    def.key === "QOO10_JP" ? "qoo10.ItemDescription" :
-    def.key === "SHOPIFY" ? "shopify.descriptionHtml" : null;
+    def.key === "QOO10_JP"
+      ? "qoo10.ItemDescription"
+      : def.key === "SHOPIFY"
+        ? "shopify.descriptionHtml"
+        : null;
   for (const commonKey of def.requiredCommonFields) {
     const val = commonValues[commonKey] ?? "";
     if (commonKey === "images") {
@@ -183,7 +183,10 @@ export function CreateMasterFromChannelModal({
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: channelDetail } = useChannelProduct(channelId, channelProduct.channelItemId);
+  const { data: channelDetail } = useChannelProduct(
+    channelId,
+    channelProduct.channelItemId,
+  );
 
   const channelVariants: ChannelProductVariant[] = useMemo(
     () => channelDetail?.variants ?? channelProduct.variants ?? [],
@@ -202,27 +205,33 @@ export function CreateMasterFromChannelModal({
   const [brand, setBrand] = useState<string>("");
   const [noBrand, setNoBrand] = useState<boolean>(false);
   const [hsCode, setHsCode] = useState<string>("");
-  const [originType, setOriginType] = useState<"domestic" | "overseas" | "other">("domestic");
+  const [originType, setOriginType] = useState<
+    "domestic" | "overseas" | "other"
+  >("domestic");
   const [countryOfOrigin, setCountryOfOrigin] = useState<string>("대한민국");
   const [material, setMaterial] = useState<string>("");
   const [weightG, setWeightG] = useState<string>("");
-  const [retailPrice, setRetailPrice] = useState<string>(channelProduct.price ?? "");
+  const [retailPrice, setRetailPrice] = useState<string>(
+    channelProduct.price ?? "",
+  );
   const [tagsInput, setTagsInput] = useState<string>("");
   const [descriptionHtml, setDescriptionHtml] = useState<string>("");
 
-  const [platformValues, setPlatformValues] = useState<Record<string, string>>(() => {
-    const productionPlaceType =
-      originType === "domestic" ? "1" : originType === "overseas" ? "2" : "3";
-    return {
-      "qoo10.ItemPrice": channelProduct.price ?? "",
-      "qoo10.ItemQty": "0",
-      "qoo10.AvailableDateType": "0",
-      "qoo10.AdultYN": "N",
-      "qoo10.TaxRate": "10",
-      "qoo10.ProductionPlaceType": productionPlaceType,
-      "shopify.status": "DRAFT",
-    };
-  });
+  const [platformValues, setPlatformValues] = useState<Record<string, string>>(
+    () => {
+      const productionPlaceType =
+        originType === "domestic" ? "1" : originType === "overseas" ? "2" : "3";
+      return {
+        "qoo10.ItemPrice": channelProduct.price ?? "",
+        "qoo10.ItemQty": "0",
+        "qoo10.AvailableDateType": "0",
+        "qoo10.AdultYN": "N",
+        "qoo10.TaxRate": "10",
+        "qoo10.ProductionPlaceType": productionPlaceType,
+        "shopify.status": "DRAFT",
+      };
+    },
+  );
 
   const setPlatformValue = (key: string, value: string): void => {
     setPlatformValues((prev) => ({ ...prev, [key]: value }));
@@ -276,11 +285,14 @@ export function CreateMasterFromChannelModal({
   useEffect(() => {
     const raw = channelDetail?.raw as Qoo10ProductRaw | undefined;
     if (!raw) return;
-    const realTitle = (raw.ItemTitle ?? raw.PromotionName ?? "").toString().trim();
+    const realTitle = (raw.ItemTitle ?? raw.PromotionName ?? "")
+      .toString()
+      .trim();
     if (!realTitle) return;
     setTitle((prev) => {
       const trimmed = prev.trim();
-      if (!trimmed || trimmed === channelProduct.channelItemId) return realTitle;
+      if (!trimmed || trimmed === channelProduct.channelItemId)
+        return realTitle;
       return prev;
     });
   }, [channelDetail?.raw, channelProduct.channelItemId]);
@@ -307,7 +319,9 @@ export function CreateMasterFromChannelModal({
       qoo10: qoo10Connected,
       shopify: shopifyConnected,
     };
-    return PLATFORM_DEFS.filter((def) => def.apiAvailable && map[def.channelId]);
+    return PLATFORM_DEFS.filter(
+      (def) => def.apiAvailable && map[def.channelId],
+    );
   }, [qoo10Connected, shopifyConnected]);
 
   // ── Qoo10 카테고리 / 브랜드 / 배송 템플릿 ────────────────────────
@@ -351,7 +365,10 @@ export function CreateMasterFromChannelModal({
   const [isBrandDropdownOpen, setIsBrandDropdownOpen] = useState(false);
   const [selectedBrandLabel, setSelectedBrandLabel] = useState("");
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedBrandKeyword(brandKeyword.trim()), 300);
+    const timer = window.setTimeout(
+      () => setDebouncedBrandKeyword(brandKeyword.trim()),
+      300,
+    );
     return () => window.clearTimeout(timer);
   }, [brandKeyword]);
   const brandQuery = useQuery(brandQueries.search(debouncedBrandKeyword));
@@ -392,7 +409,9 @@ export function CreateMasterFromChannelModal({
     setImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
-  const [optionGroups, setOptionGroups] = useState<OptionGroupDraft[]>(initialParse.groups);
+  const [optionGroups, setOptionGroups] = useState<OptionGroupDraft[]>(
+    initialParse.groups,
+  );
 
   const [variants, setVariants] = useState<VariantDraft[]>(() => {
     if (channelVariants.length === 0) {
@@ -423,7 +442,8 @@ export function CreateMasterFromChannelModal({
     [variants],
   );
   const firstVariantPrice = useMemo(
-    () => (variants[0]?.price ? String(Math.round(Number(variants[0].price))) : ""),
+    () =>
+      variants[0]?.price ? String(Math.round(Number(variants[0].price))) : "",
     [variants],
   );
 
@@ -455,13 +475,28 @@ export function CreateMasterFromChannelModal({
       descriptionHtml,
       images: images.length > 0 ? "1" : "",
     }),
-    [title, brand, hsCode, countryOfOrigin, material, weightG, retailPrice, descriptionHtml, images],
+    [
+      title,
+      brand,
+      hsCode,
+      countryOfOrigin,
+      material,
+      weightG,
+      retailPrice,
+      descriptionHtml,
+      images,
+    ],
   );
 
   const readiness = useMemo(() => {
     const map: Record<string, { ready: boolean; missing: string[] }> = {};
     for (const def of connectedPlatforms) {
-      map[def.key] = checkPlatformReadiness(def, commonValues, platformValues, t as TFn);
+      map[def.key] = checkPlatformReadiness(
+        def,
+        commonValues,
+        platformValues,
+        t as TFn,
+      );
     }
     return map;
   }, [connectedPlatforms, commonValues, platformValues, t]);
@@ -472,8 +507,11 @@ export function CreateMasterFromChannelModal({
     channelProduct.channelItemId,
   );
 
-  const canSubmit = code.trim().length > 0 && title.trim().length > 0 &&
-    variants.length > 0 && variants.every((v) => v.sku.trim().length > 0);
+  const canSubmit =
+    code.trim().length > 0 &&
+    title.trim().length > 0 &&
+    variants.length > 0 &&
+    variants.every((v) => v.sku.trim().length > 0);
 
   const handleAddOptionGroup = (): void => {
     setOptionGroups((prev) => [
@@ -488,7 +526,9 @@ export function CreateMasterFromChannelModal({
     setVariants((prev) =>
       prev.map((v) => ({
         ...v,
-        optionValues: v.optionValues.filter((ov) => ov.groupName !== removed?.name),
+        optionValues: v.optionValues.filter(
+          (ov) => ov.groupName !== removed?.name,
+        ),
       })),
     );
   };
@@ -516,7 +556,10 @@ export function CreateMasterFromChannelModal({
       {
         sku: `${code}-${prev.length + 1}`,
         optionLabel: "",
-        optionValues: optionGroups.map((g) => ({ groupName: g.name, value: "" })),
+        optionValues: optionGroups.map((g) => ({
+          groupName: g.name,
+          value: "",
+        })),
         price: "",
         stock: 0,
         channelVariantId: "",
@@ -548,7 +591,9 @@ export function CreateMasterFromChannelModal({
         if (i !== variantIdx) return v;
         const exists = v.optionValues.some((ov) => ov.groupName === groupName);
         const newValues = exists
-          ? v.optionValues.map((ov) => (ov.groupName === groupName ? { ...ov, value } : ov))
+          ? v.optionValues.map((ov) =>
+              ov.groupName === groupName ? { ...ov, value } : ov,
+            )
           : [...v.optionValues, { groupName, value }];
         return { ...v, optionValues: newValues };
       }),
@@ -597,15 +642,21 @@ export function CreateMasterFromChannelModal({
       const common: Record<string, unknown> = {};
       if (!noBrand && brand.trim()) common.brand = brand.trim();
       if (hsCode.trim()) common.hsCode = hsCode.trim();
-      if (countryOfOrigin.trim()) common.countryOfOrigin = countryOfOrigin.trim();
+      if (countryOfOrigin.trim())
+        common.countryOfOrigin = countryOfOrigin.trim();
       if (material.trim()) common.material = material.trim();
       if (weightG.trim()) common.weightG = Number(weightG);
       if (retailPrice.trim()) common.retailPrice = retailPrice.trim();
       if (tags.length > 0) common.tags = tags;
-      if (descriptionHtml.trim()) common.descriptionHtml = descriptionHtml.trim();
+      if (descriptionHtml.trim())
+        common.descriptionHtml = descriptionHtml.trim();
       const imgArr = images
         .filter((img) => img.url)
-        .map((img, i) => ({ url: img.url, altText: img.altText || undefined, order: i }));
+        .map((img, i) => ({
+          url: img.url,
+          altText: img.altText || undefined,
+          order: i,
+        }));
       if (imgArr.length > 0) common.images = imgArr;
 
       const merged: Record<string, unknown> = { ...attributes };
@@ -624,7 +675,11 @@ export function CreateMasterFromChannelModal({
         await setOptionGroupsForMaster(master.id, finalGroups);
       }
 
-      const createdVariants = await addVariantsForMaster(master.id, variants, finalGroups);
+      const createdVariants = await addVariantsForMaster(
+        master.id,
+        variants,
+        finalGroups,
+      );
 
       const mappings = variants
         .map((v, i) => {
@@ -689,7 +744,8 @@ export function CreateMasterFromChannelModal({
         >
           <Text fontWeight="semibold" fontSize="md">
             {step === "fill-info" && t("header.fillInfo")}
-            {step === "result" && (resultData ? t("header.resultSuccess") : t("header.resultFail"))}
+            {step === "result" &&
+              (resultData ? t("header.resultSuccess") : t("header.resultFail"))}
           </Text>
           <Button size="xs" variant="ghost" onClick={onClose}>
             ✕
@@ -701,8 +757,7 @@ export function CreateMasterFromChannelModal({
             <Stack gap={5}>
               <Box px={3} py={2} bg="blue.50" borderRadius="md">
                 <Text fontSize="xs" color="blue.700">
-                  {t("info.banner1", { title: channelProduct.title })}
-                  {" "}
+                  {t("info.banner1", { title: channelProduct.title })}{" "}
                   {t("info.banner2")}
                 </Text>
               </Box>
@@ -714,7 +769,10 @@ export function CreateMasterFromChannelModal({
                 <Flex gap={3}>
                   <Box flex="1">
                     <Text fontSize="xs" color="gray.600" mb={1}>
-                      {t("basicInfo.code")} <Text as="span" color="red.500">*</Text>
+                      {t("basicInfo.code")}{" "}
+                      <Text as="span" color="red.500">
+                        *
+                      </Text>
                     </Text>
                     <Input
                       size="sm"
@@ -725,7 +783,10 @@ export function CreateMasterFromChannelModal({
                   </Box>
                   <Box flex="2">
                     <Text fontSize="xs" color="gray.600" mb={1}>
-                      {t("basicInfo.name")} <Text as="span" color="red.500">*</Text>
+                      {t("basicInfo.name")}{" "}
+                      <Text as="span" color="red.500">
+                        *
+                      </Text>
                     </Text>
                     <Input
                       size="sm"
@@ -736,7 +797,9 @@ export function CreateMasterFromChannelModal({
                   </Box>
                 </Flex>
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.brand")}</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>
+                    {t("basicInfo.brand")}
+                  </Text>
                   <Flex align="center" gap={2} mb={2}>
                     <Checkbox.Root
                       checked={noBrand}
@@ -764,7 +827,9 @@ export function CreateMasterFromChannelModal({
                 </Box>
                 <Flex gap={3}>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.hsCode")}</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>
+                      {t("basicInfo.hsCode")}
+                    </Text>
                     <Input
                       size="sm"
                       value={hsCode}
@@ -773,7 +838,9 @@ export function CreateMasterFromChannelModal({
                     />
                   </Box>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.retailPrice")}</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>
+                      {t("basicInfo.retailPrice")}
+                    </Text>
                     <Input
                       size="sm"
                       type="number"
@@ -788,7 +855,9 @@ export function CreateMasterFromChannelModal({
                 </Flex>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>{t("origin.label")}</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>
+                    {t("origin.label")}
+                  </Text>
                   <Flex gap={2}>
                     <Box flexShrink={0} minW="130px">
                       <select
@@ -800,7 +869,11 @@ export function CreateMasterFromChannelModal({
                           else setCountryOfOrigin("");
                           setPlatformValue(
                             "qoo10.ProductionPlaceType",
-                            v === "domestic" ? "1" : v === "overseas" ? "2" : "3",
+                            v === "domestic"
+                              ? "1"
+                              : v === "overseas"
+                                ? "2"
+                                : "3",
                           );
                         }}
                         style={{
@@ -838,7 +911,9 @@ export function CreateMasterFromChannelModal({
 
                 <Flex gap={3}>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.material")}</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>
+                      {t("basicInfo.material")}
+                    </Text>
                     <Input
                       size="sm"
                       value={material}
@@ -847,7 +922,9 @@ export function CreateMasterFromChannelModal({
                     />
                   </Box>
                   <Box flex="1">
-                    <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.weightG")}</Text>
+                    <Text fontSize="xs" color="gray.600" mb={1}>
+                      {t("basicInfo.weightG")}
+                    </Text>
                     <Input
                       size="sm"
                       type="number"
@@ -859,7 +936,9 @@ export function CreateMasterFromChannelModal({
                 </Flex>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.tags")}</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>
+                    {t("basicInfo.tags")}
+                  </Text>
                   <Input
                     size="sm"
                     value={tagsInput}
@@ -872,7 +951,9 @@ export function CreateMasterFromChannelModal({
                 </Box>
 
                 <Box>
-                  <Text fontSize="xs" color="gray.600" mb={1}>{t("basicInfo.descriptionHtml")}</Text>
+                  <Text fontSize="xs" color="gray.600" mb={1}>
+                    {t("basicInfo.descriptionHtml")}
+                  </Text>
                   <Textarea
                     size="sm"
                     rows={6}
@@ -890,7 +971,12 @@ export function CreateMasterFromChannelModal({
                   {t("images.title")}
                 </Text>
                 {images.length > 0 && (
-                  <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
+                  <Box
+                    borderWidth="1px"
+                    borderColor="gray.200"
+                    borderRadius="md"
+                    overflow="hidden"
+                  >
                     {images.map((img, idx) => (
                       <Flex
                         key={idx}
@@ -916,7 +1002,8 @@ export function CreateMasterFromChannelModal({
                             background: "#f7fafc",
                           }}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
+                            (e.target as HTMLImageElement).style.display =
+                              "none";
                           }}
                         />
                         <Box flex="1" minW={0}>
@@ -945,8 +1032,16 @@ export function CreateMasterFromChannelModal({
                     ))}
                   </Box>
                 )}
-                <Box p={3} borderWidth="1px" borderColor="gray.200" borderRadius="md" bg="gray.50">
-                  <Text fontSize="xs" fontWeight="medium" mb={2}>{t("images.add")}</Text>
+                <Box
+                  p={3}
+                  borderWidth="1px"
+                  borderColor="gray.200"
+                  borderRadius="md"
+                  bg="gray.50"
+                >
+                  <Text fontSize="xs" fontWeight="medium" mb={2}>
+                    {t("images.add")}
+                  </Text>
                   <Flex gap={2}>
                     <Box flex="2">
                       <Input
@@ -994,35 +1089,83 @@ export function CreateMasterFromChannelModal({
                       {t("platformAttrs.description")}
                     </Text>
                   </Box>
-                  <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" bg="white" overflow="hidden">
+                  <Box
+                    borderWidth="1px"
+                    borderColor="gray.200"
+                    borderRadius="md"
+                    bg="white"
+                    overflow="hidden"
+                  >
                     <Accordion.Root multiple defaultValue={[]}>
                       {connectedPlatforms.map((def) => {
-                        const { ready, missing } = readiness[def.key] ?? { ready: false, missing: [] };
-                        const hasAnyInput = def.fields.some((f) => (platformValues[f.key] ?? "").trim());
-
-                        const statusBadge = hasAnyInput || ready ? (
-                          ready ? (
-                            <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="green.50" color="green.700" border="1px solid" borderColor="green.200">
-                              {t("platformAttrs.ready")}
-                            </Box>
-                          ) : (
-                            <Box px={2} py={0.5} borderRadius="full" fontSize="xs" fontWeight="medium" bg="orange.50" color="orange.700" border="1px solid" borderColor="orange.200">
-                              {t("platformAttrs.missingCount", { count: missing.length })}
-                            </Box>
-                          )
-                        ) : (
-                          <Box px={2} py={0.5} borderRadius="full" fontSize="xs" color="gray.400" border="1px solid" borderColor="gray.200">
-                            {t("platformAttrs.missingShort")}
-                          </Box>
+                        const { ready, missing } = readiness[def.key] ?? {
+                          ready: false,
+                          missing: [],
+                        };
+                        const hasAnyInput = def.fields.some((f) =>
+                          (platformValues[f.key] ?? "").trim(),
                         );
 
-                        const platformColors: Record<string, { bg: string; color: string }> = {
+                        const statusBadge =
+                          hasAnyInput || ready ? (
+                            ready ? (
+                              <Box
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg="green.50"
+                                color="green.700"
+                                border="1px solid"
+                                borderColor="green.200"
+                              >
+                                {t("platformAttrs.ready")}
+                              </Box>
+                            ) : (
+                              <Box
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                                fontSize="xs"
+                                fontWeight="medium"
+                                bg="orange.50"
+                                color="orange.700"
+                                border="1px solid"
+                                borderColor="orange.200"
+                              >
+                                {t("platformAttrs.missingCount", {
+                                  count: missing.length,
+                                })}
+                              </Box>
+                            )
+                          ) : (
+                            <Box
+                              px={2}
+                              py={0.5}
+                              borderRadius="full"
+                              fontSize="xs"
+                              color="gray.400"
+                              border="1px solid"
+                              borderColor="gray.200"
+                            >
+                              {t("platformAttrs.missingShort")}
+                            </Box>
+                          );
+
+                        const platformColors: Record<
+                          string,
+                          { bg: string; color: string }
+                        > = {
                           orange: { bg: "orange.100", color: "orange.700" },
                           green: { bg: "green.100", color: "green.700" },
                           red: { bg: "red.100", color: "red.700" },
                           blue: { bg: "blue.100", color: "blue.700" },
                         };
-                        const pc = platformColors[def.color] ?? { bg: "gray.100", color: "gray.700" };
+                        const pc = platformColors[def.color] ?? {
+                          bg: "gray.100",
+                          color: "gray.700",
+                        };
 
                         return (
                           <Accordion.Item
@@ -1032,39 +1175,90 @@ export function CreateMasterFromChannelModal({
                             borderColor="gray.100"
                             _first={{ borderTopWidth: 0 }}
                           >
-                            <Accordion.ItemTrigger px={4} py={3} _hover={{ bg: "gray.50" }}>
+                            <Accordion.ItemTrigger
+                              px={4}
+                              py={3}
+                              _hover={{ bg: "gray.50" }}
+                            >
                               <Flex align="center" gap={3} flex="1" minW={0}>
-                                <Box px={2.5} py={0.5} borderRadius="md" fontSize="xs" fontWeight="bold" bg={pc.bg} color={pc.color} flexShrink={0}>
+                                <Box
+                                  px={2.5}
+                                  py={0.5}
+                                  borderRadius="md"
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  bg={pc.bg}
+                                  color={pc.color}
+                                  flexShrink={0}
+                                >
                                   {def.label}
                                 </Box>
                                 {statusBadge}
-                                {!ready && hasAnyInput && missing.length > 0 && (
-                                  <Text fontSize="xs" color="gray.400" truncate>
-                                    {t("platformAttrs.missingList", { fields: missing.join(" · ") })}
-                                  </Text>
-                                )}
+                                {!ready &&
+                                  hasAnyInput &&
+                                  missing.length > 0 && (
+                                    <Text
+                                      fontSize="xs"
+                                      color="gray.400"
+                                      truncate
+                                    >
+                                      {t("platformAttrs.missingList", {
+                                        fields: missing.join(" · "),
+                                      })}
+                                    </Text>
+                                  )}
                               </Flex>
                               <Accordion.ItemIndicator />
                             </Accordion.ItemTrigger>
 
                             <Accordion.ItemContent>
                               <Box px={4} pb={5} pt={2}>
-                                {hasAnyInput && !ready && missing.length > 0 && (
-                                  <Box mb={4} px={4} py={3} bg="orange.50" borderWidth="1px" borderColor="orange.200" borderRadius="md">
-                                    <Text fontSize="sm" color="orange.700" fontWeight="medium">
-                                      {t("platformAttrs.missingHeader")}
-                                    </Text>
-                                    <Text fontSize="xs" color="orange.600" mt={1}>
-                                      {missing.join(", ")}
-                                    </Text>
-                                  </Box>
-                                )}
+                                {hasAnyInput &&
+                                  !ready &&
+                                  missing.length > 0 && (
+                                    <Box
+                                      mb={4}
+                                      px={4}
+                                      py={3}
+                                      bg="orange.50"
+                                      borderWidth="1px"
+                                      borderColor="orange.200"
+                                      borderRadius="md"
+                                    >
+                                      <Text
+                                        fontSize="sm"
+                                        color="orange.700"
+                                        fontWeight="medium"
+                                      >
+                                        {t("platformAttrs.missingHeader")}
+                                      </Text>
+                                      <Text
+                                        fontSize="xs"
+                                        color="orange.600"
+                                        mt={1}
+                                      >
+                                        {missing.join(", ")}
+                                      </Text>
+                                    </Box>
+                                  )}
 
                                 <Stack gap={4}>
                                   {def.key === "QOO10_JP" && (
                                     <Box>
-                                      <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                        <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                      <Box
+                                        mt={2}
+                                        mb={3}
+                                        pb={2}
+                                        borderBottomWidth="1px"
+                                        borderColor="gray.200"
+                                      >
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="semibold"
+                                          color="gray.500"
+                                          textTransform="uppercase"
+                                          letterSpacing="wide"
+                                        >
                                           {t("qoo10.category")}
                                         </Text>
                                       </Box>
@@ -1077,51 +1271,105 @@ export function CreateMasterFromChannelModal({
                                       ) : (
                                         <Stack gap={3}>
                                           <Box>
-                                            <Label required>{t("qoo10.mainCat")}</Label>
+                                            <Label required>
+                                              {t("qoo10.mainCat")}
+                                            </Label>
                                             <Select
                                               value={mainCatCd}
                                               onChange={(e) => {
                                                 setMainCatCd(e.target.value);
                                                 setMidCatCd("");
-                                                setPlatformValue("qoo10.SecondSubCat", "");
+                                                setPlatformValue(
+                                                  "qoo10.SecondSubCat",
+                                                  "",
+                                                );
                                               }}
                                             >
-                                              <option value="">{t("qoo10.mainCatPlaceholder")}</option>
+                                              <option value="">
+                                                {t("qoo10.mainCatPlaceholder")}
+                                              </option>
                                               {mainCatOptions.map((opt) => (
-                                                <option key={opt.code} value={opt.code}>{opt.name}</option>
+                                                <option
+                                                  key={opt.code}
+                                                  value={opt.code}
+                                                >
+                                                  {opt.name}
+                                                </option>
                                               ))}
                                             </Select>
                                           </Box>
                                           <Box>
-                                            <Label required>{t("qoo10.subCat")}</Label>
+                                            <Label required>
+                                              {t("qoo10.subCat")}
+                                            </Label>
                                             <Select
                                               value={midCatCd}
                                               onChange={(e) => {
                                                 setMidCatCd(e.target.value);
-                                                setPlatformValue("qoo10.SecondSubCat", "");
+                                                setPlatformValue(
+                                                  "qoo10.SecondSubCat",
+                                                  "",
+                                                );
                                               }}
                                               disabled={!mainCatCd}
                                             >
-                                              <option value="">{t("qoo10.subCatPlaceholder")}</option>
+                                              <option value="">
+                                                {t("qoo10.subCatPlaceholder")}
+                                              </option>
                                               {midCatOptions.map((opt) => (
-                                                <option key={opt.code} value={opt.code}>{opt.name}</option>
+                                                <option
+                                                  key={opt.code}
+                                                  value={opt.code}
+                                                >
+                                                  {opt.name}
+                                                </option>
                                               ))}
                                             </Select>
                                           </Box>
                                           <Box>
-                                            <Label required>{t("qoo10.secondSubCat")}</Label>
+                                            <Label required>
+                                              {t("qoo10.secondSubCat")}
+                                            </Label>
                                             <Select
-                                              value={platformValues["qoo10.SecondSubCat"] ?? ""}
-                                              onChange={(e) => setPlatformValue("qoo10.SecondSubCat", e.target.value)}
+                                              value={
+                                                platformValues[
+                                                  "qoo10.SecondSubCat"
+                                                ] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  "qoo10.SecondSubCat",
+                                                  e.target.value,
+                                                )
+                                              }
                                               disabled={!midCatCd}
                                             >
-                                              <option value="">{t("qoo10.secondSubCatPlaceholder")}</option>
-                                              {secondSubCatOptions.map((opt) => (
-                                                <option key={opt.code} value={opt.code}>{opt.name}</option>
-                                              ))}
+                                              <option value="">
+                                                {t(
+                                                  "qoo10.secondSubCatPlaceholder",
+                                                )}
+                                              </option>
+                                              {secondSubCatOptions.map(
+                                                (opt) => (
+                                                  <option
+                                                    key={opt.code}
+                                                    value={opt.code}
+                                                  >
+                                                    {opt.name}
+                                                  </option>
+                                                ),
+                                              )}
                                             </Select>
-                                            {platformValues["qoo10.SecondSubCat"] && (
-                                              <HelperText>{t("qoo10.codeLine", { code: platformValues["qoo10.SecondSubCat"] })}</HelperText>
+                                            {platformValues[
+                                              "qoo10.SecondSubCat"
+                                            ] && (
+                                              <HelperText>
+                                                {t("qoo10.codeLine", {
+                                                  code: platformValues[
+                                                    "qoo10.SecondSubCat"
+                                                  ],
+                                                })}
+                                              </HelperText>
                                             )}
                                           </Box>
                                         </Stack>
@@ -1131,34 +1379,64 @@ export function CreateMasterFromChannelModal({
 
                                   {def.key === "QOO10_JP" && (
                                     <Box>
-                                      <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                        <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                      <Box
+                                        mt={2}
+                                        mb={3}
+                                        pb={2}
+                                        borderBottomWidth="1px"
+                                        borderColor="gray.200"
+                                      >
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="semibold"
+                                          color="gray.500"
+                                          textTransform="uppercase"
+                                          letterSpacing="wide"
+                                        >
                                           {t("qoo10.brand")}
                                         </Text>
                                       </Box>
                                       <Label>{t("qoo10.brandSearch")}</Label>
                                       <Flex align="center" gap={2} mb={2}>
                                         <Checkbox.Root
-                                          checked={platformValues["qoo10.NoBrand"] === "true"}
+                                          checked={
+                                            platformValues["qoo10.NoBrand"] ===
+                                            "true"
+                                          }
                                           onCheckedChange={(e) => {
                                             if (e.checked) {
-                                              setPlatformValue("qoo10.NoBrand", "true");
-                                              setPlatformValue("qoo10.BrandNo", "");
+                                              setPlatformValue(
+                                                "qoo10.NoBrand",
+                                                "true",
+                                              );
+                                              setPlatformValue(
+                                                "qoo10.BrandNo",
+                                                "",
+                                              );
                                               setBrandKeyword("");
                                               setSelectedBrandLabel("");
                                               setIsBrandDropdownOpen(false);
                                             } else {
-                                              setPlatformValue("qoo10.NoBrand", "");
+                                              setPlatformValue(
+                                                "qoo10.NoBrand",
+                                                "",
+                                              );
                                             }
                                           }}
                                           size="sm"
                                         >
                                           <Checkbox.HiddenInput />
                                           <Checkbox.Control />
-                                          <Checkbox.Label fontSize="sm" color="gray.600">{t("qoo10.brandNone")}</Checkbox.Label>
+                                          <Checkbox.Label
+                                            fontSize="sm"
+                                            color="gray.600"
+                                          >
+                                            {t("qoo10.brandNone")}
+                                          </Checkbox.Label>
                                         </Checkbox.Root>
                                       </Flex>
-                                      {platformValues["qoo10.NoBrand"] !== "true" && (
+                                      {platformValues["qoo10.NoBrand"] !==
+                                        "true" && (
                                         <Box position="relative">
                                           <Input
                                             size="sm"
@@ -1166,69 +1444,116 @@ export function CreateMasterFromChannelModal({
                                             onChange={(e) => {
                                               setBrandKeyword(e.target.value);
                                               setIsBrandDropdownOpen(true);
-                                              setPlatformValue("qoo10.BrandNo", "");
+                                              setPlatformValue(
+                                                "qoo10.BrandNo",
+                                                "",
+                                              );
                                               setSelectedBrandLabel("");
                                             }}
-                                            onFocus={() => setIsBrandDropdownOpen(true)}
-                                            placeholder={t("qoo10.brandSearchPlaceholder")}
+                                            onFocus={() =>
+                                              setIsBrandDropdownOpen(true)
+                                            }
+                                            placeholder={t(
+                                              "qoo10.brandSearchPlaceholder",
+                                            )}
                                             autoComplete="off"
                                           />
-                                          {isBrandDropdownOpen && debouncedBrandKeyword.length >= 2 && (
-                                            <Box
-                                              position="absolute"
-                                              top="100%"
-                                              left={0}
-                                              right={0}
-                                              zIndex={10}
-                                              mt={1}
-                                              borderWidth="1px"
-                                              borderColor="gray.200"
-                                              borderRadius="md"
-                                              bg="white"
-                                              shadow="md"
-                                              maxH="200px"
-                                              overflowY="auto"
-                                              p={2}
-                                            >
-                                              {brandQuery.isLoading ? (
-                                                <Stack gap={2}>
-                                                  <Skeleton height="28px" />
-                                                  <Skeleton height="28px" />
-                                                </Stack>
-                                              ) : brandResults.length === 0 ? (
-                                                <Text fontSize="sm" color="gray.500" py={2} textAlign="center">{t("qoo10.brandNoResult")}</Text>
-                                              ) : (
-                                                <Stack gap={1}>
-                                                  {brandResults.map((b) => {
-                                                    const label = `${b.M_B_NM} (${b.M_B_NM_EN})`;
-                                                    const isSelected = platformValues["qoo10.BrandNo"] === b.M_B_NO;
-                                                    return (
-                                                      <Button
-                                                        key={b.M_B_NO}
-                                                        type="button"
-                                                        variant="ghost"
-                                                        justifyContent="flex-start"
-                                                        px={2}
-                                                        size="sm"
-                                                        bg={isSelected ? "gray.100" : "transparent"}
-                                                        onClick={() => {
-                                                          setPlatformValue("qoo10.BrandNo", b.M_B_NO);
-                                                          setBrandKeyword(label);
-                                                          setSelectedBrandLabel(label);
-                                                          setIsBrandDropdownOpen(false);
-                                                        }}
-                                                      >
-                                                        <Text fontSize="sm" fontWeight={isSelected ? "semibold" : "normal"}>{label}</Text>
-                                                      </Button>
-                                                    );
-                                                  })}
-                                                </Stack>
-                                              )}
-                                            </Box>
-                                          )}
-                                          {platformValues["qoo10.BrandNo"] && selectedBrandLabel && (
-                                            <HelperText>{t("qoo10.brandSelected", { label: selectedBrandLabel })}</HelperText>
-                                          )}
+                                          {isBrandDropdownOpen &&
+                                            debouncedBrandKeyword.length >=
+                                              2 && (
+                                              <Box
+                                                position="absolute"
+                                                top="100%"
+                                                left={0}
+                                                right={0}
+                                                zIndex={10}
+                                                mt={1}
+                                                borderWidth="1px"
+                                                borderColor="gray.200"
+                                                borderRadius="md"
+                                                bg="white"
+                                                shadow="md"
+                                                maxH="200px"
+                                                overflowY="auto"
+                                                p={2}
+                                              >
+                                                {brandQuery.isLoading ? (
+                                                  <Stack gap={2}>
+                                                    <Skeleton height="28px" />
+                                                    <Skeleton height="28px" />
+                                                  </Stack>
+                                                ) : brandResults.length ===
+                                                  0 ? (
+                                                  <Text
+                                                    fontSize="sm"
+                                                    color="gray.500"
+                                                    py={2}
+                                                    textAlign="center"
+                                                  >
+                                                    {t("qoo10.brandNoResult")}
+                                                  </Text>
+                                                ) : (
+                                                  <Stack gap={1}>
+                                                    {brandResults.map((b) => {
+                                                      const label = `${b.M_B_NM} (${b.M_B_NM_EN})`;
+                                                      const isSelected =
+                                                        platformValues[
+                                                          "qoo10.BrandNo"
+                                                        ] === b.M_B_NO;
+                                                      return (
+                                                        <Button
+                                                          key={b.M_B_NO}
+                                                          type="button"
+                                                          variant="ghost"
+                                                          justifyContent="flex-start"
+                                                          px={2}
+                                                          size="sm"
+                                                          bg={
+                                                            isSelected
+                                                              ? "gray.100"
+                                                              : "transparent"
+                                                          }
+                                                          onClick={() => {
+                                                            setPlatformValue(
+                                                              "qoo10.BrandNo",
+                                                              b.M_B_NO,
+                                                            );
+                                                            setBrandKeyword(
+                                                              label,
+                                                            );
+                                                            setSelectedBrandLabel(
+                                                              label,
+                                                            );
+                                                            setIsBrandDropdownOpen(
+                                                              false,
+                                                            );
+                                                          }}
+                                                        >
+                                                          <Text
+                                                            fontSize="sm"
+                                                            fontWeight={
+                                                              isSelected
+                                                                ? "semibold"
+                                                                : "normal"
+                                                            }
+                                                          >
+                                                            {label}
+                                                          </Text>
+                                                        </Button>
+                                                      );
+                                                    })}
+                                                  </Stack>
+                                                )}
+                                              </Box>
+                                            )}
+                                          {platformValues["qoo10.BrandNo"] &&
+                                            selectedBrandLabel && (
+                                              <HelperText>
+                                                {t("qoo10.brandSelected", {
+                                                  label: selectedBrandLabel,
+                                                })}
+                                              </HelperText>
+                                            )}
                                         </Box>
                                       )}
                                     </Box>
@@ -1237,59 +1562,122 @@ export function CreateMasterFromChannelModal({
                                   {def.fields
                                     .filter((field) => {
                                       if (def.key !== "QOO10_JP") return true;
-                                      const skipKeys = ["qoo10.SecondSubCat", "qoo10.BrandNo"];
+                                      const skipKeys = [
+                                        "qoo10.SecondSubCat",
+                                        "qoo10.BrandNo",
+                                      ];
                                       return !skipKeys.includes(field.key);
                                     })
                                     .map((field) => {
                                       const isConditionallyRequired =
                                         !!field.conditionalRequired &&
                                         field.conditionalRequired.values.includes(
-                                          platformValues[field.conditionalRequired.dependsOn] ?? "",
+                                          platformValues[
+                                            field.conditionalRequired.dependsOn
+                                          ] ?? "",
                                         );
 
-                                      if (field.key === "qoo10.AvailableDateType") {
+                                      if (
+                                        field.key === "qoo10.AvailableDateType"
+                                      ) {
                                         return (
                                           <Box key={field.key}>
                                             {field.sectionHeader && (
-                                              <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                                <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                              <Box
+                                                mt={2}
+                                                mb={3}
+                                                pb={2}
+                                                borderBottomWidth="1px"
+                                                borderColor="gray.200"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="semibold"
+                                                  color="gray.500"
+                                                  textTransform="uppercase"
+                                                  letterSpacing="wide"
+                                                >
                                                   {field.sectionHeader}
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>{t("qoo10.deliveryType")}</Label>
+                                            <Label required>
+                                              {t("qoo10.deliveryType")}
+                                            </Label>
                                             <Select
-                                              value={platformValues["qoo10.AvailableDateType"] ?? "0"}
-                                              onChange={(e) => setPlatformValue("qoo10.AvailableDateType", e.target.value)}
+                                              value={
+                                                platformValues[
+                                                  "qoo10.AvailableDateType"
+                                                ] ?? "0"
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  "qoo10.AvailableDateType",
+                                                  e.target.value,
+                                                )
+                                              }
                                             >
-                                              <option value="0">{t("qoo10.deliveryNormal")}</option>
-                                              <option value="1">{t("qoo10.deliveryPrep")}</option>
-                                              <option value="2">{t("qoo10.deliveryRelease")}</option>
-                                              <option value="3">{t("qoo10.deliverySameDay")}</option>
+                                              <option value="0">
+                                                {t("qoo10.deliveryNormal")}
+                                              </option>
+                                              <option value="1">
+                                                {t("qoo10.deliveryPrep")}
+                                              </option>
+                                              <option value="2">
+                                                {t("qoo10.deliveryRelease")}
+                                              </option>
+                                              <option value="3">
+                                                {t("qoo10.deliverySameDay")}
+                                              </option>
                                             </Select>
                                           </Box>
                                         );
                                       }
 
-                                      if (field.key === "qoo10.AvailableDateValue") {
-                                        const dateType = platformValues["qoo10.AvailableDateType"] ?? "0";
+                                      if (
+                                        field.key === "qoo10.AvailableDateValue"
+                                      ) {
+                                        const dateType =
+                                          platformValues[
+                                            "qoo10.AvailableDateType"
+                                          ] ?? "0";
                                         const placeholder =
-                                          dateType === "0" ? t("qoo10.deliveryHintNormal") :
-                                          dateType === "1" ? t("qoo10.deliveryHintPrep") :
-                                          dateType === "2" ? t("qoo10.deliveryHintRelease") :
-                                          t("qoo10.deliveryHintSameDay");
+                                          dateType === "0"
+                                            ? t("qoo10.deliveryHintNormal")
+                                            : dateType === "1"
+                                              ? t("qoo10.deliveryHintPrep")
+                                              : dateType === "2"
+                                                ? t("qoo10.deliveryHintRelease")
+                                                : t(
+                                                    "qoo10.deliveryHintSameDay",
+                                                  );
                                         const isRequired = dateType !== "0";
                                         return (
                                           <Box key={field.key}>
-                                            <Label required={isRequired}>{t("qoo10.deliveryValue")}</Label>
+                                            <Label required={isRequired}>
+                                              {t("qoo10.deliveryValue")}
+                                            </Label>
                                             <Input
                                               size="sm"
-                                              value={platformValues["qoo10.AvailableDateValue"] ?? ""}
-                                              onChange={(e) => setPlatformValue("qoo10.AvailableDateValue", e.target.value)}
+                                              value={
+                                                platformValues[
+                                                  "qoo10.AvailableDateValue"
+                                                ] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  "qoo10.AvailableDateValue",
+                                                  e.target.value,
+                                                )
+                                              }
                                               placeholder={placeholder}
                                             />
                                             {dateType === "0" && (
-                                              <HelperText>{t("qoo10.deliveryNormalHelper")}</HelperText>
+                                              <HelperText>
+                                                {t(
+                                                  "qoo10.deliveryNormalHelper",
+                                                )}
+                                              </HelperText>
                                             )}
                                           </Box>
                                         );
@@ -1299,24 +1687,44 @@ export function CreateMasterFromChannelModal({
                                         return (
                                           <Box key={field.key}>
                                             {field.sectionHeader && (
-                                              <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                                <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                              <Box
+                                                mt={2}
+                                                mb={3}
+                                                pb={2}
+                                                borderBottomWidth="1px"
+                                                borderColor="gray.200"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="semibold"
+                                                  color="gray.500"
+                                                  textTransform="uppercase"
+                                                  letterSpacing="wide"
+                                                >
                                                   {field.sectionHeader}
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>{t("qoo10.stock")}</Label>
+                                            <Label required>
+                                              {t("qoo10.stock")}
+                                            </Label>
                                             <Input
                                               size="sm"
                                               type="number"
-                                              value={platformValues["qoo10.ItemQty"] ?? "0"}
+                                              value={
+                                                platformValues[
+                                                  "qoo10.ItemQty"
+                                                ] ?? "0"
+                                              }
                                               readOnly
                                               bg="gray.50"
                                               color="gray.600"
                                               cursor="default"
                                             />
                                             <HelperText>
-                                              {t("qoo10.stockAutoHint", { count: totalVariantStock })}
+                                              {t("qoo10.stockAutoHint", {
+                                                count: totalVariantStock,
+                                              })}
                                             </HelperText>
                                           </Box>
                                         );
@@ -1326,32 +1734,57 @@ export function CreateMasterFromChannelModal({
                                         return (
                                           <Box key={field.key}>
                                             {field.sectionHeader && (
-                                              <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                                <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                              <Box
+                                                mt={2}
+                                                mb={3}
+                                                pb={2}
+                                                borderBottomWidth="1px"
+                                                borderColor="gray.200"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="semibold"
+                                                  color="gray.500"
+                                                  textTransform="uppercase"
+                                                  letterSpacing="wide"
+                                                >
                                                   {field.sectionHeader}
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>{t("qoo10.price")}</Label>
+                                            <Label required>
+                                              {t("qoo10.price")}
+                                            </Label>
                                             <Input
                                               size="sm"
                                               type="number"
-                                              value={platformValues["qoo10.ItemPrice"] ?? ""}
+                                              value={
+                                                platformValues[
+                                                  "qoo10.ItemPrice"
+                                                ] ?? ""
+                                              }
                                               readOnly
                                               bg="gray.50"
                                               color="gray.600"
                                               cursor="default"
                                             />
                                             <HelperText>
-                                              {t("qoo10.priceAutoHint")}{firstVariantPrice !== "" && ` (¥${firstVariantPrice})`}
+                                              {t("qoo10.priceAutoHint")}
+                                              {firstVariantPrice !== "" &&
+                                                ` (¥${firstVariantPrice})`}
                                             </HelperText>
                                           </Box>
                                         );
                                       }
 
                                       if (field.key === "qoo10.ShippingNo") {
-                                        const selectedNo = platformValues["qoo10.ShippingNo"] ?? "";
-                                        const shippingTypeLabel: Record<string, string> = {
+                                        const selectedNo =
+                                          platformValues["qoo10.ShippingNo"] ??
+                                          "";
+                                        const shippingTypeLabel: Record<
+                                          string,
+                                          string
+                                        > = {
                                           X: t("qoo10.shippingTypeX"),
                                           F: t("qoo10.shippingTypeF"),
                                           M: t("qoo10.shippingTypeM"),
@@ -1359,27 +1792,53 @@ export function CreateMasterFromChannelModal({
                                           D: t("qoo10.shippingTypeD"),
                                           R: t("qoo10.shippingTypeR"),
                                         };
-                                        const selectedTemplate = shippingTemplates.find(
-                                          (tpl) => String(tpl.ShippingNo) === selectedNo,
-                                        );
-                                        const filteredTemplates = shippingKeyword.trim()
-                                          ? shippingTemplates.filter(
-                                              (tpl) =>
-                                                String(tpl.ShippingNo).includes(shippingKeyword) ||
-                                                (tpl.transcName ?? "").includes(shippingKeyword) ||
-                                                (shippingTypeLabel[tpl.ShippingType] ?? "").includes(shippingKeyword),
-                                            )
-                                          : shippingTemplates;
+                                        const selectedTemplate =
+                                          shippingTemplates.find(
+                                            (tpl) =>
+                                              String(tpl.ShippingNo) ===
+                                              selectedNo,
+                                          );
+                                        const filteredTemplates =
+                                          shippingKeyword.trim()
+                                            ? shippingTemplates.filter(
+                                                (tpl) =>
+                                                  String(
+                                                    tpl.ShippingNo,
+                                                  ).includes(shippingKeyword) ||
+                                                  (
+                                                    tpl.transcName ?? ""
+                                                  ).includes(shippingKeyword) ||
+                                                  (
+                                                    shippingTypeLabel[
+                                                      tpl.ShippingType
+                                                    ] ?? ""
+                                                  ).includes(shippingKeyword),
+                                              )
+                                            : shippingTemplates;
                                         return (
                                           <Box key={field.key}>
                                             {field.sectionHeader && (
-                                              <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                                <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                              <Box
+                                                mt={2}
+                                                mb={3}
+                                                pb={2}
+                                                borderBottomWidth="1px"
+                                                borderColor="gray.200"
+                                              >
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="semibold"
+                                                  color="gray.500"
+                                                  textTransform="uppercase"
+                                                  letterSpacing="wide"
+                                                >
                                                   {field.sectionHeader}
                                                 </Text>
                                               </Box>
                                             )}
-                                            <Label required>{t("qoo10.shippingTemplate")}</Label>
+                                            <Label required>
+                                              {t("qoo10.shippingTemplate")}
+                                            </Label>
                                             <Box position="relative">
                                               <Input
                                                 size="sm"
@@ -1387,119 +1846,239 @@ export function CreateMasterFromChannelModal({
                                                   shippingTemplateQuery.isLoading
                                                     ? t("qoo10.shippingLoading")
                                                     : shippingTemplateQuery.isError
-                                                      ? t("qoo10.shippingManualPlaceholder")
-                                                      : shippingTemplates.length === 0
-                                                        ? t("qoo10.shippingManualPlaceholder")
-                                                        : t("qoo10.shippingSearchPlaceholder")
+                                                      ? t(
+                                                          "qoo10.shippingManualPlaceholder",
+                                                        )
+                                                      : shippingTemplates.length ===
+                                                          0
+                                                        ? t(
+                                                            "qoo10.shippingManualPlaceholder",
+                                                          )
+                                                        : t(
+                                                            "qoo10.shippingSearchPlaceholder",
+                                                          )
                                                 }
                                                 value={
                                                   shippingTemplates.length === 0
-                                                    ? selectedNo ?? ""
+                                                    ? (selectedNo ?? "")
                                                     : isShippingDropdownOpen
                                                       ? shippingKeyword
                                                       : selectedTemplate
                                                         ? `No.${selectedTemplate.ShippingNo} · ${shippingTypeLabel[selectedTemplate.ShippingType] ?? selectedTemplate.ShippingType} · ${selectedTemplate.transcName}`
                                                         : selectedNo === "0"
-                                                          ? t("qoo10.shippingFreeRow")
+                                                          ? t(
+                                                              "qoo10.shippingFreeRow",
+                                                            )
                                                           : selectedNo
                                                             ? `No. ${selectedNo}`
                                                             : ""
                                                 }
                                                 onFocus={() => {
-                                                  if (shippingTemplates.length > 0) {
-                                                    setIsShippingDropdownOpen(true);
+                                                  if (
+                                                    shippingTemplates.length > 0
+                                                  ) {
+                                                    setIsShippingDropdownOpen(
+                                                      true,
+                                                    );
                                                     setShippingKeyword("");
                                                   }
                                                 }}
                                                 onChange={(e) => {
-                                                  if (shippingTemplates.length === 0) {
-                                                    setPlatformValue("qoo10.ShippingNo", e.target.value);
-                                                    if (!platformValues["qoo10.AvailableDateType"]) {
-                                                      setPlatformValue("qoo10.AvailableDateType", "0");
+                                                  if (
+                                                    shippingTemplates.length ===
+                                                    0
+                                                  ) {
+                                                    setPlatformValue(
+                                                      "qoo10.ShippingNo",
+                                                      e.target.value,
+                                                    );
+                                                    if (
+                                                      !platformValues[
+                                                        "qoo10.AvailableDateType"
+                                                      ]
+                                                    ) {
+                                                      setPlatformValue(
+                                                        "qoo10.AvailableDateType",
+                                                        "0",
+                                                      );
                                                     }
                                                   } else {
-                                                    setShippingKeyword(e.target.value);
+                                                    setShippingKeyword(
+                                                      e.target.value,
+                                                    );
                                                   }
                                                 }}
                                                 onBlur={(e) => {
-                                                  if (shippingTemplates.length === 0 && e.target.value.trim()) {
-                                                    setPlatformValue("qoo10.ShippingNo", e.target.value.trim());
-                                                    if (!platformValues["qoo10.AvailableDateType"]) {
-                                                      setPlatformValue("qoo10.AvailableDateType", "0");
+                                                  if (
+                                                    shippingTemplates.length ===
+                                                      0 &&
+                                                    e.target.value.trim()
+                                                  ) {
+                                                    setPlatformValue(
+                                                      "qoo10.ShippingNo",
+                                                      e.target.value.trim(),
+                                                    );
+                                                    if (
+                                                      !platformValues[
+                                                        "qoo10.AvailableDateType"
+                                                      ]
+                                                    ) {
+                                                      setPlatformValue(
+                                                        "qoo10.AvailableDateType",
+                                                        "0",
+                                                      );
                                                     }
                                                   }
-                                                  window.setTimeout(() => setIsShippingDropdownOpen(false), 150);
+                                                  window.setTimeout(
+                                                    () =>
+                                                      setIsShippingDropdownOpen(
+                                                        false,
+                                                      ),
+                                                    150,
+                                                  );
                                                 }}
-                                                readOnly={shippingTemplateQuery.isLoading}
+                                                readOnly={
+                                                  shippingTemplateQuery.isLoading
+                                                }
                                               />
-                                              {isShippingDropdownOpen && shippingTemplates.length > 0 && (
-                                                <Box
-                                                  position="absolute"
-                                                  top="100%"
-                                                  left={0}
-                                                  right={0}
-                                                  zIndex={200}
-                                                  bg="white"
-                                                  border="1px solid"
-                                                  borderColor="gray.200"
-                                                  borderRadius="md"
-                                                  boxShadow="md"
-                                                  maxH="220px"
-                                                  overflowY="auto"
-                                                  mt={1}
-                                                >
+                                              {isShippingDropdownOpen &&
+                                                shippingTemplates.length >
+                                                  0 && (
                                                   <Box
-                                                    px={3}
-                                                    py={2}
-                                                    cursor="pointer"
-                                                    fontSize="sm"
-                                                    _hover={{ bg: "gray.50" }}
-                                                    bg={selectedNo === "0" ? "orange.50" : "white"}
-                                                    onMouseDown={() => {
-                                                      setPlatformValue("qoo10.ShippingNo", "0");
-                                                      setIsShippingDropdownOpen(false);
-                                                    }}
+                                                    position="absolute"
+                                                    top="100%"
+                                                    left={0}
+                                                    right={0}
+                                                    zIndex={200}
+                                                    bg="white"
+                                                    border="1px solid"
+                                                    borderColor="gray.200"
+                                                    borderRadius="md"
+                                                    boxShadow="md"
+                                                    maxH="220px"
+                                                    overflowY="auto"
+                                                    mt={1}
                                                   >
-                                                    <Text fontWeight="medium">{t("qoo10.shippingFreeRow")}</Text>
-                                                  </Box>
-                                                  {filteredTemplates.length === 0 && (
-                                                    <Box px={3} py={2} fontSize="sm" color="gray.400">
-                                                      {t("qoo10.shippingNoResult")}
-                                                    </Box>
-                                                  )}
-                                                  {filteredTemplates.map((tpl) => (
                                                     <Box
-                                                      key={tpl.ShippingNo}
                                                       px={3}
                                                       py={2}
                                                       cursor="pointer"
                                                       fontSize="sm"
                                                       _hover={{ bg: "gray.50" }}
-                                                      bg={selectedNo === String(tpl.ShippingNo) ? "orange.50" : "white"}
+                                                      bg={
+                                                        selectedNo === "0"
+                                                          ? "orange.50"
+                                                          : "white"
+                                                      }
                                                       onMouseDown={() => {
-                                                        setPlatformValue("qoo10.ShippingNo", String(tpl.ShippingNo));
-                                                        if (!platformValues["qoo10.AvailableDateType"]) {
-                                                          setPlatformValue("qoo10.AvailableDateType", "0");
-                                                        }
-                                                        setIsShippingDropdownOpen(false);
+                                                        setPlatformValue(
+                                                          "qoo10.ShippingNo",
+                                                          "0",
+                                                        );
+                                                        setIsShippingDropdownOpen(
+                                                          false,
+                                                        );
                                                       }}
                                                     >
                                                       <Text fontWeight="medium">
-                                                        No.{tpl.ShippingNo} · {shippingTypeLabel[tpl.ShippingType] ?? tpl.ShippingType} · {tpl.transcName}
-                                                      </Text>
-                                                      <Text fontSize="xs" color="gray.500">
-                                                        {t("qoo10.shippingFeeLine", { fee: tpl.ShippingFee })}{tpl.ShippingType === 'M' ? ` · ${t("qoo10.shippingFreeCondition", { amount: tpl.FreeCondition })}` : ''}
+                                                        {t(
+                                                          "qoo10.shippingFreeRow",
+                                                        )}
                                                       </Text>
                                                     </Box>
-                                                  ))}
-                                                </Box>
-                                              )}
+                                                    {filteredTemplates.length ===
+                                                      0 && (
+                                                      <Box
+                                                        px={3}
+                                                        py={2}
+                                                        fontSize="sm"
+                                                        color="gray.400"
+                                                      >
+                                                        {t(
+                                                          "qoo10.shippingNoResult",
+                                                        )}
+                                                      </Box>
+                                                    )}
+                                                    {filteredTemplates.map(
+                                                      (tpl) => (
+                                                        <Box
+                                                          key={tpl.ShippingNo}
+                                                          px={3}
+                                                          py={2}
+                                                          cursor="pointer"
+                                                          fontSize="sm"
+                                                          _hover={{
+                                                            bg: "gray.50",
+                                                          }}
+                                                          bg={
+                                                            selectedNo ===
+                                                            String(
+                                                              tpl.ShippingNo,
+                                                            )
+                                                              ? "orange.50"
+                                                              : "white"
+                                                          }
+                                                          onMouseDown={() => {
+                                                            setPlatformValue(
+                                                              "qoo10.ShippingNo",
+                                                              String(
+                                                                tpl.ShippingNo,
+                                                              ),
+                                                            );
+                                                            if (
+                                                              !platformValues[
+                                                                "qoo10.AvailableDateType"
+                                                              ]
+                                                            ) {
+                                                              setPlatformValue(
+                                                                "qoo10.AvailableDateType",
+                                                                "0",
+                                                              );
+                                                            }
+                                                            setIsShippingDropdownOpen(
+                                                              false,
+                                                            );
+                                                          }}
+                                                        >
+                                                          <Text fontWeight="medium">
+                                                            No.{tpl.ShippingNo}{" "}
+                                                            ·{" "}
+                                                            {shippingTypeLabel[
+                                                              tpl.ShippingType
+                                                            ] ??
+                                                              tpl.ShippingType}{" "}
+                                                            · {tpl.transcName}
+                                                          </Text>
+                                                          <Text
+                                                            fontSize="xs"
+                                                            color="gray.500"
+                                                          >
+                                                            {t(
+                                                              "qoo10.shippingFeeLine",
+                                                              {
+                                                                fee: tpl.ShippingFee,
+                                                              },
+                                                            )}
+                                                            {tpl.ShippingType ===
+                                                            "M"
+                                                              ? ` · ${t("qoo10.shippingFreeCondition", { amount: tpl.FreeCondition })}`
+                                                              : ""}
+                                                          </Text>
+                                                        </Box>
+                                                      ),
+                                                    )}
+                                                  </Box>
+                                                )}
                                             </Box>
                                             {selectedNo === "0" && (
-                                              <HelperText>{t("qoo10.shippingFreeHelper")}</HelperText>
+                                              <HelperText>
+                                                {t("qoo10.shippingFreeHelper")}
+                                              </HelperText>
                                             )}
                                             {shippingTemplateQuery.isError && (
-                                              <HelperText>{t("qoo10.shippingApiError")}</HelperText>
+                                              <HelperText>
+                                                {t("qoo10.shippingApiError")}
+                                              </HelperText>
                                             )}
                                           </Box>
                                         );
@@ -1508,76 +2087,174 @@ export function CreateMasterFromChannelModal({
                                       return (
                                         <Box key={field.key}>
                                           {field.sectionHeader && (
-                                            <Box mt={2} mb={3} pb={2} borderBottomWidth="1px" borderColor="gray.200">
-                                              <Text fontSize="xs" fontWeight="semibold" color="gray.500" textTransform="uppercase" letterSpacing="wide">
+                                            <Box
+                                              mt={2}
+                                              mb={3}
+                                              pb={2}
+                                              borderBottomWidth="1px"
+                                              borderColor="gray.200"
+                                            >
+                                              <Text
+                                                fontSize="xs"
+                                                fontWeight="semibold"
+                                                color="gray.500"
+                                                textTransform="uppercase"
+                                                letterSpacing="wide"
+                                              >
                                                 {field.sectionHeader}
                                               </Text>
                                             </Box>
                                           )}
                                           {field.type !== "checkbox" && (
-                                            <Label required={field.required || isConditionallyRequired}>
+                                            <Label
+                                              required={
+                                                field.required ||
+                                                isConditionallyRequired
+                                              }
+                                            >
                                               {field.label}
                                             </Label>
                                           )}
-                                          {field.type === "select" && field.options ? (
+                                          {field.type === "select" &&
+                                          field.options ? (
                                             <Select
-                                              value={platformValues[field.key] ?? ""}
-                                              onChange={(e) => setPlatformValue(field.key, e.target.value)}
+                                              value={
+                                                platformValues[field.key] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  field.key,
+                                                  e.target.value,
+                                                )
+                                              }
                                             >
-                                              <option value="">{t("field.selectPlaceholder")}</option>
+                                              <option value="">
+                                                {t("field.selectPlaceholder")}
+                                              </option>
                                               {field.options.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                                <option
+                                                  key={opt.value}
+                                                  value={opt.value}
+                                                >
+                                                  {opt.label}
+                                                </option>
                                               ))}
                                             </Select>
                                           ) : field.conditionalOptions &&
                                             field.conditionalOptions.values.includes(
-                                              String(platformValues[field.conditionalOptions.dependsOn] ?? ""),
+                                              String(
+                                                platformValues[
+                                                  field.conditionalOptions
+                                                    .dependsOn
+                                                ] ?? "",
+                                              ),
                                             ) ? (
                                             <Select
-                                              value={platformValues[field.key] ?? ""}
-                                              onChange={(e) => setPlatformValue(field.key, e.target.value)}
+                                              value={
+                                                platformValues[field.key] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  field.key,
+                                                  e.target.value,
+                                                )
+                                              }
                                             >
-                                              <option value="">{t("field.noneOption")}</option>
-                                              {field.conditionalOptions.options.map((opt) => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                              ))}
+                                              <option value="">
+                                                {t("field.noneOption")}
+                                              </option>
+                                              {field.conditionalOptions.options.map(
+                                                (opt) => (
+                                                  <option
+                                                    key={opt.value}
+                                                    value={opt.value}
+                                                  >
+                                                    {opt.label}
+                                                  </option>
+                                                ),
+                                              )}
                                             </Select>
                                           ) : field.type === "checkbox" ? (
                                             <Flex align="center" gap={2} mt={1}>
                                               <Checkbox.Root
-                                                checked={platformValues[field.key] === "true"}
-                                                onCheckedChange={(e) => setPlatformValue(field.key, e.checked ? "true" : "false")}
+                                                checked={
+                                                  platformValues[field.key] ===
+                                                  "true"
+                                                }
+                                                onCheckedChange={(e) =>
+                                                  setPlatformValue(
+                                                    field.key,
+                                                    e.checked
+                                                      ? "true"
+                                                      : "false",
+                                                  )
+                                                }
                                                 size="sm"
                                               >
                                                 <Checkbox.HiddenInput />
                                                 <Checkbox.Control />
-                                                <Checkbox.Label fontSize="sm" color="gray.700">{field.label}</Checkbox.Label>
+                                                <Checkbox.Label
+                                                  fontSize="sm"
+                                                  color="gray.700"
+                                                >
+                                                  {field.label}
+                                                </Checkbox.Label>
                                               </Checkbox.Root>
                                             </Flex>
-                                          ) : field.type === "textarea" && (field.key === "qoo10.ItemDescription" || field.key === "shopify.descriptionHtml") ? (
+                                          ) : field.type === "textarea" &&
+                                            (field.key ===
+                                              "qoo10.ItemDescription" ||
+                                              field.key ===
+                                                "shopify.descriptionHtml") ? (
                                             <ShopifyHtmlEditor
-                                              value={platformValues[field.key] ?? ""}
-                                              onChange={(v) => setPlatformValue(field.key, v)}
+                                              value={
+                                                platformValues[field.key] ?? ""
+                                              }
+                                              onChange={(v) =>
+                                                setPlatformValue(field.key, v)
+                                              }
                                             />
                                           ) : field.type === "textarea" ? (
                                             <Textarea
                                               size="sm"
                                               rows={3}
-                                              value={platformValues[field.key] ?? ""}
-                                              onChange={(e) => setPlatformValue(field.key, e.target.value)}
+                                              value={
+                                                platformValues[field.key] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  field.key,
+                                                  e.target.value,
+                                                )
+                                              }
                                               placeholder={field.placeholder}
                                             />
                                           ) : (
                                             <Input
                                               size="sm"
-                                              type={field.type === "number" ? "number" : "text"}
-                                              value={platformValues[field.key] ?? ""}
-                                              onChange={(e) => setPlatformValue(field.key, e.target.value)}
+                                              type={
+                                                field.type === "number"
+                                                  ? "number"
+                                                  : "text"
+                                              }
+                                              value={
+                                                platformValues[field.key] ?? ""
+                                              }
+                                              onChange={(e) =>
+                                                setPlatformValue(
+                                                  field.key,
+                                                  e.target.value,
+                                                )
+                                              }
                                               placeholder={field.placeholder}
                                               maxLength={field.maxLength}
                                             />
                                           )}
-                                          {field.note && <HelperText>{field.note}</HelperText>}
+                                          {field.note && (
+                                            <HelperText>
+                                              {field.note}
+                                            </HelperText>
+                                          )}
                                         </Box>
                                       );
                                     })}
@@ -1597,7 +2274,11 @@ export function CreateMasterFromChannelModal({
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700">
                     {t("optionGroups.title")}
                   </Text>
-                  <Button size="xs" variant="outline" onClick={handleAddOptionGroup}>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={handleAddOptionGroup}
+                  >
                     <Plus size={12} /> {t("optionGroups.add")}
                   </Button>
                 </Flex>
@@ -1613,7 +2294,9 @@ export function CreateMasterFromChannelModal({
                           size="sm"
                           flex="1"
                           value={g.name}
-                          onChange={(e) => handleUpdateGroupName(i, e.target.value)}
+                          onChange={(e) =>
+                            handleUpdateGroupName(i, e.target.value)
+                          }
                           placeholder={t("optionGroups.namePlaceholder")}
                         />
                         <Button
@@ -1635,7 +2318,11 @@ export function CreateMasterFromChannelModal({
                   <Text fontSize="sm" fontWeight="semibold" color="gray.700">
                     {t("variants.title")}
                   </Text>
-                  <Button size="xs" variant="outline" onClick={handleAddVariant}>
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    onClick={handleAddVariant}
+                  >
                     <Plus size={12} /> {t("variants.add")}
                   </Button>
                 </Flex>
@@ -1644,10 +2331,16 @@ export function CreateMasterFromChannelModal({
                     <Table.Row>
                       <Table.ColumnHeader>SKU *</Table.ColumnHeader>
                       {optionGroups.map((g, i) => (
-                        <Table.ColumnHeader key={i}>{g.name || t("variants.optionN", { n: i + 1 })}</Table.ColumnHeader>
+                        <Table.ColumnHeader key={i}>
+                          {g.name || t("variants.optionN", { n: i + 1 })}
+                        </Table.ColumnHeader>
                       ))}
-                      <Table.ColumnHeader>{t("variants.price")}</Table.ColumnHeader>
-                      <Table.ColumnHeader>{t("variants.stock")}</Table.ColumnHeader>
+                      <Table.ColumnHeader>
+                        {t("variants.price")}
+                      </Table.ColumnHeader>
+                      <Table.ColumnHeader>
+                        {t("variants.stock")}
+                      </Table.ColumnHeader>
                       <Table.ColumnHeader w="40px" />
                     </Table.Row>
                   </Table.Header>
@@ -1658,18 +2351,26 @@ export function CreateMasterFromChannelModal({
                           <Input
                             size="xs"
                             value={v.sku}
-                            onChange={(e) => handleUpdateVariantField(i, "sku", e.target.value)}
+                            onChange={(e) =>
+                              handleUpdateVariantField(i, "sku", e.target.value)
+                            }
                           />
                         </Table.Cell>
                         {optionGroups.map((g, gi) => {
-                          const ov = v.optionValues.find((o) => o.groupName === g.name);
+                          const ov = v.optionValues.find(
+                            (o) => o.groupName === g.name,
+                          );
                           return (
                             <Table.Cell key={gi}>
                               <Input
                                 size="xs"
                                 value={ov?.value ?? ""}
                                 onChange={(e) =>
-                                  handleUpdateVariantOptionValue(i, g.name, e.target.value)
+                                  handleUpdateVariantOptionValue(
+                                    i,
+                                    g.name,
+                                    e.target.value,
+                                  )
                                 }
                               />
                             </Table.Cell>
@@ -1679,7 +2380,13 @@ export function CreateMasterFromChannelModal({
                           <Input
                             size="xs"
                             value={v.price}
-                            onChange={(e) => handleUpdateVariantField(i, "price", e.target.value)}
+                            onChange={(e) =>
+                              handleUpdateVariantField(
+                                i,
+                                "price",
+                                e.target.value,
+                              )
+                            }
                           />
                         </Table.Cell>
                         <Table.Cell>
@@ -1688,7 +2395,11 @@ export function CreateMasterFromChannelModal({
                             type="number"
                             value={v.stock}
                             onChange={(e) =>
-                              handleUpdateVariantField(i, "stock", Number(e.target.value) || 0)
+                              handleUpdateVariantField(
+                                i,
+                                "stock",
+                                Number(e.target.value) || 0,
+                              )
                             }
                           />
                         </Table.Cell>
@@ -1709,7 +2420,9 @@ export function CreateMasterFromChannelModal({
                 </Table.Root>
                 {channelVariants.length > 0 && (
                   <Text fontSize="xs" color="gray.500">
-                    {t("variants.channelMapHint", { count: channelVariants.length })}
+                    {t("variants.channelMapHint", {
+                      count: channelVariants.length,
+                    })}
                   </Text>
                 )}
               </Stack>
@@ -1719,11 +2432,17 @@ export function CreateMasterFromChannelModal({
           {step === "result" && resultData && (
             <Stack gap={3} align="center" py={6}>
               <CheckCircle size={48} color="var(--chakra-colors-green-500)" />
-              <Text fontWeight="semibold" fontSize="lg">{t("result.successTitle")}</Text>
-              <Text fontSize="sm" color="gray.600" textAlign="center">
-                {t("result.successDescription", { title: channelProduct.title })}
+              <Text fontWeight="semibold" fontSize="lg">
+                {t("result.successTitle")}
               </Text>
-              <Text fontSize="sm">{t("result.mapped", { count: resultData.linkedVariantCount })}</Text>
+              <Text fontSize="sm" color="gray.600" textAlign="center">
+                {t("result.successDescription", {
+                  title: channelProduct.title,
+                })}
+              </Text>
+              <Text fontSize="sm">
+                {t("result.mapped", { count: resultData.linkedVariantCount })}
+              </Text>
             </Stack>
           )}
 
@@ -1745,7 +2464,12 @@ export function CreateMasterFromChannelModal({
         >
           {step === "fill-info" && (
             <>
-              <Button size="sm" variant="outline" onClick={onClose} disabled={submitting}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onClose}
+                disabled={submitting}
+              >
                 {t("footer.cancel")}
               </Button>
               <Button
@@ -1786,7 +2510,9 @@ async function setOptionGroupsForMaster(
   masterProductId: string,
   groups: OptionGroupDraft[],
 ): Promise<void> {
-  await http.put(`/api/master-products/${masterProductId}/option-groups`, { groups });
+  await http.put(`/api/master-products/${masterProductId}/option-groups`, {
+    groups,
+  });
 }
 
 async function addVariantsForMaster(
@@ -1798,7 +2524,9 @@ async function addVariantsForMaster(
   const created: Array<{ id: string }> = [];
   for (const v of variants) {
     const optionValues = v.optionValues
-      .filter((ov) => groupNames.has(ov.groupName) && ov.value.trim().length > 0)
+      .filter(
+        (ov) => groupNames.has(ov.groupName) && ov.value.trim().length > 0,
+      )
       .map((ov) => ({ groupName: ov.groupName, value: ov.value }));
     const result = await http.post<{ id: string }>(
       `/api/master-products/${masterProductId}/variants`,

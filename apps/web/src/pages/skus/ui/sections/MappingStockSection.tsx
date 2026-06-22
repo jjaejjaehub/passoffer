@@ -33,8 +33,12 @@ export function MappingStockSection({
       <FormBox title={t("form.mapping.stockTitle")}>
         <Stack gap={3}>
           <Flex align="center" gap={4}>
-            <Text fontSize="sm" color="gray.600">{t("form.mapping.currentStock")}</Text>
-            <Text fontSize="xl" fontWeight="bold">{detail.stock}</Text>
+            <Text fontSize="sm" color="gray.600">
+              {t("form.mapping.currentStock")}
+            </Text>
+            <Text fontSize="xl" fontWeight="bold">
+              {detail.stock}
+            </Text>
           </Flex>
           <Flex gap={2} align="flex-end" flexWrap="wrap">
             <Box>
@@ -71,17 +75,29 @@ export function MappingStockSection({
         </Stack>
       </FormBox>
 
-      <FormBox title={t("form.mapping.masterTitle", { count: detail.masterVariants.length })}>
+      <FormBox
+        title={t("form.mapping.masterTitle", {
+          count: detail.masterVariants.length,
+        })}
+      >
         {detail.masterVariants.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">{t("form.mapping.masterEmpty")}</Text>
+          <Text fontSize="sm" color="gray.500">
+            {t("form.mapping.masterEmpty")}
+          </Text>
         ) : (
           <Table.Root size="sm">
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>{t("form.mapping.masterProduct")}</Table.ColumnHeader>
-                <Table.ColumnHeader>{t("form.mapping.variantSku")}</Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.masterProduct")}
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.variantSku")}
+                </Table.ColumnHeader>
                 <Table.ColumnHeader>{t("form.mapping.qty")}</Table.ColumnHeader>
-                <Table.ColumnHeader>{t("form.mapping.position")}</Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.position")}
+                </Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -89,8 +105,12 @@ export function MappingStockSection({
                 <Table.Row key={`${row.masterVariantId}`}>
                   <Table.Cell>
                     <Stack gap={0.5}>
-                      <Text fontSize="sm" fontWeight="medium">{row.masterProductTitle}</Text>
-                      <Text fontSize="xs" color="gray.500">{row.masterProductId}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {row.masterProductTitle}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {row.masterProductId}
+                      </Text>
                     </Stack>
                   </Table.Cell>
                   <Table.Cell>
@@ -110,16 +130,28 @@ export function MappingStockSection({
         <HelperText>{t("form.mapping.masterHelper")}</HelperText>
       </FormBox>
 
-      <FormBox title={t("form.mapping.listedTitle", { count: detail.listedSkus.length })}>
+      <FormBox
+        title={t("form.mapping.listedTitle", {
+          count: detail.listedSkus.length,
+        })}
+      >
         {detail.listedSkus.length === 0 ? (
-          <Text fontSize="sm" color="gray.500">{t("form.mapping.listedEmpty")}</Text>
+          <Text fontSize="sm" color="gray.500">
+            {t("form.mapping.listedEmpty")}
+          </Text>
         ) : (
           <Table.Root size="sm">
             <Table.Header>
               <Table.Row>
-                <Table.ColumnHeader>{t("form.mapping.listedProductId")}</Table.ColumnHeader>
-                <Table.ColumnHeader>{t("form.mapping.channelVariantId")}</Table.ColumnHeader>
-                <Table.ColumnHeader>{t("form.mapping.channelSellerCode")}</Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.listedProductId")}
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.channelVariantId")}
+                </Table.ColumnHeader>
+                <Table.ColumnHeader>
+                  {t("form.mapping.channelSellerCode")}
+                </Table.ColumnHeader>
                 <Table.ColumnHeader>{t("form.mapping.qty")}</Table.ColumnHeader>
               </Table.Row>
             </Table.Header>
@@ -127,7 +159,9 @@ export function MappingStockSection({
               {detail.listedSkus.map((row, idx) => (
                 <Table.Row key={`${row.listedProductId}_${idx}`}>
                   <Table.Cell>
-                    <Text fontSize="sm" fontFamily="mono">{row.listedProductId}</Text>
+                    <Text fontSize="sm" fontFamily="mono">
+                      {row.listedProductId}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell>
                     <Text fontSize="sm">{row.channelVariantId}</Text>

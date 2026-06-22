@@ -13,15 +13,7 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import {
-  Check,
-  Pencil,
-  Plus,
-  Search,
-  Sparkles,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Check, Pencil, Plus, Search, Sparkles, Trash2, X } from "lucide-react";
 
 import { useChannels } from "@/entities/channel";
 import { useSkus } from "@/entities/sku/api/skuQueries";
@@ -158,7 +150,12 @@ function SkuPickerInline({
                 gap={2}
               >
                 <Box flex={1} minW={0}>
-                  <Text fontSize="xs" fontWeight="600" color="gray.800" lineClamp={1}>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="600"
+                    color="gray.800"
+                    lineClamp={1}
+                  >
                     {sku.code}
                   </Text>
                   <Text fontSize="2xs" color="gray.600" lineClamp={1}>
@@ -195,7 +192,8 @@ function RuleEditorModal({
   const [pickerOpen, setPickerOpen] = useState(false);
   const isEdit = !!draft.id;
 
-  const canSubmit = !!draft.channelId && !!draft.channelItemCode && !!draft.skuId;
+  const canSubmit =
+    !!draft.channelId && !!draft.channelItemCode && !!draft.skuId;
 
   return (
     <Flex
@@ -336,7 +334,12 @@ function RuleEditorModal({
                   borderColor="gray.200"
                 >
                   <Box flex={1} minW={0}>
-                    <Text fontSize="xs" fontWeight="600" color="gray.800" lineClamp={1}>
+                    <Text
+                      fontSize="xs"
+                      fontWeight="600"
+                      color="gray.800"
+                      lineClamp={1}
+                    >
                       {draft.skuCode || "-"}
                     </Text>
                     <Text fontSize="2xs" color="gray.600" lineClamp={1}>
@@ -347,14 +350,23 @@ function RuleEditorModal({
                     size="xs"
                     variant="ghost"
                     onClick={() =>
-                      onChange({ ...draft, skuId: "", skuCode: "", skuName: "" })
+                      onChange({
+                        ...draft,
+                        skuId: "",
+                        skuCode: "",
+                        skuName: "",
+                      })
                     }
                   >
                     <X size={12} />
                   </Button>
                 </Flex>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => setPickerOpen(true)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPickerOpen(true)}
+                >
                   <Search size={12} />
                   <Box ml={1}>SKU 선택</Box>
                 </Button>
@@ -475,7 +487,8 @@ export default function MatchingRulesPage() {
   const [filterChannelId, setFilterChannelId] = useState<string>("");
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
-  const [autoLearnedFilter, setAutoLearnedFilter] = useState<AutoLearnedFilter>("all");
+  const [autoLearnedFilter, setAutoLearnedFilter] =
+    useState<AutoLearnedFilter>("all");
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -484,8 +497,7 @@ export default function MatchingRulesPage() {
   const { data, isLoading } = useMatchingRules({
     channelId: filterChannelId || undefined,
     search: search.trim() || undefined,
-    isActive:
-      activeFilter === "all" ? undefined : activeFilter === "active",
+    isActive: activeFilter === "all" ? undefined : activeFilter === "active",
     autoLearned:
       autoLearnedFilter === "all" ? undefined : autoLearnedFilter === "auto",
     page,
@@ -502,7 +514,8 @@ export default function MatchingRulesPage() {
   const deleteMut = useDeleteMatchingRule();
   const deleteManyMut = useDeleteManyMatchingRules();
 
-  const allChecked = items.length > 0 && items.every((r) => selectedIds.has(r.id));
+  const allChecked =
+    items.length > 0 && items.every((r) => selectedIds.has(r.id));
   const someChecked = items.some((r) => selectedIds.has(r.id));
 
   function toggleAll() {
@@ -562,7 +575,9 @@ export default function MatchingRulesPage() {
   }
 
   async function handleDeleteSelected() {
-    const ids = Array.from(selectedIds).filter((id) => items.some((r) => r.id === id));
+    const ids = Array.from(selectedIds).filter((id) =>
+      items.some((r) => r.id === id),
+    );
     if (ids.length === 0) return;
     if (!confirm(`선택된 ${ids.length}개 규칙을 삭제하시겠습니까?`)) return;
     await deleteManyMut.mutateAsync(ids);
@@ -609,7 +624,13 @@ export default function MatchingRulesPage() {
         </Box>
       </Flex>
 
-      <Box bg="white" borderBottomWidth={1} borderBottomColor="gray.100" px={6} py={3}>
+      <Box
+        bg="white"
+        borderBottomWidth={1}
+        borderBottomColor="gray.100"
+        px={6}
+        py={3}
+      >
         <Flex gap={3} wrap="wrap" align="center">
           <select
             value={filterChannelId}
@@ -680,7 +701,11 @@ export default function MatchingRulesPage() {
                   setPage(1);
                 }}
               >
-                {k === "all" ? "전체출처" : k === "manual" ? "수동" : "자동학습"}
+                {k === "all"
+                  ? "전체출처"
+                  : k === "manual"
+                    ? "수동"
+                    : "자동학습"}
               </Button>
             ))}
           </HStack>
@@ -733,7 +758,13 @@ export default function MatchingRulesPage() {
             </Text>
           </Box>
         ) : (
-          <Box bg="white" borderWidth={1} borderColor="gray.200" borderRadius="md" overflowX="auto">
+          <Box
+            bg="white"
+            borderWidth={1}
+            borderColor="gray.200"
+            borderRadius="md"
+            overflowX="auto"
+          >
             <Box as="table" w="100%" fontSize="xs">
               <Box as="thead" bg="gray.50">
                 <Box as="tr">
@@ -746,17 +777,39 @@ export default function MatchingRulesPage() {
                       <Checkbox.Control />
                     </Checkbox.Root>
                   </Box>
-                  <Box as="th" px={3} py={2} textAlign="left">채널</Box>
-                  <Box as="th" px={3} py={2} textAlign="left">쇼핑몰 상품코드</Box>
-                  <Box as="th" px={3} py={2} textAlign="left">상품명</Box>
-                  <Box as="th" px={3} py={2} textAlign="left">옵션</Box>
-                  <Box as="th" px={3} py={2} textAlign="left">매칭 SKU</Box>
-                  <Box as="th" px={3} py={2} textAlign="right">출고수량</Box>
-                  <Box as="th" px={3} py={2} textAlign="center">우선순위</Box>
-                  <Box as="th" px={3} py={2} textAlign="center">자동학습</Box>
-                  <Box as="th" px={3} py={2} textAlign="center">활성</Box>
-                  <Box as="th" px={3} py={2} textAlign="right">매칭 횟수</Box>
-                  <Box as="th" px={3} py={2} textAlign="right" w="120px">액션</Box>
+                  <Box as="th" px={3} py={2} textAlign="left">
+                    채널
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="left">
+                    쇼핑몰 상품코드
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="left">
+                    상품명
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="left">
+                    옵션
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="left">
+                    매칭 SKU
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="right">
+                    출고수량
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="center">
+                    우선순위
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="center">
+                    자동학습
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="center">
+                    활성
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="right">
+                    매칭 횟수
+                  </Box>
+                  <Box as="th" px={3} py={2} textAlign="right" w="120px">
+                    액션
+                  </Box>
                 </Box>
               </Box>
               <Box as="tbody">
@@ -835,7 +888,13 @@ export default function MatchingRulesPage() {
                         <Checkbox.Control />
                       </Checkbox.Root>
                     </Box>
-                    <Box as="td" px={3} py={2} textAlign="right" color="gray.600">
+                    <Box
+                      as="td"
+                      px={3}
+                      py={2}
+                      textAlign="right"
+                      color="gray.600"
+                    >
                       {rule.matchHitCount}
                     </Box>
                     <Box as="td" px={3} py={2} textAlign="right">

@@ -1,29 +1,21 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  Badge,
-  Box,
-  Button,
-  Flex,
-  Stack,
-  Table,
-  Text,
-} from '@chakra-ui/react';
-import { PageHeader } from '@/shared/ui';
+import { useState } from "react";
+import { Badge, Box, Button, Flex, Stack, Table, Text } from "@chakra-ui/react";
+import { PageHeader } from "@/shared/ui";
 import {
   BarcodeScanVerify,
   type BarcodeScanRecord,
-} from '@/features/barcode-scan-verify';
+} from "@/features/barcode-scan-verify";
 
 const HISTORY_LIMIT = 50;
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
+  return d.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 }
 
@@ -104,8 +96,8 @@ export function BarcodeDispatchPage(): React.JSX.Element {
                         {r.scannedCode}
                       </Table.Cell>
                       <Table.Cell>
-                        <Badge colorPalette={matched ? 'green' : 'red'}>
-                          {matched ? '출고완료' : r.result.reason ?? '실패'}
+                        <Badge colorPalette={matched ? "green" : "red"}>
+                          {matched ? "출고완료" : (r.result.reason ?? "실패")}
                         </Badge>
                       </Table.Cell>
                       <Table.Cell fontSize="xs">
@@ -115,13 +107,13 @@ export function BarcodeDispatchPage(): React.JSX.Element {
                               {o.channelId} · {o.channelOrderId}
                             </Text>
                             <Text color="gray.500">
-                              {o.trackingCarrier ?? '-'} {o.trackingNo ?? ''} ·{' '}
-                              {o.receiverName ?? o.buyerName ?? ''}
+                              {o.trackingCarrier ?? "-"} {o.trackingNo ?? ""} ·{" "}
+                              {o.receiverName ?? o.buyerName ?? ""}
                             </Text>
                           </Stack>
                         ) : (
                           <Text color="gray.500">
-                            {r.result.reason ?? 'unknown'}
+                            {r.result.reason ?? "unknown"}
                           </Text>
                         )}
                       </Table.Cell>

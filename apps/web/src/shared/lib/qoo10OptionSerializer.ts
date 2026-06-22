@@ -73,7 +73,9 @@ export function axesToSimpleItems(axes: OptionAxisState[]): SimpleOptionItem[] {
   return out;
 }
 
-export function simpleItemsToAxes(items: SimpleOptionItem[]): OptionAxisState[] {
+export function simpleItemsToAxes(
+  items: SimpleOptionItem[],
+): OptionAxisState[] {
   const byName = new Map<string, string[]>();
 
   for (const item of items) {
@@ -108,12 +110,9 @@ export function serializeSimpleOptions(items: SimpleOptionItem[]): string {
       }
 
       // Qoo10 포맷: [Name]||*[Value]||*[Price]||*[OptionCode]$$...
-      return [
-        name,
-        value,
-        String(item.Price ?? 0),
-        item.OptionCode ?? "",
-      ].join(COL);
+      return [name, value, String(item.Price ?? 0), item.OptionCode ?? ""].join(
+        COL,
+      );
     })
     .join(ROW);
 }
@@ -167,10 +166,7 @@ export type InventoryOptionItem = {
   _rowId?: string;
 };
 
-export function getSimpleItemId(
-  item: SimpleOptionItem,
-  index: number,
-): string {
+export function getSimpleItemId(item: SimpleOptionItem, index: number): string {
   return `${item.Name}__${item.Value}__${index}`;
 }
 
@@ -270,7 +266,9 @@ function cartesianValues(axes: OptionAxisState[]): string[][] {
   return rows;
 }
 
-export function cartesianProduct(axes: OptionAxisState[]): InventoryOptionItem[] {
+export function cartesianProduct(
+  axes: OptionAxisState[],
+): InventoryOptionItem[] {
   if (axes.length === 0) return [];
   const limitedAxes = axes.slice(0, MAX_INVENTORY_AXES);
   if (limitedAxes.some((axis) => axis.values.length === 0)) {
@@ -324,28 +322,30 @@ export function serializeInventoryOptions(
     throw new Error("[serialize] 옵션 항목이 없습니다.");
   }
 
-  return items
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    .map(({ _rowId: _ignored, ...item }, i) => {
-      const axes = getActiveAxes(item);
-      if (axes.length === 0) {
-        throw new Error(
-          `[serialize] ${i + 1}번째 행: 유효한 옵션명/옵션값이 없습니다.`,
-        );
-      }
+  return (
+    items
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .map(({ _rowId: _ignored, ...item }, i) => {
+        const axes = getActiveAxes(item);
+        if (axes.length === 0) {
+          throw new Error(
+            `[serialize] ${i + 1}번째 행: 유효한 옵션명/옵션값이 없습니다.`,
+          );
+        }
 
-      if (item.Qty < 0) {
-        throw new Error(
-          `[serialize] ${i + 1}번째 행: 재고수량은 0 이상이어야 합니다.`,
-        );
-      }
+        if (item.Qty < 0) {
+          throw new Error(
+            `[serialize] ${i + 1}번째 행: 재고수량은 0 이상이어야 합니다.`,
+          );
+        }
 
-      // Qoo10 포맷:
-      // [Name1]||*[Value1]||*...[NameN]||*[ValueN]||*[Price]||*[Qty]||*[ItemTypeCode]$$...
-      const axisPart = axes.flat().join(COL);
-      return `${axisPart}||*${item.Price}||*${item.Qty}||*${item.ItemTypeCode}`;
-    })
-    .join(ROW);
+        // Qoo10 포맷:
+        // [Name1]||*[Value1]||*...[NameN]||*[ValueN]||*[Price]||*[Qty]||*[ItemTypeCode]$$...
+        const axisPart = axes.flat().join(COL);
+        return `${axisPart}||*${item.Price}||*${item.Qty}||*${item.ItemTypeCode}`;
+      })
+      .join(ROW)
+  );
 }
 
 export function deserializeInventoryOptions(
@@ -429,4 +429,3 @@ export function deserializeInventoryOptions(
 // 조합형 다중 축 테스트
 // 입력 문자열: "size||*L||*color||*red||*0||*5||*lr-1"
 // output: Value1='L', Value2='red', Price=0, Qty=5, ItemTypeCode='lr-1'
-

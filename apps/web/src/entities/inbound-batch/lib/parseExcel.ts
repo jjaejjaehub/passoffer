@@ -22,7 +22,10 @@ const COLUMN_ALIASES: Record<string, string> = {
 };
 
 function normalizeKey(raw: string): string {
-  return raw.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 }
 
 export async function parseExcelFile(file: File): Promise<ParseResult> {
@@ -76,7 +79,8 @@ export async function parseExcelFile(file: File): Promise<ParseResult> {
             : null,
       expectedAt: parseDate(normalized.expectedAt),
       lotCode:
-        typeof normalized.lotCode === "string" && normalized.lotCode.trim().length > 0
+        typeof normalized.lotCode === "string" &&
+        normalized.lotCode.trim().length > 0
           ? normalized.lotCode.trim()
           : null,
       note:
