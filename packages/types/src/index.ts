@@ -601,5 +601,33 @@ export interface IChannelAdapter {
   pushVariantStock?(channelItemId: string, channelVariantId: string, newQty: number): Promise<void>;
 }
 
+// ─── Notification (SMS/카카오 알림톡) ───────────────────────────
+
+export type NotificationChannel = 'sms' | 'kakao';
+export type NotificationVendor = 'mock_sms' | 'mock_kakao';
+export type NotificationResult = 'ok' | 'warn' | 'error';
+
+export interface NotificationSendInput {
+  recipient: string;
+  template: string;
+  variables?: Record<string, string | number>;
+  body?: string;
+}
+
+export interface NotificationSendResult {
+  ok: boolean;
+  vendorMessageId?: string;
+  result: NotificationResult;
+  errorMessage?: string;
+  renderedBody: string;
+  vendorResponse?: unknown;
+}
+
+export interface INotificationAdapter {
+  readonly vendor: NotificationVendor;
+  readonly channel: NotificationChannel;
+  send(input: NotificationSendInput): Promise<NotificationSendResult>;
+}
+
 // StandardOrder v2 (Canonical 주문 모델) — 별도 파일에 정의
 export * from './standard-order';

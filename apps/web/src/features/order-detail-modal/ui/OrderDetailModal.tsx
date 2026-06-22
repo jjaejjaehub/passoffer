@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
+import { useState } from "react";
+import { Box, Button, Dialog, Flex, Portal, Text } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
 import {
   CHANNEL_CONFIG,
@@ -11,6 +12,7 @@ import {
   SEMANTIC_LABEL,
 } from "@/shared/config";
 import type { OrderListItem } from "@/entities/order";
+import { SendNotificationModal } from "@/features/send-notification";
 
 interface OrderDetailModalProps {
   order: OrderListItem | null;
@@ -278,7 +280,17 @@ export function OrderDetailModal({
     semantic: formatSemantic,
   });
 
+  const [notifyOpen, setNotifyOpen] = useState(false);
+
   if (!order) return null;
+
+  const defaultRecipient =
+    order.buyerMobile ?? order.buyerTel ?? order.receiverMobile ?? order.receiverTel ?? "";
+  const defaultVariables: Record<string, string> = {
+    buyerName: order.buyerName ?? "",
+    orderNo: order.channelOrderId ?? "",
+    trackingNo: order.trackingNo ?? "",
+  };
 
   return (
     <Dialog.Root
@@ -295,14 +307,29 @@ export function OrderDetailModal({
         <Dialog.Positioner>
           <Dialog.Content maxW="1000px" w="92vw">
             <Dialog.Header>
-              <Flex direction="column" gap={1}>
-                <Text fontSize="sm" color="gray.500">
-                  {formatChannel(order.channelId)} · {order.channelOrderId}
-                </Text>
-                <Text fontSize="lg" fontWeight="semibold">
-                  {order.buyerName ?? "(구매자 없음)"} ·{" "}
-                  {formatFulfillment(order.fulfillmentStatus)}
-                </Text>
+              <Flex
+                align="center"
+                justify="space-between"
+                w="100%"
+                gap={3}
+              >
+                <Flex direction="column" gap={1}>
+                  <Text fontSize="sm" color="gray.500">
+                    {formatChannel(order.channelId)} · {order.channelOrderId}
+                  </Text>
+                  <Text fontSize="lg" fontWeight="semibold">
+                    {order.buyerName ?? "(구매자 없음)"} ·{" "}
+                    {formatFulfillment(order.fulfillmentStatus)}
+                  </Text>
+                </Flex>
+                <Button
+                  size="xs"
+                  variant="outline"
+                  colorScheme="blue"
+                  onClick={() => setNotifyOpen(true)}
+                >
+                  알림 발송
+                </Button>
               </Flex>
               <Dialog.CloseTrigger />
             </Dialog.Header>
@@ -352,6 +379,13 @@ export function OrderDetailModal({
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>
+      <SendNotificationModal
+        open={notifyOpen}
+        onClose={() => setNotifyOpen(false)}
+        orderId={order.id}
+        defaultRecipient={defaultRecipient || undefined}
+        defaultVariables={defaultVariables}
+      />
     </Dialog.Root>
   );
 }

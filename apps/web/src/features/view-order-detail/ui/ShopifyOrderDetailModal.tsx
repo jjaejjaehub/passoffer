@@ -11,7 +11,7 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { AlertTriangle, CheckCircle, Package, X, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, MessageSquare, Package, X, XCircle } from "lucide-react";
 import { isAxiosError } from "axios";
 
 import {
@@ -22,6 +22,7 @@ import {
   type FulfillOrderInput,
   type OrderCancelReason,
 } from "@/entities/order";
+import { SendNotificationModal } from "@/features/send-notification";
 
 // ─── 상수 ─────────────────────────────────────────────────────
 
@@ -91,6 +92,14 @@ function OrderDetailContent({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [notifyOpen, setNotifyOpen] = useState(false);
+
+  const defaultRecipient = order.buyer.tel ?? "";
+  const defaultVariables: Record<string, string> = {
+    buyerName: order.buyer.name ?? "",
+    orderNo: order.channelOrderId ?? "",
+    trackingNo: order.trackingNumber ?? "",
+  };
 
   const fulfill = useShopifyFulfillOrder(order.id);
   const cancel = useShopifyCancelOrder(order.id);
@@ -160,6 +169,27 @@ function OrderDetailContent({
           <Text fontSize="sm" color="red.700">{errorMsg}</Text>
         </Flex>
       )}
+
+      {/* 액션 바 */}
+      <Flex justify="flex-end">
+        <Button
+          size="xs"
+          variant="outline"
+          colorScheme="blue"
+          onClick={() => setNotifyOpen(true)}
+        >
+          <MessageSquare size={12} />
+          알림 발송
+        </Button>
+      </Flex>
+
+      <SendNotificationModal
+        open={notifyOpen}
+        onClose={() => setNotifyOpen(false)}
+        orderId={order.id}
+        defaultRecipient={defaultRecipient || undefined}
+        defaultVariables={defaultVariables}
+      />
 
       {/* 주문 요약 */}
       <Section title="주문 정보">

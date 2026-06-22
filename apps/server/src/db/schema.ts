@@ -965,3 +965,31 @@ export const userSettings = pgTable('user_settings', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// ─── notification_events ────────────────────────────────────────
+// SMS/카카오 알림 전송 이력. INotificationAdapter 호출 결과를 저장.
+
+export const notificationChannelEnum = pgEnum('notification_channel', ['sms', 'kakao']);
+export const notificationResultEnum = pgEnum('notification_result', ['ok', 'warn', 'error']);
+
+export const notificationEvents = pgTable(
+  'notification_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'set null' }),
+    channel: notificationChannelEnum('channel').notNull(),
+    template: text('template').notNull(),
+    recipient: text('recipient').notNull(),
+    payload: jsonb('payload').notNull().default({}),
+    result: notificationResultEnum('result').notNull(),
+    errorMessage: text('error_message'),
+    vendorMessageId: text('vendor_message_id'),
+    renderedBody: text('rendered_body'),
+    sentAt: timestamp('sent_at').notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    orderSentIdx: index('notification_events_order_sent_idx').on(table.orderId, table.sentAt),
+  }),
+);
+
