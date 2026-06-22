@@ -1,5 +1,6 @@
-import { OrdersPage } from '@/pages/orders';
+import { redirect } from "next/navigation";
+import { ROUTES } from "@/shared/config";
 
-export default function Page(): React.JSX.Element {
-  return <OrdersPage />;
+export default function Page(): never {
+  redirect(ROUTES.payments);
 }

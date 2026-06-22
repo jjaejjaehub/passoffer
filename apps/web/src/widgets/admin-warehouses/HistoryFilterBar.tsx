@@ -1,7 +1,20 @@
 "use client";
 
-import { Box, Button, Flex, HStack, Input, Stack, Text } from "@chakra-ui/react";
-import { ArrowRightLeft, PackageMinus, PackagePlus, Settings2 } from "lucide-react";
+import {
+  Box,
+  Button,
+  Flex,
+  HStack,
+  Input,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
+import {
+  ArrowRightLeft,
+  PackageMinus,
+  PackagePlus,
+  Settings2,
+} from "lucide-react";
 import type { ReactElement } from "react";
 import type { MovementType } from "@oms/types";
 

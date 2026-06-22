@@ -1,2 +1,1 @@
-export * from './ui/OrderQuickDrawer';
-
+export * from "./ui/OrderQuickDrawer";

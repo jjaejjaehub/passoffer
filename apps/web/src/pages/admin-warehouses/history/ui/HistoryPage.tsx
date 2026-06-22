@@ -40,7 +40,8 @@ export function HistoryPage(): ReactElement {
   );
   const [search, setSearch] = useState<string>("");
   const [openEvent, setOpenEvent] = useState<HistoryEvent | null>(null);
-  const [visibleDateCount, setVisibleDateCount] = useState<number>(PAGE_SIZE_DAYS);
+  const [visibleDateCount, setVisibleDateCount] =
+    useState<number>(PAGE_SIZE_DAYS);
 
   const debouncedSearch = useDebouncedValue(search, 300);
 
@@ -161,8 +162,8 @@ export function HistoryPage(): ReactElement {
                   총 {filtered.length.toLocaleString()}건 · {distinctDates}일치
                 </Text>
                 <Text fontSize="xs" color="gray.500">
-                  {Math.min(visibleDateCount, distinctDates)} / {distinctDates}일
-                  표시
+                  {Math.min(visibleDateCount, distinctDates)} / {distinctDates}
+                  일 표시
                 </Text>
               </Flex>
               <HistoryTimeline

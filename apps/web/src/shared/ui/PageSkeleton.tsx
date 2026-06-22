@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Box, Skeleton, SkeletonText } from "@chakra-ui/react";
 

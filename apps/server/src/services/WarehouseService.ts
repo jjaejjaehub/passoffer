@@ -1,12 +1,12 @@
-import type { FastifyInstance } from 'fastify';
-import { eq, and } from 'drizzle-orm';
+import type { FastifyInstance } from "fastify";
+import { eq, and } from "drizzle-orm";
 import {
   warehouses,
   warehouseLocations,
   warehouseStocks,
   inboundOrders,
   stockMovements,
-} from '../db/schema';
+} from "../db/schema";
 import type {
   IWMSAdapter,
   WMSVendor,
@@ -14,10 +14,10 @@ import type {
   InboundBatch,
   AdjustmentRequest,
   DateRange,
-} from '@oms/types';
-import { MockSelfWarehouseAdapter } from '../adapters/wms/MockSelfWarehouseAdapter';
-import { MockCJLogisticsAdapter } from '../adapters/wms/MockCJLogisticsAdapter';
-import { MockSFTPBatchAdapter } from '../adapters/wms/MockSFTPBatchAdapter';
+} from "@oms/types";
+import { MockSelfWarehouseAdapter } from "../adapters/wms/MockSelfWarehouseAdapter";
+import { MockCJLogisticsAdapter } from "../adapters/wms/MockCJLogisticsAdapter";
+import { MockSFTPBatchAdapter } from "../adapters/wms/MockSFTPBatchAdapter";
 
 export class WarehouseService {
   constructor(
@@ -27,10 +27,14 @@ export class WarehouseService {
 
   private getAdapter(vendor: WMSVendor): IWMSAdapter {
     switch (vendor) {
-      case 'self': return new MockSelfWarehouseAdapter();
-      case 'cj_logistics': return new MockCJLogisticsAdapter();
-      case 'sftp_batch': return new MockSFTPBatchAdapter();
-      default: throw new Error(`Unsupported WMS vendor: ${vendor}`);
+      case "self":
+        return new MockSelfWarehouseAdapter();
+      case "cj_logistics":
+        return new MockCJLogisticsAdapter();
+      case "sftp_batch":
+        return new MockSFTPBatchAdapter();
+      default:
+        throw new Error(`Unsupported WMS vendor: ${vendor}`);
     }
   }
 
@@ -128,7 +132,7 @@ export class WarehouseService {
       .values({
         userId: this.userId,
         warehouseId,
-        status: 'instructed',
+        status: "instructed",
         vendorRef: result.vendorRef,
         expectedAt: batch.expectedAt ? new Date(batch.expectedAt) : undefined,
         itemsJson: batch.items,
@@ -142,7 +146,12 @@ export class WarehouseService {
     return this.app.db
       .select()
       .from(inboundOrders)
-      .where(and(eq(inboundOrders.warehouseId, warehouseId), eq(inboundOrders.userId, this.userId)));
+      .where(
+        and(
+          eq(inboundOrders.warehouseId, warehouseId),
+          eq(inboundOrders.userId, this.userId),
+        ),
+      );
   }
 
   // ─── 재고 조정 ────────────────────────────────────────────────
@@ -158,7 +167,7 @@ export class WarehouseService {
       .values({
         userId: this.userId,
         warehouseId,
-        type: 'adjustment',
+        type: "adjustment",
         status: result.status,
         vendorRef: result.vendorRef,
         reasonCode: req.reasonCode,
@@ -183,6 +192,10 @@ export class WarehouseService {
     const wh = await this.getWarehouse(warehouseId);
     if (!wh) throw new Error(`Warehouse not found: ${warehouseId}`);
     const adapter = this.getAdapter(wh.vendor as WMSVendor);
-    return { vendor: adapter.vendor, syncMode: adapter.syncMode, capabilities: adapter.capabilities };
+    return {
+      vendor: adapter.vendor,
+      syncMode: adapter.syncMode,
+      capabilities: adapter.capabilities,
+    };
   }
 }

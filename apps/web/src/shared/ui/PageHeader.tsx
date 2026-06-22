@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { Box, Flex, Heading, Text } from '@chakra-ui/react';
-import type { BoxProps } from '@chakra-ui/react';
-import type React from 'react';
-import type { ReactNode } from 'react';
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
+import type { BoxProps } from "@chakra-ui/react";
+import type React from "react";
+import type { ReactNode } from "react";
 
 interface PageHeaderProps extends BoxProps {
   title: string;
@@ -35,4 +35,3 @@ export function PageHeader({
     </Box>
   );
 }
-

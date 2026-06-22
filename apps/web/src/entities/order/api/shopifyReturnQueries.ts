@@ -74,8 +74,12 @@ export const shopifyReturnsQueryRoot = ["shopify", "returns"] as const;
 
 export const shopifyReturnQueries = {
   all: () => shopifyReturnsQueryRoot,
-  list: (params: Pick<ShopifyReturnsQueryParams, "claimStatus" | "dateFrom" | "dateTo">) =>
-    [...shopifyReturnsQueryRoot, params] as const,
+  list: (
+    params: Pick<
+      ShopifyReturnsQueryParams,
+      "claimStatus" | "dateFrom" | "dateTo"
+    >,
+  ) => [...shopifyReturnsQueryRoot, params] as const,
 };
 
 // ─── 에러 파싱 ─────────────────────────────────────────────────
@@ -117,17 +121,28 @@ export interface ShopifyReturnStatsResult {
 
 // ─── 반품 통계 훅 (반품 목록에서 집계) ────────────────────────
 
-export function useShopifyReturnStats(params: { dateFrom?: string; dateTo?: string } = {}): ShopifyReturnStatsResult {
+export function useShopifyReturnStats(
+  params: { dateFrom?: string; dateTo?: string } = {},
+): ShopifyReturnStatsResult {
   const { hasKey } = useChannelApiKey("shopify");
   const channelUuid = useChannelUuid("shopify");
   const { dateFrom, dateTo } = params;
 
   const query = useQuery({
-    queryKey: [...shopifyReturnsQueryRoot, "stats", { dateFrom, dateTo }] as const,
+    queryKey: [
+      ...shopifyReturnsQueryRoot,
+      "stats",
+      { dateFrom, dateTo },
+    ] as const,
     queryFn: async (): Promise<ShopifyReturnStats> => {
       if (!channelUuid) {
         throw Object.assign(new Error("NO_API_KEY"), {
-          response: { data: { error: "NO_API_KEY", message: "Shopify 채널이 연결되지 않았습니다." } },
+          response: {
+            data: {
+              error: "NO_API_KEY",
+              message: "Shopify 채널이 연결되지 않았습니다.",
+            },
+          },
         });
       }
       const searchParams = new URLSearchParams();
@@ -140,16 +155,26 @@ export function useShopifyReturnStats(params: { dateFrom?: string; dateTo?: stri
 
       const openCount = items.filter((i) => i.status === "OPEN").length;
       const closedCount = items.filter((i) => i.status !== "OPEN").length;
-      const totalRefundedAmount = items.reduce((sum, i) => sum + parseFloat(i.totalRefunded || "0"), 0);
+      const totalRefundedAmount = items.reduce(
+        (sum, i) => sum + parseFloat(i.totalRefunded || "0"),
+        0,
+      );
       const currencyCode = items[0]?.currencyCode ?? "USD";
 
-      return { openCount, closedCount, totalCount: items.length, totalRefundedAmount, currencyCode };
+      return {
+        openCount,
+        closedCount,
+        totalCount: items.length,
+        totalRefundedAmount,
+        currencyCode,
+      };
     },
     enabled: hasKey && !!channelUuid,
     staleTime: 5 * 60 * 1000,
     retry: (failureCount, error) => {
       const parsed = parseError(error);
-      if (parsed.type === "NO_API_KEY" || parsed.type === "AUTH_ERROR") return false;
+      if (parsed.type === "NO_API_KEY" || parsed.type === "AUTH_ERROR")
+        return false;
       return failureCount < 2;
     },
   });
@@ -188,7 +213,8 @@ export function useShopifyReturns(
           response: {
             data: {
               error: "NO_API_KEY",
-              message: "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
+              message:
+                "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
             },
           },
         });
@@ -197,7 +223,8 @@ export function useShopifyReturns(
       const searchParams = new URLSearchParams();
       if (dateFrom) searchParams.set("startDate", dateFrom.replace(/-/g, ""));
       if (dateTo) searchParams.set("endDate", dateTo.replace(/-/g, ""));
-      if (claimStatus && claimStatus !== "ALL") searchParams.set("claimStatus", claimStatus);
+      if (claimStatus && claimStatus !== "ALL")
+        searchParams.set("claimStatus", claimStatus);
 
       return http.get<ShopifyReturnItem[]>(
         `/api/orders/${encodeURIComponent(channelUuid)}/returns?${searchParams.toString()}`,
@@ -219,6 +246,8 @@ export function useShopifyReturns(
     isLoading: query.isLoading && hasKey,
     error: query.error ? parseError(query.error) : null,
     hasApiKey: hasKey,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

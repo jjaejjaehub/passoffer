@@ -1,23 +1,13 @@
 "use client";
 
 import { Box, Table, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 import type { ShopifyReturnItem } from "@/entities/order";
 
-// ─── 상태 한국어 라벨 ──────────────────────────────────────────
+// ─── 상태 색상 ─────────────────────────────────────────────────
 
-const RETURN_STATUS_LABEL: Record<string, string> = {
-  OPEN: "반품 진행중",
-  REQUESTED: "반품 요청됨",
-  DECLINED: "반품 거절됨",
-  CLOSED: "반품 완료",
-  CANCELLED: "반품 취소됨",
-};
-
-const RETURN_STATUS_COLOR: Record<
-  string,
-  { bg: string; color: string }
-> = {
+const RETURN_STATUS_COLOR: Record<string, { bg: string; color: string }> = {
   OPEN: { bg: "blue.50", color: "blue.700" },
   REQUESTED: { bg: "orange.50", color: "orange.700" },
   DECLINED: { bg: "red.50", color: "red.700" },
@@ -25,24 +15,35 @@ const RETURN_STATUS_COLOR: Record<
   CANCELLED: { bg: "gray.100", color: "gray.600" },
 };
 
-const RETURN_REASON_LABEL: Record<string, string> = {
-  UNKNOWN: "기타",
-  SIZE_TOO_SMALL: "사이즈 작음",
-  SIZE_TOO_LARGE: "사이즈 큼",
-  WRONG_ITEM: "잘못된 상품",
-  NOT_AS_DESCRIBED: "상품 설명 불일치",
-  DEFECTIVE: "불량/파손",
-  STYLE: "스타일 불만족",
-  COLOR: "색상 불만족",
-  MISSING_ITEM: "상품 누락",
-  OTHER: "기타",
-};
+const STATUS_KEYS = new Set([
+  "OPEN",
+  "REQUESTED",
+  "DECLINED",
+  "CLOSED",
+  "CANCELLED",
+]);
+const REASON_KEYS = new Set([
+  "UNKNOWN",
+  "SIZE_TOO_SMALL",
+  "SIZE_TOO_LARGE",
+  "WRONG_ITEM",
+  "NOT_AS_DESCRIBED",
+  "DEFECTIVE",
+  "STYLE",
+  "COLOR",
+  "MISSING_ITEM",
+  "OTHER",
+]);
 
 // ─── 서브 컴포넌트 ─────────────────────────────────────────────
 
 function ReturnStatusBadge({ status }: { status: string }): React.JSX.Element {
-  const label = RETURN_STATUS_LABEL[status] ?? status;
-  const colors = RETURN_STATUS_COLOR[status] ?? { bg: "gray.100", color: "gray.600" };
+  const t = useTranslations("widgets.shopifyReturnTable.statuses");
+  const label = STATUS_KEYS.has(status) ? t(status) : status;
+  const colors = RETURN_STATUS_COLOR[status] ?? {
+    bg: "gray.100",
+    color: "gray.600",
+  };
   return (
     <Box
       display="inline-flex"
@@ -78,8 +79,12 @@ export function ShopifyReturnTable({
   onSelectionChange,
   onRowClick,
 }: ShopifyReturnTableProps): React.JSX.Element {
-  const isAllSelected = returns.length > 0 && selectedIds.length === returns.length;
-  const isIndeterminate = selectedIds.length > 0 && selectedIds.length < returns.length;
+  const t = useTranslations("widgets.shopifyReturnTable");
+  const tReasons = useTranslations("widgets.shopifyReturnTable.reasons");
+  const isAllSelected =
+    returns.length > 0 && selectedIds.length === returns.length;
+  const isIndeterminate =
+    selectedIds.length > 0 && selectedIds.length < returns.length;
 
   const handleSelectAll = (checked: boolean): void => {
     onSelectionChange(checked ? returns.map((r) => r.returnId) : []);
@@ -97,7 +102,7 @@ export function ShopifyReturnTable({
     return (
       <Box py={10} textAlign="center">
         <Text color="gray.400" fontSize="sm">
-          반품 데이터가 없습니다.
+          {t("empty")}
         </Text>
       </Box>
     );
@@ -124,16 +129,36 @@ export function ShopifyReturnTable({
                 }
               />
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">반품 상태</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">반품번호</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">주문번호</Table.ColumnHeader>
-            <Table.ColumnHeader w="200px">상품명</Table.ColumnHeader>
-            <Table.ColumnHeader w="60px" textAlign="right">수량</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px" textAlign="right">환불금액</Table.ColumnHeader>
-            <Table.ColumnHeader w="160px">반품 사유</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">요청일</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">완료일</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">구매자</Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.status")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.returnNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.orderNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="200px">
+              {t("columns.productName")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="60px" textAlign="right">
+              {t("columns.quantity")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px" textAlign="right">
+              {t("columns.refundAmount")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="160px">
+              {t("columns.reason")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.requestedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.completedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.buyer")}
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
 
@@ -144,9 +169,14 @@ export function ShopifyReturnTable({
             const extraCount = ret.lineItems.length - 1;
             const firstReason = firstLineItem?.returnReason;
             const reasonLabel = firstReason
-              ? (RETURN_REASON_LABEL[firstReason] ?? firstReason)
+              ? REASON_KEYS.has(firstReason)
+                ? tReasons(firstReason)
+                : firstReason
               : null;
-            const reasonNote = firstLineItem?.returnReasonNote ?? firstLineItem?.customerNote ?? null;
+            const reasonNote =
+              firstLineItem?.returnReasonNote ??
+              firstLineItem?.customerNote ??
+              null;
 
             return (
               <Table.Row
@@ -200,7 +230,7 @@ export function ShopifyReturnTable({
                   </Text>
                   {extraCount > 0 && (
                     <Text fontSize="xs" color="gray.400">
-                      외 {extraCount}개 상품
+                      {t("extraItems", { count: extraCount })}
                     </Text>
                   )}
                   {firstLineItem?.lineItemSku && (
@@ -246,7 +276,9 @@ export function ShopifyReturnTable({
                     </Text>
                   )}
                   {!reasonLabel && !reasonNote && (
-                    <Text fontSize="xs" color="gray.400">—</Text>
+                    <Text fontSize="xs" color="gray.400">
+                      —
+                    </Text>
                   )}
                 </Table.Cell>
 

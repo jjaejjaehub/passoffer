@@ -223,7 +223,10 @@ export const PLATFORM_DEFS: PlatformDef[] = [
         required: false,
         placeholder: "유형 1: YYYY-MM-DD / 유형 2: 영업일 수",
         note: "배송 가능 유형이 '날짜 지정(1)' 또는 '영업일 기준(2)'일 때 입력",
-        conditionalRequired: { dependsOn: "qoo10.AvailableDateType", values: ["1", "2"] },
+        conditionalRequired: {
+          dependsOn: "qoo10.AvailableDateType",
+          values: ["1", "2"],
+        },
         maxLength: 10,
       },
 

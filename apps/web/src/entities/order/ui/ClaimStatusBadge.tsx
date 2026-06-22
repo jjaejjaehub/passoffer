@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Box, Text } from '@chakra-ui/react';
+import { Box, Text } from "@chakra-ui/react";
 
 interface ClaimStatusBadgeProps {
   status: string;
@@ -8,26 +8,26 @@ interface ClaimStatusBadgeProps {
 
 function getClaimStatusLabel(status: string): string {
   switch (status) {
-    case '1':
-      return '취소요청';
-    case '2':
-      return '취소중';
-    case '3':
-      return '취소완료';
-    case '4':
-      return '반품요청';
-    case '5':
-      return '반품중';
-    case '6':
-      return '반품완료';
-    case '11':
-      return '교환신청';
-    case '12':
-      return '교환승인';
-    case '13':
-      return '재배송중';
+    case "1":
+      return "취소요청";
+    case "2":
+      return "취소중";
+    case "3":
+      return "취소완료";
+    case "4":
+      return "반품요청";
+    case "5":
+      return "반품중";
+    case "6":
+      return "반품완료";
+    case "11":
+      return "교환신청";
+    case "12":
+      return "교환승인";
+    case "13":
+      return "재배송중";
     default:
-      return status || '-';
+      return status || "-";
   }
 }
 
@@ -54,4 +54,3 @@ export function ClaimStatusBadge({
     </Box>
   );
 }
-

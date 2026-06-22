@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { http } from '@/shared/api';
-import { qoo10OrderQueries } from './qoo10OrderQueries';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { http } from "@/shared/api";
+import { qoo10OrderQueries } from "./qoo10OrderQueries";
 
 // ─── SetSendingInfo ──────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ export function useQoo10SetSendingInfo() {
 
   return useMutation({
     mutationFn: async (input: SetSendingInfoInput): Promise<void> => {
-      await http.post('/api/qoo10/shipping/send', input);
+      await http.post("/api/qoo10/shipping/send", input);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qoo10OrderQueries.all() });
@@ -30,8 +30,8 @@ export function useQoo10SetSendingInfo() {
 
 interface SetSellerCheckInput {
   orderNo: string;
-  estShipDt?: string;          // 발송예정일 yyyyMMdd
-  delayType?: '1' | '2' | '3' | '4'; // 1:상품준비중 2:주문제작 3:고객요청 4:기타
+  estShipDt?: string; // 발송예정일 yyyyMMdd
+  delayType?: "1" | "2" | "3" | "4"; // 1:상품준비중 2:주문제작 3:고객요청 4:기타
   delayMemo?: string;
 }
 
@@ -41,7 +41,7 @@ export function useQoo10SetSellerCheck() {
 
   return useMutation({
     mutationFn: async (input: SetSellerCheckInput): Promise<void> => {
-      await http.post('/api/qoo10/shipping/seller-check', input);
+      await http.post("/api/qoo10/shipping/seller-check", input);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qoo10OrderQueries.all() });

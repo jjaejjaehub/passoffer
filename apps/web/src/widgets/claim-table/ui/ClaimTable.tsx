@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Table, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 import { ClaimStatusBadge } from "@/entities/order";
 import type { Qoo10ClaimItem } from "@/shared/api/qoo10/types";
@@ -26,6 +27,7 @@ export function ClaimTable({
   selectedIds,
   onSelectionChange,
 }: ClaimTableProps): React.JSX.Element {
+  const t = useTranslations("widgets.claimTable");
   const isAllSelected =
     claims.length > 0 && selectedIds.length === claims.length;
   const isIndeterminate =
@@ -47,7 +49,7 @@ export function ClaimTable({
     return (
       <Box py={10} textAlign="center">
         <Text color="gray.400" fontSize="sm">
-          클레임 데이터가 없습니다.
+          {t("empty")}
         </Text>
       </Box>
     );
@@ -74,24 +76,48 @@ export function ClaimTable({
                 }
               />
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">클레임 상태</Table.ColumnHeader>
-            <Table.ColumnHeader w="110px">주문번호</Table.ColumnHeader>
-            <Table.ColumnHeader w="110px">장바구니번호</Table.ColumnHeader>
-            <Table.ColumnHeader w="200px">상품명</Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.status")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="110px">
+              {t("columns.orderNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="110px">
+              {t("columns.cartNo")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="200px">
+              {t("columns.productName")}
+            </Table.ColumnHeader>
             <Table.ColumnHeader w="60px" textAlign="right">
-              수량
+              {t("columns.quantity")}
             </Table.ColumnHeader>
             <Table.ColumnHeader w="120px" textAlign="right">
-              결제금액
+              {t("columns.amount")}
             </Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">요청일</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">완료일</Table.ColumnHeader>
-            <Table.ColumnHeader w="100px">주문일</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">구매자</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px">수취인</Table.ColumnHeader>
-            <Table.ColumnHeader w="180px">사유</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">배송사/운송장</Table.ColumnHeader>
-            <Table.ColumnHeader w="140px">반품배송사/운송장</Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.requestedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.completedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="100px">
+              {t("columns.orderedAt")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.buyer")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px">
+              {t("columns.recipient")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="180px">
+              {t("columns.reason")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.shippingCompanyTracking")}
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="140px">
+              {t("columns.returnShippingCompanyTracking")}
+            </Table.ColumnHeader>
           </Table.Row>
         </Table.Header>
 

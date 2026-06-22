@@ -15,7 +15,10 @@ import {
 } from "@chakra-ui/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { useInventoryOptions, useSaveInventoryOptions } from "@/entities/product";
+import {
+  useInventoryOptions,
+  useSaveInventoryOptions,
+} from "@/entities/product";
 import type { InventoryOptionItem, OptionAxisState } from "@/entities/product";
 import {
   cartesianProduct,
@@ -31,14 +34,18 @@ interface InventoryOptionSectionProps {
   channelId: "qoo10" | "rakuten";
 }
 
-type InventoryEditableField = "Price" | "Qty" | "ItemTypeCode" | "Value1" | "Value2" | "Value3";
+type InventoryEditableField =
+  | "Price"
+  | "Qty"
+  | "ItemTypeCode"
+  | "Value1"
+  | "Value2"
+  | "Value3";
 
-type EditingCell =
-  | {
-      id: string;
-      field: InventoryEditableField;
-    }
-  | null;
+type EditingCell = {
+  id: string;
+  field: InventoryEditableField;
+} | null;
 
 type DraftInventoryRow = {
   values: string[];
@@ -51,7 +58,10 @@ const INVENTORY_MAX_AXES = 3;
 const INVENTORY_MAX_VALUES = 20;
 const INVENTORY_MAX_ROWS = 1000;
 
-function getInventoryValueByIndex(item: InventoryOptionItem, axisIndex: number): string {
+function getInventoryValueByIndex(
+  item: InventoryOptionItem,
+  axisIndex: number,
+): string {
   if (axisIndex === 0) return item.Value1;
   if (axisIndex === 1) return item.Value2;
   if (axisIndex === 2) return item.Value3;
@@ -66,7 +76,9 @@ function getInventoryValueByIndex(item: InventoryOptionItem, axisIndex: number):
  */
 function getInventoryKey(item: InventoryOptionItem): string {
   if (item._rowId) return item._rowId;
-  return [item.Value1, item.Value2, item.Value3, item.Value4, item.Value5].join("__");
+  return [item.Value1, item.Value2, item.Value3, item.Value4, item.Value5].join(
+    "__",
+  );
 }
 
 function setInventoryField(
@@ -118,10 +130,16 @@ export function InventoryOptionSection({
 
   useEffect(() => {
     if (data.type === "inventory") {
-      const initialAxes = inventoryItemsToAxes(data.items).slice(0, INVENTORY_MAX_AXES);
+      const initialAxes = inventoryItemsToAxes(data.items).slice(
+        0,
+        INVENTORY_MAX_AXES,
+      );
       setAxes(initialAxes);
       setFormAxes(initialAxes);
-      const nextOverrides: Record<string, { Price: number; Qty: number; ItemTypeCode: string }> = {};
+      const nextOverrides: Record<
+        string,
+        { Price: number; Qty: number; ItemTypeCode: string }
+      > = {};
       for (const item of data.items) {
         nextOverrides[getInventoryKey(item)] = {
           Price: item.Price,
@@ -149,26 +167,28 @@ export function InventoryOptionSection({
     return cartesianProduct(axes.slice(0, INVENTORY_MAX_AXES));
   }, [appliedAxes, axes, data]);
 
-  const displayItems = useMemo<InventoryOptionItem[]>(
-    () => {
-      const base = tableItems
-        .filter((item) => !deletedKeys.has(getInventoryKey(item)))
-        .map((item) => {
-          const itemKey = getInventoryKey(item);
-          const override = overrides[itemKey];
-          if (!override) return item;
-          return { ...item, ...override };
-        });
+  const displayItems = useMemo<InventoryOptionItem[]>(() => {
+    const base = tableItems
+      .filter((item) => !deletedKeys.has(getInventoryKey(item)))
+      .map((item) => {
+        const itemKey = getInventoryKey(item);
+        const override = overrides[itemKey];
+        if (!override) return item;
+        return { ...item, ...override };
+      });
 
-      return [...base, ...manualRows];
-    },
-    [deletedKeys, manualRows, overrides, tableItems],
-  );
+    return [...base, ...manualRows];
+  }, [deletedKeys, manualRows, overrides, tableItems]);
 
   useEffect(() => {
-    const validKeys = new Set(displayItems.map((item) => getInventoryKey(item)));
+    const validKeys = new Set(
+      displayItems.map((item) => getInventoryKey(item)),
+    );
     setOverrides((prev) => {
-      const next: Record<string, { Price: number; Qty: number; ItemTypeCode: string }> = {};
+      const next: Record<
+        string,
+        { Price: number; Qty: number; ItemTypeCode: string }
+      > = {};
       for (const [key, value] of Object.entries(prev)) {
         if (validKeys.has(key)) next[key] = value;
       }
@@ -190,8 +210,7 @@ export function InventoryOptionSection({
     0,
   );
 
-  const isAllSelected =
-    rowIds.length > 0 && selectedCount === rowIds.length;
+  const isAllSelected = rowIds.length > 0 && selectedCount === rowIds.length;
 
   const isIndeterminate = selectedCount > 0 && selectedCount < rowIds.length;
 
@@ -244,7 +263,10 @@ export function InventoryOptionSection({
         : undefined;
 
     setOverrides((prev) => {
-      const next: Record<string, { Price: number; Qty: number; ItemTypeCode: string }> = {
+      const next: Record<
+        string,
+        { Price: number; Qty: number; ItemTypeCode: string }
+      > = {
         ...prev,
       };
       for (let index = 0; index < displayItems.length; index += 1) {
@@ -299,7 +321,11 @@ export function InventoryOptionSection({
     if (!target) return;
     const oldKey = getInventoryKey(target);
 
-    if (cell.field === "Price" || cell.field === "Qty" || cell.field === "ItemTypeCode") {
+    if (
+      cell.field === "Price" ||
+      cell.field === "Qty" ||
+      cell.field === "ItemTypeCode"
+    ) {
       const next = setInventoryField(
         target,
         cell.field,
@@ -314,7 +340,8 @@ export function InventoryOptionSection({
         },
       }));
     } else {
-      const axisIndex = cell.field === "Value1" ? 0 : cell.field === "Value2" ? 1 : 2;
+      const axisIndex =
+        cell.field === "Value1" ? 0 : cell.field === "Value2" ? 1 : 2;
       const prevValue = getInventoryValueByIndex(target, axisIndex);
 
       if (prevValue === trimmed) {
@@ -343,7 +370,11 @@ export function InventoryOptionSection({
         if (idx !== axisIndex) return axis;
         if (axis.values.includes(trimmed)) return axis;
         const nextValues = [...axis.values, trimmed];
-        return { ...axis, values: nextValues, _rawValues: nextValues.join(", ") };
+        return {
+          ...axis,
+          values: nextValues,
+          _rawValues: nextValues.join(", "),
+        };
       });
 
       // 새로 생기는 카르테시안 행 전부 차단 (newItemKey 포함)
@@ -390,7 +421,9 @@ export function InventoryOptionSection({
       if (!newItemAlreadyInBase) {
         // manualRows: 중복 제거 후 추가
         setManualRows((prev) => {
-          const filtered = prev.filter((item) => getInventoryKey(item) !== newItemKey);
+          const filtered = prev.filter(
+            (item) => getInventoryKey(item) !== newItemKey,
+          );
           return [...filtered, newItem];
         });
       }
@@ -402,7 +435,10 @@ export function InventoryOptionSection({
 
   const applyAxes = (confirmedAxes: OptionAxisState[]): void => {
     // OptionAxisForm에서 확정된 values 기준으로만 추가 검증
-    const nextCount = confirmedAxes.reduce((acc, axis) => acc * axis.values.length, 1);
+    const nextCount = confirmedAxes.reduce(
+      (acc, axis) => acc * axis.values.length,
+      1,
+    );
     if (nextCount > INVENTORY_MAX_ROWS) {
       appToaster.create({
         title: `${INVENTORY_MAX_ROWS}개를 초과하는 조합은 생성할 수 없습니다.`,
@@ -536,7 +572,9 @@ export function InventoryOptionSection({
     );
 
     const nextCartesian = cartesianProduct(nextAxes);
-    const nextKeys = new Set(nextCartesian.map((item) => getInventoryKey(item)));
+    const nextKeys = new Set(
+      nextCartesian.map((item) => getInventoryKey(item)),
+    );
 
     const newlyAddedKeys = new Set<string>();
     for (const key of nextKeys) {
@@ -564,8 +602,19 @@ export function InventoryOptionSection({
   };
 
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" p={5}>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+    <Box
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="lg"
+      bg="white"
+      p={5}
+    >
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={2}
+      >
         <Text fontSize="lg" fontWeight="semibold">
           조합형 옵션
         </Text>
@@ -675,18 +724,34 @@ export function InventoryOptionSection({
           </Alert.Content>
         </Alert.Root>
       ) : displayItems.length === 0 && draftRow === null ? (
-        <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" p={4} bg="gray.50">
+        <Box
+          borderWidth="1px"
+          borderColor="gray.200"
+          borderRadius="md"
+          p={4}
+          bg="gray.50"
+        >
           <Text fontSize="sm" color="gray.600">
             등록된 조합형 옵션이 없습니다.
           </Text>
         </Box>
       ) : (
-        <Box overflowX="auto" borderWidth="1px" borderColor="gray.200" borderRadius="md">
+        <Box
+          overflowX="auto"
+          borderWidth="1px"
+          borderColor="gray.200"
+          borderRadius="md"
+        >
           <Table.Root size="sm" style={{ tableLayout: "fixed" }}>
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeader w="44px" p={0} verticalAlign="middle">
-                  <Box h="28px" display="flex" alignItems="center" justifyContent="center">
+                  <Box
+                    h="28px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     <input
                       ref={headerCheckboxRef}
                       type="checkbox"
@@ -697,36 +762,73 @@ export function InventoryOptionSection({
                 </Table.ColumnHeader>
                 {axes.length > 0 ? (
                   axes.map((axis) => (
-                    <Table.ColumnHeader key={axis.id} minW="80px" w="80px" p={0} verticalAlign="middle">
+                    <Table.ColumnHeader
+                      key={axis.id}
+                      minW="80px"
+                      w="80px"
+                      p={0}
+                      verticalAlign="middle"
+                    >
                       <Box px={2} h="28px" display="flex" alignItems="center">
                         {axis.name}
                       </Box>
                     </Table.ColumnHeader>
                   ))
                 ) : (
-                  <Table.ColumnHeader minW="80px" w="80px" p={0} verticalAlign="middle">
+                  <Table.ColumnHeader
+                    minW="80px"
+                    w="80px"
+                    p={0}
+                    verticalAlign="middle"
+                  >
                     <Box px={2} h="28px" display="flex" alignItems="center">
                       옵션값
                     </Box>
                   </Table.ColumnHeader>
                 )}
-                <Table.ColumnHeader minW="80px" w="80px" p={0} verticalAlign="middle">
-                  <Box px={2} h="28px" display="flex" alignItems="center" justifyContent="flex-end">
+                <Table.ColumnHeader
+                  minW="80px"
+                  w="80px"
+                  p={0}
+                  verticalAlign="middle"
+                >
+                  <Box
+                    px={2}
+                    h="28px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="flex-end"
+                  >
                     옵션가격
                   </Box>
                 </Table.ColumnHeader>
-                <Table.ColumnHeader minW="80px" w="80px" p={0} verticalAlign="middle">
+                <Table.ColumnHeader
+                  minW="80px"
+                  w="80px"
+                  p={0}
+                  verticalAlign="middle"
+                >
                   <Box px={2} h="28px" display="flex" alignItems="center">
                     재고수량
                   </Box>
                 </Table.ColumnHeader>
-                <Table.ColumnHeader minW="120px" w="120px" p={0} verticalAlign="middle">
+                <Table.ColumnHeader
+                  minW="120px"
+                  w="120px"
+                  p={0}
+                  verticalAlign="middle"
+                >
                   <Box px={2} h="28px" display="flex" alignItems="center">
                     판매자옵션코드
                   </Box>
                 </Table.ColumnHeader>
                 <Table.ColumnHeader w="60px" p={0} verticalAlign="middle">
-                  <Box h="28px" display="flex" alignItems="center" justifyContent="center">
+                  <Box
+                    h="28px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
                     삭제
                   </Box>
                 </Table.ColumnHeader>
@@ -735,14 +837,25 @@ export function InventoryOptionSection({
             <Table.Body>
               {displayItems.map((row, rowIndex) => {
                 const rowId = getInventoryItemId(row, rowIndex);
-                const priceEditing = editingCell?.id === String(rowIndex) && editingCell?.field === "Price";
-                const qtyEditing = editingCell?.id === String(rowIndex) && editingCell?.field === "Qty";
-                const codeEditing = editingCell?.id === String(rowIndex) && editingCell?.field === "ItemTypeCode";
+                const priceEditing =
+                  editingCell?.id === String(rowIndex) &&
+                  editingCell?.field === "Price";
+                const qtyEditing =
+                  editingCell?.id === String(rowIndex) &&
+                  editingCell?.field === "Qty";
+                const codeEditing =
+                  editingCell?.id === String(rowIndex) &&
+                  editingCell?.field === "ItemTypeCode";
 
                 return (
                   <Table.Row key={rowId}>
                     <Table.Cell w="44px" p={0} verticalAlign="middle">
-                      <Box h="28px" display="flex" alignItems="center" justifyContent="center">
+                      <Box
+                        h="28px"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         <input
                           type="checkbox"
                           checked={selectedIds[rowId] === true}
@@ -755,19 +868,31 @@ export function InventoryOptionSection({
                     {axes.length > 0 ? (
                       axes.map((axis, axisIndex) => {
                         const field: InventoryEditableField =
-                          axisIndex === 0 ? "Value1" : axisIndex === 1 ? "Value2" : "Value3";
+                          axisIndex === 0
+                            ? "Value1"
+                            : axisIndex === 1
+                              ? "Value2"
+                              : "Value3";
                         const isEditing =
                           editingCell?.id === String(rowIndex) &&
                           editingCell?.field === field;
                         const value = getInventoryValueByIndex(row, axisIndex);
                         return (
-                          <Table.Cell key={`${rowId}_${axis.id}`} minW="80px" w="80px" p={0} verticalAlign="middle">
+                          <Table.Cell
+                            key={`${rowId}_${axis.id}`}
+                            minW="80px"
+                            w="80px"
+                            p={0}
+                            verticalAlign="middle"
+                          >
                             {isEditing ? (
                               <Input
                                 size="sm"
                                 autoFocus
                                 value={editValue}
-                                onChange={(event) => setEditValue(event.target.value)}
+                                onChange={(event) =>
+                                  setEditValue(event.target.value)
+                                }
                                 onKeyDown={(event) => {
                                   if (event.key === "Enter") commitEdit();
                                   if (event.key === "Escape") cancelEdit();
@@ -786,7 +911,9 @@ export function InventoryOptionSection({
                                 borderRadius="sm"
                                 h="28px"
                                 minH="28px"
-                                onDoubleClick={() => startEdit(rowIndex, field, value)}
+                                onDoubleClick={() =>
+                                  startEdit(rowIndex, field, value)
+                                }
                               >
                                 {value}
                               </Box>
@@ -795,14 +922,31 @@ export function InventoryOptionSection({
                         );
                       })
                     ) : (
-                      <Table.Cell minW="80px" w="80px" p={0} verticalAlign="middle">
-                        <Box px={2} h="28px" minH="28px" display="flex" alignItems="center">
+                      <Table.Cell
+                        minW="80px"
+                        w="80px"
+                        p={0}
+                        verticalAlign="middle"
+                      >
+                        <Box
+                          px={2}
+                          h="28px"
+                          minH="28px"
+                          display="flex"
+                          alignItems="center"
+                        >
                           {row.Value1 || "-"}
                         </Box>
                       </Table.Cell>
                     )}
 
-                    <Table.Cell minW="80px" w="80px" p={0} verticalAlign="middle" textAlign="right">
+                    <Table.Cell
+                      minW="80px"
+                      w="80px"
+                      p={0}
+                      verticalAlign="middle"
+                      textAlign="right"
+                    >
                       {priceEditing ? (
                         <Input
                           size="sm"
@@ -837,14 +981,21 @@ export function InventoryOptionSection({
                           display="flex"
                           alignItems="center"
                           justifyContent="flex-end"
-                          onDoubleClick={() => startEdit(rowIndex, "Price", row.Price)}
+                          onDoubleClick={() =>
+                            startEdit(rowIndex, "Price", row.Price)
+                          }
                         >
                           {`¥${row.Price.toLocaleString("ja-JP")}`}
                         </Box>
                       )}
                     </Table.Cell>
 
-                    <Table.Cell minW="80px" w="80px" p={0} verticalAlign="middle">
+                    <Table.Cell
+                      minW="80px"
+                      w="80px"
+                      p={0}
+                      verticalAlign="middle"
+                    >
                       {qtyEditing ? (
                         <Input
                           size="sm"
@@ -878,14 +1029,21 @@ export function InventoryOptionSection({
                           minH="28px"
                           display="flex"
                           alignItems="center"
-                          onDoubleClick={() => startEdit(rowIndex, "Qty", row.Qty)}
+                          onDoubleClick={() =>
+                            startEdit(rowIndex, "Qty", row.Qty)
+                          }
                         >
                           {row.Qty.toLocaleString("ja-JP")}
                         </Box>
                       )}
                     </Table.Cell>
 
-                    <Table.Cell minW="120px" w="120px" p={0} verticalAlign="middle">
+                    <Table.Cell
+                      minW="120px"
+                      w="120px"
+                      p={0}
+                      verticalAlign="middle"
+                    >
                       {codeEditing ? (
                         <Input
                           size="sm"
@@ -920,7 +1078,11 @@ export function InventoryOptionSection({
                           display="flex"
                           alignItems="center"
                           onDoubleClick={() =>
-                            startEdit(rowIndex, "ItemTypeCode", row.ItemTypeCode)
+                            startEdit(
+                              rowIndex,
+                              "ItemTypeCode",
+                              row.ItemTypeCode,
+                            )
                           }
                         >
                           {row.ItemTypeCode.trim().length > 0
@@ -930,7 +1092,12 @@ export function InventoryOptionSection({
                       )}
                     </Table.Cell>
                     <Table.Cell w="60px" p={0} verticalAlign="middle">
-                      <Box h="28px" display="flex" alignItems="center" justifyContent="center">
+                      <Box
+                        h="28px"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
                         <Button
                           size="xs"
                           variant="outline"
@@ -948,7 +1115,13 @@ export function InventoryOptionSection({
                   <Table.Cell w="44px" p={0} verticalAlign="middle" />
                   {axes.length > 0 ? (
                     axes.map((axis, axisIndex) => (
-                      <Table.Cell key={`draft_${axis.id}`} minW="80px" w="80px" p={0} verticalAlign="middle">
+                      <Table.Cell
+                        key={`draft_${axis.id}`}
+                        minW="80px"
+                        w="80px"
+                        p={0}
+                        verticalAlign="middle"
+                      >
                         <Input
                           size="sm"
                           value={draftRow.values[axisIndex] ?? ""}
@@ -972,13 +1145,20 @@ export function InventoryOptionSection({
                       </Table.Cell>
                     ))
                   ) : (
-                    <Table.Cell minW="80px" w="80px" p={0} verticalAlign="middle">
+                    <Table.Cell
+                      minW="80px"
+                      w="80px"
+                      p={0}
+                      verticalAlign="middle"
+                    >
                       <Input
                         size="sm"
                         value={draftRow.values[0] ?? ""}
                         onChange={(event) =>
                           setDraftRow((prev) =>
-                            prev ? { ...prev, values: [event.target.value] } : prev,
+                            prev
+                              ? { ...prev, values: [event.target.value] }
+                              : prev,
                           )
                         }
                         w="100%"
@@ -988,7 +1168,13 @@ export function InventoryOptionSection({
                       />
                     </Table.Cell>
                   )}
-                  <Table.Cell minW="80px" w="80px" p={0} verticalAlign="middle" textAlign="right">
+                  <Table.Cell
+                    minW="80px"
+                    w="80px"
+                    p={0}
+                    verticalAlign="middle"
+                    textAlign="right"
+                  >
                     <Input
                       size="sm"
                       value={String(draftRow.Price)}
@@ -997,7 +1183,9 @@ export function InventoryOptionSection({
                           prev
                             ? {
                                 ...prev,
-                                Price: Number.isFinite(Number(event.target.value))
+                                Price: Number.isFinite(
+                                  Number(event.target.value),
+                                )
                                   ? Number(event.target.value)
                                   : 0,
                               }
@@ -1032,13 +1220,20 @@ export function InventoryOptionSection({
                       minH="28px"
                     />
                   </Table.Cell>
-                  <Table.Cell minW="120px" w="120px" p={0} verticalAlign="middle">
+                  <Table.Cell
+                    minW="120px"
+                    w="120px"
+                    p={0}
+                    verticalAlign="middle"
+                  >
                     <Input
                       size="sm"
                       value={draftRow.ItemTypeCode}
                       onChange={(event) =>
                         setDraftRow((prev) =>
-                          prev ? { ...prev, ItemTypeCode: event.target.value } : prev,
+                          prev
+                            ? { ...prev, ItemTypeCode: event.target.value }
+                            : prev,
                         )
                       }
                       onKeyDown={(event) => {
@@ -1055,7 +1250,11 @@ export function InventoryOptionSection({
                       <Button size="xs" variant="outline" onClick={commitDraft}>
                         적용
                       </Button>
-                      <Button size="xs" variant="ghost" onClick={() => setDraftRow(null)}>
+                      <Button
+                        size="xs"
+                        variant="ghost"
+                        onClick={() => setDraftRow(null)}
+                      >
                         취소
                       </Button>
                     </HStack>

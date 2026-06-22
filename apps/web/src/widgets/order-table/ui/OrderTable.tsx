@@ -2,6 +2,7 @@
 
 import { Box, Flex, Skeleton, Text } from "@chakra-ui/react";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { Order } from "@/entities/order";
 import { StatusBadge, useQoo10SetSendingInfo } from "@/entities/order";
 import { useSaveShipDate } from "@/features/save-ship-date";
@@ -17,8 +18,14 @@ export interface OrderTableProps {
   onOrderIdClick: (orderId: string) => void;
 }
 
-function PaymentBadge({ paymentDate }: { paymentDate?: string }): React.JSX.Element {
-  const isPaid = Boolean(paymentDate && paymentDate !== "0" && paymentDate !== "");
+function PaymentBadge({
+  paymentDate,
+}: {
+  paymentDate?: string;
+}): React.JSX.Element {
+  const isPaid = Boolean(
+    paymentDate && paymentDate !== "0" && paymentDate !== "",
+  );
   return isPaid ? (
     <Box
       display="inline-flex"
@@ -49,6 +56,7 @@ export function OrderTable({
   showChannelColumn = true,
   onOrderIdClick,
 }: OrderTableProps): React.JSX.Element {
+  const tChannels = useTranslations("config.channels");
   const saveShipDate = useSaveShipDate();
   const setSendingInfo = useQoo10SetSendingInfo();
 
@@ -96,7 +104,10 @@ export function OrderTable({
     return `${year}-${month}-${day}`;
   };
 
-  const formatPriceWithCurrency = (amount: number | undefined, currency: Order["currency"]): string => {
+  const formatPriceWithCurrency = (
+    amount: number | undefined,
+    currency: Order["currency"],
+  ): string => {
     if (amount === undefined) return "—";
     if (currency === "JPY") {
       return `¥${amount.toLocaleString("ja-JP")}`;
@@ -109,7 +120,13 @@ export function OrderTable({
 
   return (
     <Box w="100%" overflowX="auto">
-      <Box as="table" w="max-content" minW="100%" fontSize="sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+      <Box
+        as="table"
+        w="max-content"
+        minW="100%"
+        fontSize="sm"
+        style={{ borderCollapse: "separate", borderSpacing: 0 }}
+      >
         <Box
           as="thead"
           bg="white"
@@ -119,7 +136,15 @@ export function OrderTable({
           boxShadow="inset 0 -1px 0 var(--chakra-colors-gray-100)"
         >
           <Box as="tr">
-            <Box as="th" px={4} py={3} textAlign="left" whiteSpace="nowrap" minW="40px" w="40px">
+            <Box
+              as="th"
+              px={4}
+              py={3}
+              textAlign="left"
+              whiteSpace="nowrap"
+              minW="40px"
+              w="40px"
+            >
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -286,6 +311,12 @@ export function OrderTable({
           {orders.map((order) => {
             const isSelected = selectedIds.includes(order.id);
             const channel = CHANNEL_CONFIG[order.channelId];
+            let channelName: string = channel?.name ?? order.channelId;
+            try {
+              channelName = tChannels(`${order.channelId}.name`);
+            } catch {
+              channelName = channel?.name ?? order.channelId;
+            }
             const primaryItem = order.items[0];
             const orderIdValue = order.channelOrderId;
             // 수취인 관련 필드는 리스트 테이블에서 사용하지 않고 주문 상세 Drawer에서만 사용
@@ -299,7 +330,14 @@ export function OrderTable({
                 borderBottomWidth="1px"
                 borderColor="gray.100"
               >
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="40px" w="40px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="40px"
+                  w="40px"
+                >
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -333,19 +371,59 @@ export function OrderTable({
                     {orderIdValue}
                   </button>
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="100px" w="100px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="100px"
+                  w="100px"
+                >
                   <StatusBadge status={order.status} />
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" textAlign="center" minW="64px" w="64px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  textAlign="center"
+                  minW="64px"
+                  w="64px"
+                >
                   <PaymentBadge paymentDate={order.paymentDate} />
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="110px" w="110px">
-                  <Text fontSize="sm" color="gray.700">{formatDate(order.orderedAt)}</Text>
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="110px"
+                  w="110px"
+                >
+                  <Text fontSize="sm" color="gray.700">
+                    {formatDate(order.orderedAt)}
+                  </Text>
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="110px" w="110px">
-                  <Text fontSize="sm" color="gray.700">{formatDate(order.paymentDate)}</Text>
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="110px"
+                  w="110px"
+                >
+                  <Text fontSize="sm" color="gray.700">
+                    {formatDate(order.paymentDate)}
+                  </Text>
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="110px" w="110px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="110px"
+                  w="110px"
+                >
                   <ShipDateCell
                     orderId={order.id}
                     value={order.shipDate ?? null}
@@ -353,7 +431,7 @@ export function OrderTable({
                     onChange={(date) => {
                       saveShipDate.mutate({
                         channelOrderId: order.channelOrderId ?? order.id,
-                        channelType: order.channelId ?? 'qoo10',
+                        channelType: order.channelId ?? "qoo10",
                         shipDate: date,
                       });
                     }}
@@ -377,15 +455,39 @@ export function OrderTable({
                     />
                   )}
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="60px" w="60px">
-                  <Text fontSize="sm" color="gray.700">{primaryItem?.quantity ?? 0}</Text>
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="60px"
+                  w="60px"
+                >
+                  <Text fontSize="sm" color="gray.700">
+                    {primaryItem?.quantity ?? 0}
+                  </Text>
                 </Box>
-                <Box as="td" px={4} py={3} textAlign="right" whiteSpace="nowrap" minW="90px" w="90px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  textAlign="right"
+                  whiteSpace="nowrap"
+                  minW="90px"
+                  w="90px"
+                >
                   <Text fontWeight="medium" color="gray.900">
                     {formatPriceWithCurrency(order.settlePrice, order.currency)}
                   </Text>
                 </Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="140px" w="140px">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  minW="140px"
+                  w="140px"
+                >
                   <TrackingInputCell
                     orderId={order.id}
                     channelId={order.channelId}
@@ -393,7 +495,7 @@ export function OrderTable({
                     existingCarrierId={order.carrierId ?? undefined}
                     existingTrackingNumber={order.trackingNumber ?? undefined}
                     onSave={async ({ carrierId, trackingNumber }) => {
-                      if (order.channelId === 'qoo10' && order.channelOrderId) {
+                      if (order.channelId === "qoo10" && order.channelOrderId) {
                         await setSendingInfo.mutateAsync({
                           orderNo: String(order.packNo ?? order.channelOrderId),
                           shippingCorp: carrierId,
@@ -406,7 +508,14 @@ export function OrderTable({
                   />
                 </Box>
                 {showChannelColumn && (
-                  <Box as="td" px={4} py={3} whiteSpace="nowrap" minW="90px" w="90px">
+                  <Box
+                    as="td"
+                    px={4}
+                    py={3}
+                    whiteSpace="nowrap"
+                    minW="90px"
+                    w="90px"
+                  >
                     <Flex align="center" gap={2}>
                       <Box
                         w={5}
@@ -424,7 +533,7 @@ export function OrderTable({
                         {channel?.initial ?? order.channelId[0]?.toUpperCase()}
                       </Box>
                       <Text fontSize="sm" color="gray.700">
-                        {channel?.name ?? order.channelId}
+                        {channelName}
                       </Text>
                     </Flex>
                   </Box>

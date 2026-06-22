@@ -1,24 +1,41 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Box, Button, Flex, Input, SimpleGrid, Text } from '@chakra-ui/react';
-import { useForm } from 'react-hook-form';
-import { ShoppingCart, Package, TrendingUp } from 'lucide-react';
-import { z } from 'zod';
-import type { ChannelId } from '@/shared/config';
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Box, Button, Flex, Input, SimpleGrid, Text } from "@chakra-ui/react";
+import { useForm } from "react-hook-form";
+import { ShoppingCart, Package, TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { z } from "zod";
+import type { ChannelId } from "@/shared/config";
 import {
   CHANNEL_CONFIG,
   COMING_SOON_CHANNELS,
   LIVE_CHANNELS,
-} from '@/shared/config';
-import { PageHeader, appToaster } from '@/shared/ui';
-import { useChannelApiKey } from '@/entities/channel';
-
+} from "@/shared/config";
+import { PageHeader, appToaster } from "@/shared/ui";
+import { useChannelApiKey } from "@/entities/channel";
 
 export function ChannelsSettingsPage(): React.JSX.Element {
+  const t = useTranslations("pages.settingsChannels");
+  const tChannels = useTranslations("config.channels");
+  const getChannelName = (id: ChannelId, fallback: string): string => {
+    try {
+      return tChannels(`${id}.name` as never);
+    } catch {
+      return fallback;
+    }
+  };
+  const getChannelDescription = (id: ChannelId, fallback: string): string => {
+    try {
+      return tChannels(`${id}.description` as never);
+    } catch {
+      return fallback;
+    }
+  };
   const searchParams = useSearchParams();
-  const [selectedChannelId, setSelectedChannelId] = useState<ChannelId>('qoo10');
+  const [selectedChannelId, setSelectedChannelId] =
+    useState<ChannelId>("qoo10");
   const [showConnectForm, setShowConnectForm] = useState<boolean>(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState<boolean>(false);
@@ -31,55 +48,55 @@ export function ChannelsSettingsPage(): React.JSX.Element {
     hasKey: hasQoo10Key,
     removeKeys: removeQoo10Keys,
     saveKeys: saveQoo10Keys,
-  } = useChannelApiKey('qoo10');
+  } = useChannelApiKey("qoo10");
   const {
     keys: rakutenKeys,
     hasKey: hasRakutenKey,
     removeKeys: removeRakutenKeys,
     saveKeys: saveRakutenKeys,
-  } = useChannelApiKey('rakuten');
+  } = useChannelApiKey("rakuten");
   const {
     keys: shopeeKeys,
     hasKey: hasShopeeKey,
     removeKeys: removeShopeeKeys,
     saveKeys: saveShopeeKeys,
-  } = useChannelApiKey('shopee');
+  } = useChannelApiKey("shopee");
   const {
     keys: shopifyKeys,
     hasKey: hasShopifyKey,
     removeKeys: removeShopifyKeys,
-  } = useChannelApiKey('shopify');
+  } = useChannelApiKey("shopify");
 
   // 채널별 연결 상태 — React Query 캐시에서 직접 파생 (별도 로컬 state 불필요)
   // 서버 렌더 시점에는 캐시가 비어있어 false → hydration 후 true가 되면 mismatch가 나므로,
   // hydrate 완료 전에는 일괄 false로 그린다.
   const isChannelConnected = (channelId: ChannelId): boolean => {
     if (!hydrated) return false;
-    if (channelId === 'qoo10') return hasQoo10Key;
-    if (channelId === 'rakuten') return hasRakutenKey;
-    if (channelId === 'shopee') return hasShopeeKey;
-    if (channelId === 'shopify') return hasShopifyKey;
+    if (channelId === "qoo10") return hasQoo10Key;
+    if (channelId === "rakuten") return hasRakutenKey;
+    if (channelId === "shopee") return hasShopeeKey;
+    if (channelId === "shopify") return hasShopifyKey;
     return false;
   };
 
   // OAuth 콜백 결과 처리
   useEffect(() => {
-    const oauthSuccess = searchParams?.get('oauth_success');
-    const shopifyConnected = searchParams?.get('shopify');
-    const oauthErrorParam = searchParams?.get('oauth_error');
-    if (oauthSuccess === '1' || shopifyConnected === 'connected') {
-      setSelectedChannelId('shopify');
+    const oauthSuccess = searchParams?.get("oauth_success");
+    const shopifyConnected = searchParams?.get("shopify");
+    const oauthErrorParam = searchParams?.get("oauth_error");
+    if (oauthSuccess === "1" || shopifyConnected === "connected") {
+      setSelectedChannelId("shopify");
       setShowConnectForm(false);
     }
     if (oauthErrorParam) {
-      setSelectedChannelId('shopify');
+      setSelectedChannelId("shopify");
       setShowConnectForm(true);
       setOauthError(decodeURIComponent(oauthErrorParam));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
+  const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
   const isConnected = isChannelConnected(selectedChannelId);
 
   const handleConnect = (): void => {
@@ -91,27 +108,23 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
   };
 
   const handleDisconnect = (): void => {
-    if (selectedChannelId === 'qoo10') {
+    if (selectedChannelId === "qoo10") {
       removeQoo10Keys();
     }
-    if (selectedChannelId === 'rakuten') {
+    if (selectedChannelId === "rakuten") {
       removeRakutenKeys();
     }
-    if (selectedChannelId === 'shopee') {
+    if (selectedChannelId === "shopee") {
       removeShopeeKeys();
     }
-    if (selectedChannelId === 'shopify') {
+    if (selectedChannelId === "shopify") {
       removeShopifyKeys();
     }
   };
 
   return (
     <Box>
-      <PageHeader
-        title="채널 관리"
-        description="판매 채널을 연결하고 API 키를 관리합니다."
-        mb={8}
-      />
+      <PageHeader title={t("title")} description={t("description")} mb={8} />
 
       {/* Live channel tabs */}
       <Flex
@@ -134,8 +147,8 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
                 setShowConnectForm(false);
               }}
               borderRadius={0}
-              color={isActive ? 'gray.900' : 'gray.500'}
-              fontWeight={isActive ? 'semibold' : 'normal'}
+              color={isActive ? "gray.900" : "gray.500"}
+              fontWeight={isActive ? "semibold" : "normal"}
               px={3}
               py={2}
               height="auto"
@@ -143,19 +156,19 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
               outline="none"
               boxShadow={
                 isActive
-                  ? 'inset 0 -2px 0 0 var(--chakra-colors-gray-900)'
-                  : 'none'
+                  ? "inset 0 -2px 0 0 var(--chakra-colors-gray-900)"
+                  : "none"
               }
               _hover={{
-                bg: 'transparent',
-                color: 'gray.900',
-                boxShadow: 'inset 0 -2px 0 0 var(--chakra-colors-gray-200)',
+                bg: "transparent",
+                color: "gray.900",
+                boxShadow: "inset 0 -2px 0 0 var(--chakra-colors-gray-200)",
               }}
-              _active={{ bg: 'transparent' }}
+              _active={{ bg: "transparent" }}
               _focus={{
                 boxShadow: isActive
-                  ? 'inset 0 -2px 0 0 var(--chakra-colors-gray-900)'
-                  : 'none',
+                  ? "inset 0 -2px 0 0 var(--chakra-colors-gray-900)"
+                  : "none",
               }}
             >
               <Flex align="center" gap={2}>
@@ -163,9 +176,11 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
                   w={1.5}
                   h={1.5}
                   borderRadius="2px"
-                  bg={isLiveConnected ? 'gray.900' : 'gray.300'}
+                  bg={isLiveConnected ? "gray.900" : "gray.300"}
                 />
-                <Text fontSize="sm">{channel.name}</Text>
+                <Text fontSize="sm">
+                  {getChannelName(channel.id, channel.name)}
+                </Text>
               </Flex>
             </Button>
           );
@@ -182,236 +197,263 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
           p={5}
           mb={4}
         >
-            <Flex justify="space-between" align="center">
-              <Flex align="center" gap={3}>
-                <Box
-                  w={9}
-                  h={9}
-                  borderRadius="md"
-                  borderWidth="1px"
-                  borderColor="gray.200"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <Text fontSize="sm" fontWeight="bold" color="gray.600">
-                    {selectedChannel.initial}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontSize="sm" fontWeight="semibold" color="gray.900">
-                    {selectedChannel.name}
-                  </Text>
-                  <Flex align="center" gap={1.5}>
-                    <Box
-                      w={1.5}
-                      h={1.5}
-                      borderRadius="2px"
-                      bg={isConnected ? 'gray.900' : 'gray.300'}
-                    />
-                    <Text fontSize="xs" color="gray.500">
-                      {isConnected ? '연결됨 · 마지막 확인: 2분 전' : '미연결'}
-                    </Text>
-                  </Flex>
-                </Box>
-              </Flex>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                color="gray.500"
-                _hover={{ color: 'gray.900', bg: 'gray.50' }}
-                onClick={isConnected ? handleDisconnect : handleConnect}
+          <Flex justify="space-between" align="center">
+            <Flex align="center" gap={3}>
+              <Box
+                w={9}
+                h={9}
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="gray.200"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
               >
-                {isConnected ? '연결 해제' : '연결하기'}
-              </Button>
+                <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                  {selectedChannel.initial}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+                  {getChannelName(selectedChannelId, selectedChannel.name)}
+                </Text>
+                <Flex align="center" gap={1.5}>
+                  <Box
+                    w={1.5}
+                    h={1.5}
+                    borderRadius="2px"
+                    bg={isConnected ? "gray.900" : "gray.300"}
+                  />
+                  <Text fontSize="xs" color="gray.500">
+                    {isConnected
+                      ? t("status.connectedWithTime")
+                      : t("status.disconnected")}
+                  </Text>
+                </Flex>
+              </Box>
             </Flex>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              color="gray.500"
+              _hover={{ color: "gray.900", bg: "gray.50" }}
+              onClick={isConnected ? handleDisconnect : handleConnect}
+            >
+              {isConnected ? t("status.disconnect") : t("status.connect")}
+            </Button>
+          </Flex>
         </Box>
 
         {/* API credentials panel (moved here; collection status removed) */}
-        <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" p={5}>
-            {!isConnected && !showConnectForm && (
-              <Box py={8}>
-                <Flex direction="column" align="center" gap={6}>
-                  <Box>
-                    <Flex
-                      justify="center"
-                      align="center"
-                      mb={4}
-                      position="relative"
+        <Box
+          borderWidth="1px"
+          borderColor="gray.200"
+          borderRadius="lg"
+          bg="white"
+          p={5}
+        >
+          {!isConnected && !showConnectForm && (
+            <Box py={8}>
+              <Flex direction="column" align="center" gap={6}>
+                <Box>
+                  <Flex
+                    justify="center"
+                    align="center"
+                    mb={4}
+                    position="relative"
+                  >
+                    <Box
+                      w={16}
+                      h={16}
+                      borderRadius="xl"
+                      borderWidth="1px"
+                      borderColor="gray.200"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
                     >
-                      <Box
-                        w={16}
-                        h={16}
-                        borderRadius="xl"
-                        borderWidth="1px"
-                        borderColor="gray.200"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <Text fontSize="2xl" fontWeight="bold" color="gray.300">
-                          {selectedChannel.initial}
-                        </Text>
-                      </Box>
-                    </Flex>
-                    <Box textAlign="center">
-                      <Text fontSize="lg" fontWeight="semibold" mb={1} color="gray.900">
-                        {selectedChannel.name} 미연결
-                      </Text>
-                      <Text fontSize="sm" color="gray.500">
-                        {selectedChannelId === 'rakuten'
-                          ? 'Rakuten RMS API 키를 등록하면 일본 라쿠텐 주문을 자동으로 수집할 수 있습니다.'
-                          : 'API 키를 등록하면 주문을 자동으로 수집할 수 있습니다.'}
+                      <Text fontSize="2xl" fontWeight="bold" color="gray.300">
+                        {selectedChannel.initial}
                       </Text>
                     </Box>
+                  </Flex>
+                  <Box textAlign="center">
+                    <Text
+                      fontSize="lg"
+                      fontWeight="semibold"
+                      mb={1}
+                      color="gray.900"
+                    >
+                      {t("panel.notConnectedTitle", {
+                        channelName: getChannelName(
+                          selectedChannelId,
+                          selectedChannel.name,
+                        ),
+                      })}
+                    </Text>
+                    <Text fontSize="sm" color="gray.500">
+                      {selectedChannelId === "rakuten"
+                        ? t("panel.rakutenHint")
+                        : t("panel.defaultHint")}
+                    </Text>
                   </Box>
+                </Box>
 
-                  <SimpleGrid
-                    columns={3}
-                    gap={3}
-                    w="100%"
-                    maxW="380px"
+                <SimpleGrid columns={3} gap={3} w="100%" maxW="380px">
+                  <Box
+                    borderWidth="1px"
+                    borderColor="gray.100"
+                    borderRadius="lg"
+                    bg="gray.50"
+                    p={3}
+                    textAlign="center"
                   >
-                    <Box
-                      borderWidth="1px"
-                      borderColor="gray.100"
-                      borderRadius="lg"
-                      bg="gray.50"
-                      p={3}
-                      textAlign="center"
-                    >
-                      <ShoppingCart size={14} color="#a3a3a3" />
-                      <Text mt={2} fontSize="11px" color="gray.500">
-                        주문 자동 수집
-                      </Text>
-                    </Box>
-                    <Box
-                      borderWidth="1px"
-                      borderColor="gray.100"
-                      borderRadius="lg"
-                      bg="gray.50"
-                      p={3}
-                      textAlign="center"
-                    >
-                      <Package size={14} color="#a3a3a3" />
-                      <Text mt={2} fontSize="11px" color="gray.500">
-                        상품·재고 동기화
-                      </Text>
-                    </Box>
-                    <Box
-                      borderWidth="1px"
-                      borderColor="gray.100"
-                      borderRadius="lg"
-                      bg="gray.50"
-                      p={3}
-                      textAlign="center"
-                    >
-                      <TrendingUp size={14} color="#a3a3a3" />
-                      <Text mt={2} fontSize="11px" color="gray.500">
-                        매출 통합 관리
-                      </Text>
-                    </Box>
-                  </SimpleGrid>
-
-                  <Button
-                    size="sm"
-                    bg="gray.900"
-                    color="white"
-                    _hover={{ bg: 'gray.800' }}
-                    onClick={() => setShowConnectForm(true)}
+                    <ShoppingCart size={14} color="#a3a3a3" />
+                    <Text mt={2} fontSize="11px" color="gray.500">
+                      {t("panel.featureAutoCollect")}
+                    </Text>
+                  </Box>
+                  <Box
+                    borderWidth="1px"
+                    borderColor="gray.100"
+                    borderRadius="lg"
+                    bg="gray.50"
+                    p={3}
+                    textAlign="center"
                   >
-                    {selectedChannel.name} 연결하기
-                  </Button>
-                </Flex>
-              </Box>
-            )}
+                    <Package size={14} color="#a3a3a3" />
+                    <Text mt={2} fontSize="11px" color="gray.500">
+                      {t("panel.featureSyncStock")}
+                    </Text>
+                  </Box>
+                  <Box
+                    borderWidth="1px"
+                    borderColor="gray.100"
+                    borderRadius="lg"
+                    bg="gray.50"
+                    p={3}
+                    textAlign="center"
+                  >
+                    <TrendingUp size={14} color="#a3a3a3" />
+                    <Text mt={2} fontSize="11px" color="gray.500">
+                      {t("panel.featureIntegratedSales")}
+                    </Text>
+                  </Box>
+                </SimpleGrid>
 
-            {((!isConnected && showConnectForm) ||
-              (isConnected && (selectedChannelId === 'qoo10' || selectedChannelId === 'rakuten' || selectedChannelId === 'shopee' || selectedChannelId === 'shopify'))) && (
-              <Box>
-                <Text fontSize="sm" fontWeight="medium" mb={3} color="gray.800">
-                  API 자격 증명
-                </Text>
-                {selectedChannelId === 'qoo10' && (
-                  <Qoo10ConnectForm
-                    onSuccess={handleConnectSuccess}
-                    onSaveKeys={(values) =>
-                      saveQoo10Keys({
-                        certificationKey: values.apiKey,
-                        sellerId: values.sellerId,
-                      })
-                    }
-                    defaultValues={{
-                      apiKey: qoo10Keys?.certificationKey ?? '',
-                      sellerId: qoo10Keys?.sellerId ?? '',
-                    }}
-                  />
-                )}
-                {selectedChannelId === 'rakuten' && (
-                  <RakutenConnectForm
-                    onSuccess={handleConnectSuccess}
-                    onSaveKeys={(values) =>
-                      saveRakutenKeys({
-                        serviceSecret: values.serviceSecret,
-                        licenseKey: values.licenseKey,
-                        shopUrl: values.shopUrl,
-                      })
-                    }
-                    defaultValues={{
-                      serviceSecret: rakutenKeys?.serviceSecret ?? '',
-                      licenseKey: rakutenKeys?.licenseKey ?? '',
-                      shopUrl: rakutenKeys?.shopUrl ?? '',
-                    }}
-                  />
-                )}
-                {selectedChannelId === 'shopee' && (
-                  <ShopeeConnectForm
-                    onSuccess={handleConnectSuccess}
-                    onSaveKeys={async (values) => {
-                      await saveShopeeKeys({
-                        partnerId: values.partnerId,
-                        partnerKey: values.partnerKey,
-                        shopId: values.shopId,
-                        accessToken: '',
-                        refreshToken: '',
-                        expireAt: 0,
-                      });
-                    }}
-                    defaultValues={{
-                      partnerId: shopeeKeys?.partnerId ?? '',
-                      partnerKey: shopeeKeys?.partnerKey ?? '',
-                      shopId: shopeeKeys?.shopId ?? '',
-                    }}
-                  />
-                )}
-                {selectedChannelId === 'shopify' && (
-                  <ShopifyConnectForm
-                    onSuccess={handleConnectSuccess}
-                    oauthError={oauthError}
-                    defaultValues={{
-                      shopDomain: shopifyKeys?.shopDomain ?? '',
-                      clientId: shopifyKeys?.clientId ?? '',
-                      clientSecret: shopifyKeys?.clientSecret ?? '',
-                    }}
-                  />
-                )}
-              </Box>
-            )}
+                <Button
+                  size="sm"
+                  bg="gray.900"
+                  color="white"
+                  _hover={{ bg: "gray.800" }}
+                  onClick={() => setShowConnectForm(true)}
+                >
+                  {t("panel.connectButton", {
+                    channelName: getChannelName(
+                      selectedChannelId,
+                      selectedChannel.name,
+                    ),
+                  })}
+                </Button>
+              </Flex>
+            </Box>
+          )}
 
-            {isConnected && !showConnectForm && selectedChannelId !== 'qoo10' && selectedChannelId !== 'rakuten' && selectedChannelId !== 'shopee' && selectedChannelId !== 'shopify' && (
+          {((!isConnected && showConnectForm) ||
+            (isConnected &&
+              (selectedChannelId === "qoo10" ||
+                selectedChannelId === "rakuten" ||
+                selectedChannelId === "shopee" ||
+                selectedChannelId === "shopify"))) && (
+            <Box>
+              <Text fontSize="sm" fontWeight="medium" mb={3} color="gray.800">
+                {t("panel.credentialsTitle")}
+              </Text>
+              {selectedChannelId === "qoo10" && (
+                <Qoo10ConnectForm
+                  onSuccess={handleConnectSuccess}
+                  onSaveKeys={(values) =>
+                    saveQoo10Keys({
+                      certificationKey: values.apiKey,
+                      sellerId: values.sellerId,
+                    })
+                  }
+                  defaultValues={{
+                    apiKey: qoo10Keys?.certificationKey ?? "",
+                    sellerId: qoo10Keys?.sellerId ?? "",
+                  }}
+                />
+              )}
+              {selectedChannelId === "rakuten" && (
+                <RakutenConnectForm
+                  onSuccess={handleConnectSuccess}
+                  onSaveKeys={(values) =>
+                    saveRakutenKeys({
+                      serviceSecret: values.serviceSecret,
+                      licenseKey: values.licenseKey,
+                      shopUrl: values.shopUrl,
+                    })
+                  }
+                  defaultValues={{
+                    serviceSecret: rakutenKeys?.serviceSecret ?? "",
+                    licenseKey: rakutenKeys?.licenseKey ?? "",
+                    shopUrl: rakutenKeys?.shopUrl ?? "",
+                  }}
+                />
+              )}
+              {selectedChannelId === "shopee" && (
+                <ShopeeConnectForm
+                  onSuccess={handleConnectSuccess}
+                  onSaveKeys={async (values) => {
+                    await saveShopeeKeys({
+                      partnerId: values.partnerId,
+                      partnerKey: values.partnerKey,
+                      shopId: values.shopId,
+                      accessToken: "",
+                      refreshToken: "",
+                      expireAt: 0,
+                    });
+                  }}
+                  defaultValues={{
+                    partnerId: shopeeKeys?.partnerId ?? "",
+                    partnerKey: shopeeKeys?.partnerKey ?? "",
+                    shopId: shopeeKeys?.shopId ?? "",
+                  }}
+                />
+              )}
+              {selectedChannelId === "shopify" && (
+                <ShopifyConnectForm
+                  onSuccess={handleConnectSuccess}
+                  oauthError={oauthError}
+                  defaultValues={{
+                    shopDomain: shopifyKeys?.shopDomain ?? "",
+                    clientId: shopifyKeys?.clientId ?? "",
+                    clientSecret: shopifyKeys?.clientSecret ?? "",
+                  }}
+                />
+              )}
+            </Box>
+          )}
+
+          {isConnected &&
+            !showConnectForm &&
+            selectedChannelId !== "qoo10" &&
+            selectedChannelId !== "rakuten" &&
+            selectedChannelId !== "shopee" &&
+            selectedChannelId !== "shopify" && (
               <Text fontSize="sm" color="gray.500">
-                이 채널은 연결된 상태이며, API 설정은 별도로 제공되지 않습니다.
+                {t("panel.noApiSetup")}
               </Text>
             )}
-          </Box>
+        </Box>
       </Box>
 
       {/* Coming soon channels */}
       <Box>
         <Flex justify="space-between" align="center" mb={3}>
           <Text fontSize="sm" fontWeight="medium" color="gray.600">
-            추가 예정 채널
+            {t("panel.comingSoonTitle")}
           </Text>
           <Text fontSize="xs" color="gray.400">
             Phase 2
@@ -450,7 +492,7 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
                   <Box>
                     <Flex align="center" gap={2}>
                       <Text fontSize="sm" fontWeight="medium" color="gray.700">
-                        {channel.name}
+                        {getChannelName(channel.id, channel.name)}
                       </Text>
                       <Box
                         as="span"
@@ -462,11 +504,11 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
                         fontSize="10px"
                         color="gray.400"
                       >
-                        준비 중
+                        {t("panel.comingSoonBadge")}
                       </Box>
                     </Flex>
                     <Text fontSize="xs" color="gray.400">
-                      {channel.description}
+                      {getChannelDescription(channel.id, channel.description)}
                     </Text>
                   </Box>
                 </Flex>
@@ -480,8 +522,8 @@ const selectedChannel = CHANNEL_CONFIG[selectedChannelId];
 }
 
 const qoo10Schema = z.object({
-  apiKey: z.string().min(1, 'API 키를 입력해 주세요'),
-  sellerId: z.string().optional().default(''),
+  apiKey: z.string().min(1, "API 키를 입력해 주세요"),
+  sellerId: z.string().optional().default(""),
 });
 
 type Qoo10FormValues = z.infer<typeof qoo10Schema>;
@@ -497,6 +539,7 @@ function Qoo10ConnectForm({
   onSaveKeys,
   defaultValues,
 }: Qoo10ConnectFormProps): React.JSX.Element {
+  const t = useTranslations("pages.settingsChannels");
   const {
     register,
     handleSubmit,
@@ -504,58 +547,78 @@ function Qoo10ConnectForm({
     formState: { errors, isSubmitting },
   } = useForm<Qoo10FormValues>({
     defaultValues: {
-      apiKey: defaultValues?.apiKey ?? '',
-      sellerId: defaultValues?.sellerId ?? '',
+      apiKey: defaultValues?.apiKey ?? "",
+      sellerId: defaultValues?.sellerId ?? "",
     },
   });
 
   useEffect(() => {
     if (defaultValues?.apiKey || defaultValues?.sellerId) {
-      reset({ apiKey: defaultValues.apiKey ?? '', sellerId: defaultValues.sellerId ?? '' });
+      reset({
+        apiKey: defaultValues.apiKey ?? "",
+        sellerId: defaultValues.sellerId ?? "",
+      });
     }
   }, [defaultValues?.apiKey, defaultValues?.sellerId, reset]);
 
   const onSubmit = async (values: Qoo10FormValues): Promise<void> => {
     try {
       await onSaveKeys(values);
-      appToaster.create({ type: 'success', title: 'Qoo10 연결 완료', description: 'API 키가 저장되었습니다.' });
+      appToaster.create({
+        type: "success",
+        title: t("qoo10.toast.successTitle"),
+        description: t("qoo10.toast.successDescription"),
+      });
       onSuccess();
     } catch {
-      appToaster.create({ type: 'error', title: '저장 실패', description: '연결 정보를 다시 확인해 주세요.' });
+      appToaster.create({
+        type: "error",
+        title: t("qoo10.toast.errorTitle"),
+        description: t("qoo10.toast.errorDescription"),
+      });
     }
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)} display="flex" flexDirection="column" gap={3}>
+    <Box
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      display="flex"
+      flexDirection="column"
+      gap={3}
+    >
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          API 키 <Text as="span" color="gray.400">*</Text>
+          {t("qoo10.apiKeyLabel")}{" "}
+          <Text as="span" color="gray.400">
+            *
+          </Text>
         </Text>
         <Input
           type="password"
           placeholder="GMKT-LIVE-XXXXXXXXXX"
           size="sm"
-          {...register('apiKey')}
+          {...register("apiKey")}
         />
         {errors.apiKey && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.apiKey.message}
+            {t("qoo10.validation.apiKeyRequired")}
           </Text>
         )}
         <Text fontSize="xs" color="gray.400" mt={1}>
-          Qoo10 판매자 센터 {'>'} 환경설정 {'>'} API 키 관리에서 발급
+          {t("qoo10.apiKeyHint")}
         </Text>
       </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          판매자 ID <Text as="span" color="gray.400">(선택)</Text>
+          {t("qoo10.sellerIdLabel")}
         </Text>
         <Input
           type="text"
           placeholder="your_seller_id"
           size="sm"
-          {...register('sellerId')}
+          {...register("sellerId")}
         />
         {errors.sellerId && (
           <Text fontSize="xs" color="gray.500" mt={1}>
@@ -570,22 +633,22 @@ function Qoo10ConnectForm({
         mt={1}
         bg="gray.900"
         color="white"
-        _hover={{ bg: 'gray.800' }}
+        _hover={{ bg: "gray.800" }}
         loading={isSubmitting}
       >
-        연결하기
+        {t("qoo10.submit")}
       </Button>
     </Box>
   );
 }
 
 const rakutenSchema = z.object({
-  serviceSecret: z.string().min(32, 'Service Secret은 32자 이상입니다'),
-  licenseKey: z.string().min(32, 'License Key는 32자 이상입니다'),
+  serviceSecret: z.string().min(32, "Service Secret은 32자 이상입니다"),
+  licenseKey: z.string().min(32, "License Key는 32자 이상입니다"),
   shopUrl: z
     .string()
-    .min(1, '샵 URL을 입력해 주세요')
-    .regex(/^[a-z0-9-]+$/, '영소문자, 숫자, 하이픈(-)만 사용 가능합니다'),
+    .min(1, "샵 URL을 입력해 주세요")
+    .regex(/^[a-z0-9-]+$/, "영소문자, 숫자, 하이픈(-)만 사용 가능합니다"),
 });
 
 type RakutenFormValues = z.infer<typeof rakutenSchema>;
@@ -596,7 +659,12 @@ interface RakutenConnectFormProps {
   defaultValues?: Partial<RakutenFormValues>;
 }
 
-function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenConnectFormProps): React.JSX.Element {
+function RakutenConnectForm({
+  onSuccess,
+  onSaveKeys,
+  defaultValues,
+}: RakutenConnectFormProps): React.JSX.Element {
+  const t = useTranslations("pages.settingsChannels");
   const {
     register,
     handleSubmit,
@@ -605,73 +673,105 @@ function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenCon
     formState: { errors, isSubmitting },
   } = useForm<RakutenFormValues>({
     defaultValues: {
-      serviceSecret: defaultValues?.serviceSecret ?? '',
-      licenseKey: defaultValues?.licenseKey ?? '',
-      shopUrl: defaultValues?.shopUrl ?? '',
+      serviceSecret: defaultValues?.serviceSecret ?? "",
+      licenseKey: defaultValues?.licenseKey ?? "",
+      shopUrl: defaultValues?.shopUrl ?? "",
     },
   });
 
   useEffect(() => {
-    if (defaultValues?.serviceSecret || defaultValues?.licenseKey || defaultValues?.shopUrl) {
+    if (
+      defaultValues?.serviceSecret ||
+      defaultValues?.licenseKey ||
+      defaultValues?.shopUrl
+    ) {
       reset({
-        serviceSecret: defaultValues.serviceSecret ?? '',
-        licenseKey: defaultValues.licenseKey ?? '',
-        shopUrl: defaultValues.shopUrl ?? '',
+        serviceSecret: defaultValues.serviceSecret ?? "",
+        licenseKey: defaultValues.licenseKey ?? "",
+        shopUrl: defaultValues.shopUrl ?? "",
       });
     }
-  }, [defaultValues?.serviceSecret, defaultValues?.licenseKey, defaultValues?.shopUrl, reset]);
+  }, [
+    defaultValues?.serviceSecret,
+    defaultValues?.licenseKey,
+    defaultValues?.shopUrl,
+    reset,
+  ]);
 
-  const shopUrl = watch('shopUrl');
+  const shopUrl = watch("shopUrl");
 
   const onSubmit = async (values: RakutenFormValues): Promise<void> => {
     try {
       await onSaveKeys(values);
-      appToaster.create({ type: 'success', title: '라쿠텐 연결 완료', description: 'API 키가 저장되었습니다.' });
+      appToaster.create({
+        type: "success",
+        title: t("rakuten.toast.successTitle"),
+        description: t("rakuten.toast.successDescription"),
+      });
       onSuccess();
     } catch {
-      appToaster.create({ type: 'error', title: '저장 실패', description: '연결 정보를 다시 확인해 주세요.' });
+      appToaster.create({
+        type: "error",
+        title: t("rakuten.toast.errorTitle"),
+        description: t("rakuten.toast.errorDescription"),
+      });
     }
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)} display="flex" flexDirection="column" gap={3}>
+    <Box
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      display="flex"
+      flexDirection="column"
+      gap={3}
+    >
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          Service Secret <Text as="span" color="gray.400">*</Text>
+          {t("rakuten.serviceSecretLabel")}{" "}
+          <Text as="span" color="gray.400">
+            *
+          </Text>
         </Text>
         <Input
           type="password"
-          placeholder="32자 이상의 Service Secret"
+          placeholder="Service Secret (32+ chars)"
           size="sm"
-          {...register('serviceSecret')}
+          {...register("serviceSecret")}
         />
         {errors.serviceSecret && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.serviceSecret.message}
+            {t("rakuten.validation.serviceSecretRequired")}
           </Text>
         )}
       </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          License Key <Text as="span" color="gray.400">*</Text>
+          {t("rakuten.licenseKeyLabel")}{" "}
+          <Text as="span" color="gray.400">
+            *
+          </Text>
         </Text>
         <Input
           type="password"
-          placeholder="32자 이상의 License Key"
+          placeholder="License Key (32+ chars)"
           size="sm"
-          {...register('licenseKey')}
+          {...register("licenseKey")}
         />
         {errors.licenseKey && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.licenseKey.message}
+            {t("rakuten.validation.licenseKeyRequired")}
           </Text>
         )}
       </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          샵 URL <Text as="span" color="gray.400">*</Text>
+          {t("rakuten.shopUrlLabel")}{" "}
+          <Text as="span" color="gray.400">
+            *
+          </Text>
         </Text>
         <Flex>
           <Box
@@ -698,7 +798,7 @@ function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenCon
             borderRadius={0}
             borderLeftWidth={0}
             borderRightWidth={0}
-            {...register('shopUrl')}
+            {...register("shopUrl")}
           />
           <Box
             as="span"
@@ -720,12 +820,14 @@ function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenCon
         </Flex>
         {errors.shopUrl && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.shopUrl.message}
+            {errors.shopUrl.type === "too_small"
+              ? t("rakuten.validation.shopUrlRequired")
+              : t("rakuten.validation.shopUrlPattern")}
           </Text>
         )}
         {shopUrl && !errors.shopUrl && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            접속 URL: https://{shopUrl}.shop.rakuten.co.jp
+            {t("rakuten.shopUrlPreview", { shopUrl })}
           </Text>
         )}
       </Box>
@@ -736,10 +838,10 @@ function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenCon
         mt={1}
         bg="gray.900"
         color="white"
-        _hover={{ bg: 'gray.800' }}
+        _hover={{ bg: "gray.800" }}
         loading={isSubmitting}
       >
-        연결하기
+        {t("rakuten.submit")}
       </Button>
     </Box>
   );
@@ -747,9 +849,9 @@ function RakutenConnectForm({ onSuccess, onSaveKeys, defaultValues }: RakutenCon
 
 // ─── Shopee 연결 폼 ─────────────────────────────────────────────────────────
 const shopeeSchema = z.object({
-  partnerId: z.string().min(1, 'Partner ID를 입력해 주세요'),
-  partnerKey: z.string().min(1, 'Partner Key를 입력해 주세요'),
-  shopId: z.string().min(1, 'Shop ID를 입력해 주세요'),
+  partnerId: z.string().min(1, "Partner ID를 입력해 주세요"),
+  partnerKey: z.string().min(1, "Partner Key를 입력해 주세요"),
+  shopId: z.string().min(1, "Shop ID를 입력해 주세요"),
 });
 type ShopeeFormValues = z.infer<typeof shopeeSchema>;
 
@@ -759,7 +861,12 @@ interface ShopeeConnectFormProps {
   defaultValues?: Partial<ShopeeFormValues>;
 }
 
-function ShopeeConnectForm({ onSuccess, onSaveKeys, defaultValues }: ShopeeConnectFormProps): React.JSX.Element {
+function ShopeeConnectForm({
+  onSuccess,
+  onSaveKeys,
+  defaultValues,
+}: ShopeeConnectFormProps): React.JSX.Element {
+  const t = useTranslations("pages.settingsChannels");
   const {
     register,
     handleSubmit,
@@ -767,82 +874,105 @@ function ShopeeConnectForm({ onSuccess, onSaveKeys, defaultValues }: ShopeeConne
     formState: { errors, isSubmitting },
   } = useForm<ShopeeFormValues>({
     defaultValues: {
-      partnerId: defaultValues?.partnerId ?? '',
-      partnerKey: defaultValues?.partnerKey ?? '',
-      shopId: defaultValues?.shopId ?? '',
+      partnerId: defaultValues?.partnerId ?? "",
+      partnerKey: defaultValues?.partnerKey ?? "",
+      shopId: defaultValues?.shopId ?? "",
     },
   });
 
   useEffect(() => {
-    if (defaultValues?.partnerId || defaultValues?.partnerKey || defaultValues?.shopId) {
+    if (
+      defaultValues?.partnerId ||
+      defaultValues?.partnerKey ||
+      defaultValues?.shopId
+    ) {
       reset({
-        partnerId: defaultValues.partnerId ?? '',
-        partnerKey: defaultValues.partnerKey ?? '',
-        shopId: defaultValues.shopId ?? '',
+        partnerId: defaultValues.partnerId ?? "",
+        partnerKey: defaultValues.partnerKey ?? "",
+        shopId: defaultValues.shopId ?? "",
       });
     }
-  }, [defaultValues?.partnerId, defaultValues?.partnerKey, defaultValues?.shopId, reset]);
+  }, [
+    defaultValues?.partnerId,
+    defaultValues?.partnerKey,
+    defaultValues?.shopId,
+    reset,
+  ]);
 
   const onSubmit = async (values: ShopeeFormValues) => {
     try {
       await onSaveKeys(values);
-      appToaster.create({ type: 'success', title: 'Shopee 연결 완료', description: '저장되었습니다.' });
+      appToaster.create({
+        type: "success",
+        title: t("shopee.toast.successTitle"),
+        description: t("shopee.toast.successDescription"),
+      });
       onSuccess();
     } catch {
-      appToaster.create({ type: 'error', title: '저장 실패', description: '연결 정보를 다시 확인해 주세요.' });
+      appToaster.create({
+        type: "error",
+        title: t("shopee.toast.errorTitle"),
+        description: t("shopee.toast.errorDescription"),
+      });
     }
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)} display="flex" flexDirection="column" gap={3}>
+    <Box
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      display="flex"
+      flexDirection="column"
+      gap={3}
+    >
       <Box>
         <Text fontSize="xs" color="gray.500" mb={1}>
-          Partner ID
+          {t("shopee.partnerIdLabel")}
         </Text>
         <Input
-          {...register('partnerId')}
+          {...register("partnerId")}
           size="sm"
           placeholder="Shopee Partner ID"
-          borderColor={errors.partnerId ? 'red.400' : 'gray.200'}
+          borderColor={errors.partnerId ? "red.400" : "gray.200"}
         />
         {errors.partnerId && (
           <Text fontSize="xs" color="red.500" mt={1}>
-            {errors.partnerId.message}
+            {t("shopee.validation.partnerIdRequired")}
           </Text>
         )}
       </Box>
 
       <Box>
         <Text fontSize="xs" color="gray.500" mb={1}>
-          Partner Key
+          {t("shopee.partnerKeyLabel")}
         </Text>
         <Input
-          {...register('partnerKey')}
+          {...register("partnerKey")}
           size="sm"
           type="password"
           placeholder="Shopee Partner Key"
-          borderColor={errors.partnerKey ? 'red.400' : 'gray.200'}
+          borderColor={errors.partnerKey ? "red.400" : "gray.200"}
         />
         {errors.partnerKey && (
           <Text fontSize="xs" color="red.500" mt={1}>
-            {errors.partnerKey.message}
+            {t("shopee.validation.partnerKeyRequired")}
           </Text>
         )}
       </Box>
 
       <Box>
         <Text fontSize="xs" color="gray.500" mb={1}>
-          Shop ID
+          {t("shopee.shopIdLabel")}
         </Text>
         <Input
-          {...register('shopId')}
+          {...register("shopId")}
           size="sm"
           placeholder="Shopee Shop ID"
-          borderColor={errors.shopId ? 'red.400' : 'gray.200'}
+          borderColor={errors.shopId ? "red.400" : "gray.200"}
         />
         {errors.shopId && (
           <Text fontSize="xs" color="red.500" mt={1}>
-            {errors.shopId.message}
+            {t("shopee.validation.shopIdRequired")}
           </Text>
         )}
       </Box>
@@ -853,10 +983,10 @@ function ShopeeConnectForm({ onSuccess, onSaveKeys, defaultValues }: ShopeeConne
         mt={1}
         bg="gray.900"
         color="white"
-        _hover={{ bg: 'gray.800' }}
+        _hover={{ bg: "gray.800" }}
         loading={isSubmitting}
       >
-        연결하기
+        {t("shopee.submit")}
       </Button>
     </Box>
   );
@@ -866,13 +996,13 @@ function ShopeeConnectForm({ onSuccess, onSaveKeys, defaultValues }: ShopeeConne
 const shopifySchema = z.object({
   shopDomain: z
     .string()
-    .min(1, '스토어 도메인을 입력해 주세요')
+    .min(1, "스토어 도메인을 입력해 주세요")
     .regex(
       /^[a-z0-9-]+\.myshopify\.com$/,
-      'your-store.myshopify.com 형식으로 입력해 주세요',
+      "your-store.myshopify.com 형식으로 입력해 주세요",
     ),
-  clientId: z.string().min(1, 'Client ID를 입력해 주세요'),
-  clientSecret: z.string().min(1, 'Client Secret을 입력해 주세요'),
+  clientId: z.string().min(1, "Client ID를 입력해 주세요"),
+  clientSecret: z.string().min(1, "Client Secret을 입력해 주세요"),
 });
 
 type ShopifyFormValues = z.infer<typeof shopifySchema>;
@@ -883,7 +1013,12 @@ interface ShopifyConnectFormProps {
   defaultValues?: Partial<ShopifyFormValues>;
 }
 
-function ShopifyConnectForm({ onSuccess: _onSuccess, oauthError, defaultValues }: ShopifyConnectFormProps): React.JSX.Element {
+function ShopifyConnectForm({
+  onSuccess: _onSuccess,
+  oauthError,
+  defaultValues,
+}: ShopifyConnectFormProps): React.JSX.Element {
+  const t = useTranslations("pages.settingsChannels");
   const {
     register,
     handleSubmit,
@@ -892,103 +1027,129 @@ function ShopifyConnectForm({ onSuccess: _onSuccess, oauthError, defaultValues }
     formState: { errors, isSubmitting },
   } = useForm<ShopifyFormValues>({
     defaultValues: {
-      shopDomain: defaultValues?.shopDomain ?? '',
-      clientId: defaultValues?.clientId ?? '',
-      clientSecret: defaultValues?.clientSecret ?? '',
+      shopDomain: defaultValues?.shopDomain ?? "",
+      clientId: defaultValues?.clientId ?? "",
+      clientSecret: defaultValues?.clientSecret ?? "",
     },
   });
 
   useEffect(() => {
-    if (defaultValues?.shopDomain || defaultValues?.clientId || defaultValues?.clientSecret) {
+    if (
+      defaultValues?.shopDomain ||
+      defaultValues?.clientId ||
+      defaultValues?.clientSecret
+    ) {
       reset({
-        shopDomain: defaultValues.shopDomain ?? '',
-        clientId: defaultValues.clientId ?? '',
-        clientSecret: defaultValues.clientSecret ?? '',
+        shopDomain: defaultValues.shopDomain ?? "",
+        clientId: defaultValues.clientId ?? "",
+        clientSecret: defaultValues.clientSecret ?? "",
       });
     }
-  }, [defaultValues?.shopDomain, defaultValues?.clientId, defaultValues?.clientSecret, reset]);
+  }, [
+    defaultValues?.shopDomain,
+    defaultValues?.clientId,
+    defaultValues?.clientSecret,
+    reset,
+  ]);
 
-  const shopDomain = watch('shopDomain');
+  const shopDomain = watch("shopDomain");
 
   const onSubmit = async (values: ShopifyFormValues): Promise<void> => {
-    const res = await fetch('/api/shopify/auth/install', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/shopify/auth/install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
     const data = (await res.json()) as { redirectUrl?: string; error?: string };
     if (!res.ok || !data.redirectUrl) {
-      throw new Error(data.error ?? 'OAuth URL 생성 실패');
+      throw new Error(data.error ?? t("shopify.errors.oauthUrlFailed"));
     }
     window.location.href = data.redirectUrl;
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit(onSubmit)} display="flex" flexDirection="column" gap={3}>
+    <Box
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      display="flex"
+      flexDirection="column"
+      gap={3}
+    >
       {oauthError && (
-        <Box bg="red.50" borderWidth="1px" borderColor="red.200" borderRadius="md" px={3} py={2}>
-          <Text fontSize="xs" color="red.600">{oauthError}</Text>
+        <Box
+          bg="red.50"
+          borderWidth="1px"
+          borderColor="red.200"
+          borderRadius="md"
+          px={3}
+          py={2}
+        >
+          <Text fontSize="xs" color="red.600">
+            {oauthError}
+          </Text>
         </Box>
       )}
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          스토어 도메인 <Text as="span" color="gray.400">*</Text>
+          {t("shopify.shopDomainLabel")}
         </Text>
         <Input
           type="text"
           placeholder="your-store.myshopify.com"
           size="sm"
-          {...register('shopDomain')}
+          {...register("shopDomain")}
         />
         {errors.shopDomain ? (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.shopDomain.message}
+            {errors.shopDomain.type === "too_small"
+              ? t("shopify.validation.shopDomainRequired")
+              : t("shopify.validation.shopDomainPattern")}
           </Text>
         ) : shopDomain ? (
           <Text fontSize="xs" color="gray.400" mt={1}>
-            Admin URL: https://{shopDomain}/admin
+            {t("shopify.shopDomainPreview", { shopDomain })}
           </Text>
         ) : (
           <Text fontSize="xs" color="gray.400" mt={1}>
-            Shopify Dev Dashboard {'>'} Apps {'>'} Develop apps에서 앱 생성 후 확인
+            {t("shopify.shopDomainHint")}
           </Text>
         )}
       </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          Client ID <Text as="span" color="gray.400">*</Text>
+          {t("shopify.clientIdLabel")}
         </Text>
         <Input
           type="text"
           placeholder="Client ID"
           size="sm"
-          {...register('clientId')}
+          {...register("clientId")}
         />
         {errors.clientId && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.clientId.message}
+            {t("shopify.validation.clientIdRequired")}
           </Text>
         )}
         <Text fontSize="xs" color="gray.400" mt={1}>
-          앱 {'>'} API credentials 탭에서 확인
+          {t("shopify.clientIdHint")}
         </Text>
       </Box>
 
       <Box>
         <Text fontSize="sm" fontWeight="medium" mb={1}>
-          Client Secret <Text as="span" color="gray.400">*</Text>
+          {t("shopify.clientSecretLabel")}
         </Text>
         <Input
           type="password"
           placeholder="Client Secret"
           size="sm"
-          {...register('clientSecret')}
+          {...register("clientSecret")}
         />
         {errors.clientSecret && (
           <Text fontSize="xs" color="gray.500" mt={1}>
-            {errors.clientSecret.message}
+            {t("shopify.validation.clientSecretRequired")}
           </Text>
         )}
       </Box>
@@ -999,10 +1160,10 @@ function ShopifyConnectForm({ onSuccess: _onSuccess, oauthError, defaultValues }
         mt={1}
         bg="gray.900"
         color="white"
-        _hover={{ bg: 'gray.800' }}
+        _hover={{ bg: "gray.800" }}
         loading={isSubmitting}
       >
-        Shopify 인증하기
+        {t("shopify.submit")}
       </Button>
     </Box>
   );

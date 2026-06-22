@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import type { BoxProps } from '@chakra-ui/react';
-import { Box, Text } from '@chakra-ui/react';
-import type { ChannelId } from '@/shared/config';
-import { CHANNEL_CONFIG } from '@/shared/config';
+import type React from "react";
+import type { BoxProps } from "@chakra-ui/react";
+import { Box, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
+import type { ChannelId } from "@/shared/config";
+import { CHANNEL_CONFIG } from "@/shared/config";
 
-type ChannelBadgeVariant = 'default' | 'pill' | 'icon-only';
+type ChannelBadgeVariant = "default" | "pill" | "icon-only";
 
 type ChannelBadgeProps = BoxProps & {
   channelId: ChannelId;
@@ -15,12 +16,19 @@ type ChannelBadgeProps = BoxProps & {
 
 export function ChannelBadge({
   channelId,
-  variant = 'default',
+  variant = "default",
   ...rest
 }: ChannelBadgeProps): React.JSX.Element {
   const channel = CHANNEL_CONFIG[channelId];
+  const tChannels = useTranslations("config.channels");
+  let channelName: string = channel.name;
+  try {
+    channelName = tChannels(`${channelId}.name`);
+  } catch {
+    channelName = channel.name;
+  }
 
-  if (variant === 'icon-only') {
+  if (variant === "icon-only") {
     return (
       <Box
         as="span"
@@ -43,7 +51,7 @@ export function ChannelBadge({
     );
   }
 
-  const borderRadius = variant === 'pill' ? 'full' : 'md';
+  const borderRadius = variant === "pill" ? "full" : "md";
 
   return (
     <Box
@@ -76,9 +84,8 @@ export function ChannelBadge({
         {channel.initial}
       </Box>
       <Text fontSize="sm" color="inherit">
-        {channel.name}
+        {channelName}
       </Text>
     </Box>
   );
 }
-

@@ -27,7 +27,9 @@ export interface ShopifyOrderDetailResult {
   refetch: () => void;
 }
 
-export function useShopifyOrderDetail(orderId: string | null): ShopifyOrderDetailResult {
+export function useShopifyOrderDetail(
+  orderId: string | null,
+): ShopifyOrderDetailResult {
   const { hasKey } = useChannelApiKey("shopify");
   const channelUuid = useChannelUuid("shopify");
 
@@ -36,10 +38,17 @@ export function useShopifyOrderDetail(orderId: string | null): ShopifyOrderDetai
     queryFn: async (): Promise<Order> => {
       if (!channelUuid) {
         throw Object.assign(new Error("NO_API_KEY"), {
-          response: { data: { error: "NO_API_KEY", message: "Shopify 채널이 연결되지 않았습니다." } },
+          response: {
+            data: {
+              error: "NO_API_KEY",
+              message: "Shopify 채널이 연결되지 않았습니다.",
+            },
+          },
         });
       }
-      return http.get<Order>(`/api/orders/${encodeURIComponent(channelUuid)}/${encodeURIComponent(orderId!)}`);
+      return http.get<Order>(
+        `/api/orders/${encodeURIComponent(channelUuid)}/${encodeURIComponent(orderId!)}`,
+      );
     },
     enabled: !!orderId && hasKey && !!channelUuid,
     staleTime: 3 * 60 * 1000,
@@ -55,6 +64,8 @@ export function useShopifyOrderDetail(orderId: string | null): ShopifyOrderDetai
     order: query.data ?? null,
     isLoading: query.isLoading && !!orderId,
     error: query.error ? parseShopifyOrderError(query.error) : null,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

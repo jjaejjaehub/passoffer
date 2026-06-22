@@ -10,18 +10,38 @@ import {
   Stack,
   Text,
 } from "@chakra-ui/react";
-import { ArrowRightLeft, PackageMinus, PackagePlus, Settings2 } from "lucide-react";
+import {
+  ArrowRightLeft,
+  PackageMinus,
+  PackagePlus,
+  Settings2,
+} from "lucide-react";
 import type { ReactElement } from "react";
 import { DEFAULT_ADJUSTMENT_REASONS } from "@oms/types";
 import type { AdjustmentReason, HistoryEvent, MovementType } from "@oms/types";
 
 const TYPE_META: Record<
   MovementType,
-  { label: string; palette: string; icon: typeof PackagePlus; deltaSign: 1 | -1 | 0 }
+  {
+    label: string;
+    palette: string;
+    icon: typeof PackagePlus;
+    deltaSign: 1 | -1 | 0;
+  }
 > = {
   inbound: { label: "입고", palette: "blue", icon: PackagePlus, deltaSign: 1 },
-  outbound: { label: "출고", palette: "purple", icon: PackageMinus, deltaSign: -1 },
-  transfer: { label: "이동", palette: "teal", icon: ArrowRightLeft, deltaSign: 0 },
+  outbound: {
+    label: "출고",
+    palette: "purple",
+    icon: PackageMinus,
+    deltaSign: -1,
+  },
+  transfer: {
+    label: "이동",
+    palette: "teal",
+    icon: ArrowRightLeft,
+    deltaSign: 0,
+  },
   adjustment: { label: "조정", palette: "gray", icon: Settings2, deltaSign: 0 },
 };
 
@@ -159,11 +179,7 @@ function DetailBody({ event }: { event: HistoryEvent }): ReactElement {
       <Stack gap={3}>
         <DetailRow label="SKU" mono value={event.sku} />
         <DetailRow label="발생 시각" value={formatDateTime(event.occurredAt)} />
-        <DetailRow
-          label="소스 시스템"
-          value={event.sourceVendor}
-          mono
-        />
+        <DetailRow label="소스 시스템" value={event.sourceVendor} mono />
         {reason ? <DetailRow label="사유" value={reason} /> : null}
         {event.vendorRef ? (
           <DetailRow label="벤더 레퍼런스" mono value={event.vendorRef} />

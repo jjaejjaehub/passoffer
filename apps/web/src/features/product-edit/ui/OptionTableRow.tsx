@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Checkbox, HStack, Table, Text } from "@chakra-ui/react";
 

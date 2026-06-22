@@ -1,13 +1,7 @@
-'use client';
+"use client";
 
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  Box,
-  Button,
-  Flex,
-  HStack,
-  Text,
-} from '@chakra-ui/react';
+import { AnimatePresence, motion } from "framer-motion";
+import { Box, Button, Flex, HStack, Text } from "@chakra-ui/react";
 
 interface BulkActionBarProps {
   selectedCount: number;
@@ -77,7 +71,7 @@ export function BulkActionBar({
                   size="sm"
                   bg="gray.900"
                   color="white"
-                  _hover={{ bg: 'gray.800' }}
+                  _hover={{ bg: "gray.800" }}
                   onClick={onBulkShip}
                 >
                   배송 처리
@@ -88,7 +82,7 @@ export function BulkActionBar({
                   variant="outline"
                   borderColor="gray.300"
                   color="gray.600"
-                  _hover={{ bg: 'gray.100', color: 'gray.900' }}
+                  _hover={{ bg: "gray.100", color: "gray.900" }}
                   onClick={handleBulkCancelClick}
                 >
                   취소 처리
@@ -98,7 +92,7 @@ export function BulkActionBar({
                   size="sm"
                   variant="ghost"
                   color="gray.500"
-                  _hover={{ color: 'gray.900' }}
+                  _hover={{ color: "gray.900" }}
                   onClick={onClearSelection}
                 >
                   선택 해제
@@ -106,10 +100,8 @@ export function BulkActionBar({
               </HStack>
             </Flex>
           </Box>
-
         </motion.div>
       )}
     </AnimatePresence>
   );
 }
-

@@ -1,6 +1,14 @@
 "use client";
 
-import { Box, Button, Flex, HStack, Heading, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  HStack,
+  Heading,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import {
@@ -91,9 +99,10 @@ export function InboundPage(): ReactElement {
     capabilitiesQuery.isLoading ||
     masterQuery.isLoading ||
     !supportsBatchInbound;
-  const uploadDisabledReason = !supportsBatchInbound && capabilities !== null
-    ? NO_BATCH_INBOUND_REASON
-    : undefined;
+  const uploadDisabledReason =
+    !supportsBatchInbound && capabilities !== null
+      ? NO_BATCH_INBOUND_REASON
+      : undefined;
 
   async function handleFile(file: File): Promise<void> {
     setParsing(true);
@@ -184,9 +193,7 @@ export function InboundPage(): ReactElement {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "전송 실패";
       setBatches((prev) =>
-        prev.map((b) =>
-          b.id === id ? { ...b, dispatchError: msg } : b,
-        ),
+        prev.map((b) => (b.id === id ? { ...b, dispatchError: msg } : b)),
       );
       throw e;
     } finally {
@@ -241,9 +248,7 @@ export function InboundPage(): ReactElement {
     }
     setSelectedIds(
       new Set(
-        batches
-          .filter((b) => b.status === "pending_dispatch")
-          .map((b) => b.id),
+        batches.filter((b) => b.status === "pending_dispatch").map((b) => b.id),
       ),
     );
   }

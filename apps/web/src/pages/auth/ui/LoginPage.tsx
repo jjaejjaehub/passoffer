@@ -47,20 +47,19 @@ export function LoginPage(): React.JSX.Element {
       router.push(from);
     } catch (err) {
       const msg = isAxiosError(err)
-        ? (err.response?.data?.message ?? "이메일 또는 비밀번호가 올바르지 않습니다.")
+        ? (err.response?.data?.message ??
+          "이메일 또는 비밀번호가 올바르지 않습니다.")
         : "로그인 중 오류가 발생했습니다.";
-      appToaster.create({ type: "error", title: "로그인 실패", description: msg });
+      appToaster.create({
+        type: "error",
+        title: "로그인 실패",
+        description: msg,
+      });
     }
   };
 
   return (
-    <Flex
-      minH="100vh"
-      align="center"
-      justify="center"
-      bg="gray.50"
-      px={4}
-    >
+    <Flex minH="100vh" align="center" justify="center" bg="gray.50" px={4}>
       <Box w="full" maxW="420px">
         {/* 로고 */}
         <Flex align="center" justify="center" gap={2.5} mb={8}>
@@ -160,7 +159,11 @@ export function LoginPage(): React.JSX.Element {
                         color: "inherit",
                       }}
                     >
-                      <Icon as={showPassword ? EyeOff : Eye} boxSize={4} color="gray.400" />
+                      <Icon
+                        as={showPassword ? EyeOff : Eye}
+                        boxSize={4}
+                        color="gray.400"
+                      />
                     </button>
                   </Box>
                   {errors.password && (
@@ -187,7 +190,9 @@ export function LoginPage(): React.JSX.Element {
 
             <Flex align="center" gap={3}>
               <Box flex="1" h="1px" bg="gray.100" />
-              <Text fontSize="xs" color="gray.400">또는</Text>
+              <Text fontSize="xs" color="gray.400">
+                또는
+              </Text>
               <Box flex="1" h="1px" bg="gray.100" />
             </Flex>
 

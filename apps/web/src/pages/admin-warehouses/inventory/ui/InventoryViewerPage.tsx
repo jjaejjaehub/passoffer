@@ -2,6 +2,7 @@
 
 import { Box, Flex, HStack, Heading, Text } from "@chakra-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/widgets/admin-warehouses";
 
 export function InventoryViewerPage(): ReactElement {
+  const t = useTranslations("pages.adminWarehousesInventory");
   const { warehouseId } = useSelectedWarehouseId();
   const queryClient = useQueryClient();
 
@@ -61,19 +63,19 @@ export function InventoryViewerPage(): ReactElement {
   return (
     <Box p={6}>
       <Flex align="center" justify="space-between" mb={6}>
-        <Heading size="lg">재고 조회</Heading>
+        <Heading size="lg">{t("title")}</Heading>
         <WarehouseSelector />
       </Flex>
 
       {warehouseId === null ? (
         <EmptyState
-          title="창고를 선택해주세요"
-          description="우측 상단에서 창고를 선택하면 재고 목록이 표시됩니다."
+          title={t("selectWarehouseTitle")}
+          description={t("selectWarehouseDescription")}
         />
       ) : (
         <Box>
           <Text fontSize="sm" color="gray.600" mb={4}>
-            창고별로 LOT 단위 재고와 SKU 단위 합계를 조회합니다.
+            {t("description")}
           </Text>
 
           <InventoryToolbar
@@ -90,15 +92,15 @@ export function InventoryViewerPage(): ReactElement {
             <LoadingState rows={8} />
           ) : capabilitiesQuery.isError ? (
             <EmptyState
-              title="창고 정보를 불러오지 못했습니다"
-              description="새로고침 후에도 동일하면 관리자에게 문의해 주세요."
+              title={t("errors.capabilitiesTitle")}
+              description={t("errors.capabilitiesDescription")}
             />
           ) : capabilities === null ? (
-            <EmptyState title="capability 정보가 없습니다" />
+            <EmptyState title={t("errors.noCapability")} />
           ) : inventoryQuery.isError ? (
             <EmptyState
-              title="재고 데이터를 불러오지 못했습니다"
-              description="잠시 후 다시 시도해 주세요."
+              title={t("errors.inventoryTitle")}
+              description={t("errors.inventoryDescription")}
             />
           ) : (
             <Box>
@@ -123,19 +125,23 @@ function FreshnessLabel({
 }: {
   rows: ReadonlyArray<{ fetchedAt: string; freshness: string }>;
 }): ReactElement {
+  const t = useTranslations("pages.adminWarehousesInventory");
   if (rows.length === 0) {
     return (
       <Text fontSize="xs" color="gray.500">
-        데이터 없음
+        {t("freshness.empty")}
       </Text>
     );
   }
-  const latest = rows.reduce((acc, r) => (r.fetchedAt > acc ? r.fetchedAt : acc), rows[0].fetchedAt);
+  const latest = rows.reduce(
+    (acc, r) => (r.fetchedAt > acc ? r.fetchedAt : acc),
+    rows[0].fetchedAt,
+  );
   const allFresh = rows.every((r) => r.freshness === "fresh");
   return (
     <Text fontSize="xs" color={allFresh ? "green.700" : "yellow.800"}>
-      마지막 동기화: {formatDateTime(latest)}
-      {allFresh ? " · 실시간" : " · 일부 지연"}
+      {t("freshness.lastSync", { time: formatDateTime(latest) })}
+      {allFresh ? t("freshness.realtime") : t("freshness.partialDelay")}
     </Text>
   );
 }

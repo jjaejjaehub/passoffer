@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Box,
@@ -8,27 +8,30 @@ import {
   Input,
   Text,
   VStack,
-} from '@chakra-ui/react';
-import { Filter, X } from 'lucide-react';
+} from "@chakra-ui/react";
+import { Filter, X } from "lucide-react";
 
 export interface OrderFilters {
   shippingMethods?: string[];
   minAmount?: number;
   maxAmount?: number;
-  sortBy?: 'latest' | 'amount_high' | 'delayed';
+  sortBy?: "latest" | "amount_high" | "delayed";
   assignee?: string;
 }
 
 const SHIPPING_METHODS = [
-  { id: 'international', label: '국제배송' },
-  { id: 'domestic', label: '국내배송' },
-  { id: 'express', label: '특급배송' },
+  { id: "international", label: "국제배송" },
+  { id: "domestic", label: "국내배송" },
+  { id: "express", label: "특급배송" },
 ];
 
-const SORT_OPTIONS: { value: NonNullable<OrderFilters['sortBy']>; label: string }[] = [
-  { value: 'latest', label: '최신순' },
-  { value: 'amount_high', label: '금액 높은순' },
-  { value: 'delayed', label: '처리 지연순' },
+const SORT_OPTIONS: {
+  value: NonNullable<OrderFilters["sortBy"]>;
+  label: string;
+}[] = [
+  { value: "latest", label: "최신순" },
+  { value: "amount_high", label: "금액 높은순" },
+  { value: "delayed", label: "처리 지연순" },
 ];
 
 interface FilterDrawerProps {
@@ -72,7 +75,7 @@ export function FilterDrawer({
         top={0}
         right={0}
         bottom={0}
-        w={{ base: '100%', sm: '360px' }}
+        w={{ base: "100%", sm: "360px" }}
         bg="white"
         zIndex={1001}
         boxShadow="-8px 0 24px rgba(0,0,0,0.12)"
@@ -90,7 +93,9 @@ export function FilterDrawer({
         >
           <HStack gap={2}>
             <Filter size={16} />
-            <Text fontWeight="semibold" fontSize="md">상세 필터</Text>
+            <Text fontWeight="semibold" fontSize="md">
+              상세 필터
+            </Text>
             {activeFilterCount > 0 && (
               <Box
                 display="inline-flex"
@@ -113,7 +118,7 @@ export function FilterDrawer({
             aria-label="닫기"
             onClick={() => onOpenChange(false)}
             color="gray.500"
-            _hover={{ color: 'gray.800' }}
+            _hover={{ color: "gray.800" }}
             display="flex"
             alignItems="center"
           >
@@ -131,16 +136,31 @@ export function FilterDrawer({
               </Text>
               <VStack align="stretch" gap={2}>
                 {SHIPPING_METHODS.map((method) => (
-                  <Box as="label" key={method.id} display="flex" alignItems="center" gap={2} cursor="pointer">
+                  <Box
+                    as="label"
+                    key={method.id}
+                    display="flex"
+                    alignItems="center"
+                    gap={2}
+                    cursor="pointer"
+                  >
                     <input
                       type="checkbox"
                       id={`shipping-${method.id}`}
-                      checked={filters.shippingMethods?.includes(method.id) ?? false}
+                      checked={
+                        filters.shippingMethods?.includes(method.id) ?? false
+                      }
                       onChange={() => handleShippingMethodToggle(method.id)}
                       aria-label={method.label}
-                      style={{ cursor: 'pointer', width: '14px', height: '14px' }}
+                      style={{
+                        cursor: "pointer",
+                        width: "14px",
+                        height: "14px",
+                      }}
                     />
-                    <Text fontSize="sm" color="gray.700">{method.label}</Text>
+                    <Text fontSize="sm" color="gray.700">
+                      {method.label}
+                    </Text>
                   </Box>
                 ))}
               </VStack>
@@ -156,22 +176,28 @@ export function FilterDrawer({
                   type="number"
                   size="sm"
                   placeholder="₩0"
-                  value={filters.minAmount ?? ''}
+                  value={filters.minAmount ?? ""}
                   onChange={(e) =>
                     onFiltersChange({
-                      minAmount: e.target.value ? Number(e.target.value) : undefined,
+                      minAmount: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                 />
-                <Text color="gray.400" flexShrink={0}>~</Text>
+                <Text color="gray.400" flexShrink={0}>
+                  ~
+                </Text>
                 <Input
                   type="number"
                   size="sm"
                   placeholder="₩0"
-                  value={filters.maxAmount ?? ''}
+                  value={filters.maxAmount ?? ""}
                   onChange={(e) =>
                     onFiltersChange({
-                      maxAmount: e.target.value ? Number(e.target.value) : undefined,
+                      maxAmount: e.target.value
+                        ? Number(e.target.value)
+                        : undefined,
                     })
                   }
                 />
@@ -185,16 +211,29 @@ export function FilterDrawer({
               </Text>
               <VStack align="stretch" gap={2}>
                 {SORT_OPTIONS.map((opt) => (
-                  <Box as="label" key={opt.value} display="flex" alignItems="center" gap={2} cursor="pointer">
+                  <Box
+                    as="label"
+                    key={opt.value}
+                    display="flex"
+                    alignItems="center"
+                    gap={2}
+                    cursor="pointer"
+                  >
                     <input
                       type="radio"
                       name="sortBy"
                       value={opt.value}
-                      checked={(filters.sortBy ?? 'latest') === opt.value}
+                      checked={(filters.sortBy ?? "latest") === opt.value}
                       onChange={() => onFiltersChange({ sortBy: opt.value })}
-                      style={{ cursor: 'pointer', width: '14px', height: '14px' }}
+                      style={{
+                        cursor: "pointer",
+                        width: "14px",
+                        height: "14px",
+                      }}
                     />
-                    <Text fontSize="sm" color="gray.700">{opt.label}</Text>
+                    <Text fontSize="sm" color="gray.700">
+                      {opt.label}
+                    </Text>
                   </Box>
                 ))}
               </VStack>
@@ -207,18 +246,19 @@ export function FilterDrawer({
               </Text>
               <select
                 style={{
-                  width: '100%',
-                  padding: '6px 10px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '14px',
-                  color: '#1a202c',
-                  backgroundColor: 'white',
+                  width: "100%",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
+                  border: "1px solid #e2e8f0",
+                  fontSize: "14px",
+                  color: "#1a202c",
+                  backgroundColor: "white",
                 }}
-                value={filters.assignee ?? 'all'}
+                value={filters.assignee ?? "all"}
                 onChange={(e) =>
                   onFiltersChange({
-                    assignee: e.target.value === 'all' ? undefined : e.target.value,
+                    assignee:
+                      e.target.value === "all" ? undefined : e.target.value,
                   })
                 }
               >

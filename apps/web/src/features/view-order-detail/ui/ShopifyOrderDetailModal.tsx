@@ -11,7 +11,14 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { AlertTriangle, CheckCircle, Package, X, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  MessageSquare,
+  Package,
+  X,
+  XCircle,
+} from "lucide-react";
 import { isAxiosError } from "axios";
 
 import {
@@ -22,6 +29,7 @@ import {
   type FulfillOrderInput,
   type OrderCancelReason,
 } from "@/entities/order";
+import { SendNotificationModal } from "@/features/send-notification";
 
 // ─── 상수 ─────────────────────────────────────────────────────
 
@@ -46,7 +54,13 @@ const CANCEL_REASONS: { value: OrderCancelReason; label: string }[] = [
 
 // ─── 상태 뱃지 ─────────────────────────────────────────────────
 
-function StatusChip({ label, color }: { label: string; color: string }): React.JSX.Element {
+function StatusChip({
+  label,
+  color,
+}: {
+  label: string;
+  color: string;
+}): React.JSX.Element {
   return (
     <Box
       display="inline-block"
@@ -65,13 +79,34 @@ function StatusChip({ label, color }: { label: string; color: string }): React.J
 
 // ─── 섹션 래퍼 ─────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
-      <Box px={4} py={2.5} bg="gray.50" borderBottomWidth="1px" borderColor="gray.200">
-        <Text fontSize="sm" fontWeight="semibold" color="gray.700">{title}</Text>
+    <Box
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="md"
+      overflow="hidden"
+    >
+      <Box
+        px={4}
+        py={2.5}
+        bg="gray.50"
+        borderBottomWidth="1px"
+        borderColor="gray.200"
+      >
+        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+          {title}
+        </Text>
       </Box>
-      <Box px={4} py={3}>{children}</Box>
+      <Box px={4} py={3}>
+        {children}
+      </Box>
     </Box>
   );
 }
@@ -86,17 +121,28 @@ function OrderDetailContent({
   onClose: () => void;
 }): React.JSX.Element {
   const [carrierId, setCarrierId] = useState(order.carrierId ?? "");
-  const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber ?? "");
+  const [trackingNumber, setTrackingNumber] = useState(
+    order.trackingNumber ?? "",
+  );
   const [cancelReason, setCancelReason] = useState<OrderCancelReason>("OTHER");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [notifyOpen, setNotifyOpen] = useState(false);
+
+  const defaultRecipient = order.buyer.tel ?? "";
+  const defaultVariables: Record<string, string> = {
+    buyerName: order.buyer.name ?? "",
+    orderNo: order.channelOrderId ?? "",
+    trackingNo: order.trackingNumber ?? "",
+  };
 
   const fulfill = useShopifyFulfillOrder(order.id);
   const cancel = useShopifyCancelOrder(order.id);
 
   const isCancelled = order.status === "CANCELLED";
-  const isFulfilled = order.status === "SHIPPED" || order.status === "DELIVERED";
+  const isFulfilled =
+    order.status === "SHIPPED" || order.status === "DELIVERED";
 
   function extractError(error: unknown): string {
     if (isAxiosError(error)) {
@@ -115,7 +161,10 @@ function OrderDetailContent({
       setErrorMsg("택배사 ID와 운송장 번호를 모두 입력해 주세요.");
       return;
     }
-    const input: FulfillOrderInput = { carrierId: carrier, trackingNumber: tracking };
+    const input: FulfillOrderInput = {
+      carrierId: carrier,
+      trackingNumber: tracking,
+    };
     try {
       await fulfill.mutateAsync(input);
       setSuccessMsg("배송 처리가 완료되었습니다.");
@@ -149,37 +198,91 @@ function OrderDetailContent({
     <VStack gap={4} align="stretch">
       {/* 성공/에러 메시지 */}
       {successMsg && (
-        <Flex align="center" gap={2} p={3} bg="green.50" borderRadius="md" borderWidth="1px" borderColor="green.200">
+        <Flex
+          align="center"
+          gap={2}
+          p={3}
+          bg="green.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="green.200"
+        >
           <CheckCircle size={16} color="var(--chakra-colors-green-600)" />
-          <Text fontSize="sm" color="green.700">{successMsg}</Text>
+          <Text fontSize="sm" color="green.700">
+            {successMsg}
+          </Text>
         </Flex>
       )}
       {errorMsg && (
-        <Flex align="center" gap={2} p={3} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
+        <Flex
+          align="center"
+          gap={2}
+          p={3}
+          bg="red.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="red.200"
+        >
           <AlertTriangle size={16} color="var(--chakra-colors-red-600)" />
-          <Text fontSize="sm" color="red.700">{errorMsg}</Text>
+          <Text fontSize="sm" color="red.700">
+            {errorMsg}
+          </Text>
         </Flex>
       )}
+
+      {/* 액션 바 */}
+      <Flex justify="flex-end">
+        <Button
+          size="xs"
+          variant="outline"
+          colorScheme="blue"
+          onClick={() => setNotifyOpen(true)}
+        >
+          <MessageSquare size={12} />
+          알림 발송
+        </Button>
+      </Flex>
+
+      <SendNotificationModal
+        open={notifyOpen}
+        onClose={() => setNotifyOpen(false)}
+        orderId={order.id}
+        defaultRecipient={defaultRecipient || undefined}
+        defaultVariables={defaultVariables}
+      />
 
       {/* 주문 요약 */}
       <Section title="주문 정보">
         <VStack gap={2} align="stretch">
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">주문번호</Text>
-            <Text fontSize="sm" fontWeight="semibold">{order.channelOrderId}</Text>
-          </Flex>
-          <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">주문일시</Text>
-            <Text fontSize="sm">{new Date(order.orderedAt).toLocaleString("ko-KR")}</Text>
-          </Flex>
-          <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">결제 금액</Text>
-            <Text fontSize="sm" fontWeight="medium">
-              {order.payment.currency} {order.payment.totalAmount.toLocaleString()}
+            <Text fontSize="sm" color="gray.500">
+              주문번호
+            </Text>
+            <Text fontSize="sm" fontWeight="semibold">
+              {order.channelOrderId}
             </Text>
           </Flex>
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">주문 상태</Text>
+            <Text fontSize="sm" color="gray.500">
+              주문일시
+            </Text>
+            <Text fontSize="sm">
+              {new Date(order.orderedAt).toLocaleString("ko-KR")}
+            </Text>
+          </Flex>
+          <Flex justify="space-between" align="center">
+            <Text fontSize="sm" color="gray.500">
+              결제 금액
+            </Text>
+            <Text fontSize="sm" fontWeight="medium">
+              {order.payment.currency}{" "}
+              {order.payment.totalAmount.toLocaleString()}
+            </Text>
+          </Flex>
+          <Flex justify="space-between" align="center">
+            <Text fontSize="sm" color="gray.500">
+              주문 상태
+            </Text>
             <StatusChip
               label={STATUS_LABEL[order.status] ?? order.status}
               color={statusColor}
@@ -187,8 +290,12 @@ function OrderDetailContent({
           </Flex>
           {order.trackingNumber && (
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.500">운송장</Text>
-              <Text fontSize="sm" fontFamily="mono">{order.trackingNumber}</Text>
+              <Text fontSize="sm" color="gray.500">
+                운송장
+              </Text>
+              <Text fontSize="sm" fontFamily="mono">
+                {order.trackingNumber}
+              </Text>
             </Flex>
           )}
         </VStack>
@@ -198,35 +305,49 @@ function OrderDetailContent({
       <Section title="구매자 및 배송지">
         <VStack gap={2} align="stretch">
           <Flex justify="space-between">
-            <Text fontSize="sm" color="gray.500">구매자</Text>
+            <Text fontSize="sm" color="gray.500">
+              구매자
+            </Text>
             <Text fontSize="sm">{order.buyer.name || "-"}</Text>
           </Flex>
           {order.buyer.email && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">이메일</Text>
+              <Text fontSize="sm" color="gray.500">
+                이메일
+              </Text>
               <Text fontSize="sm">{order.buyer.email}</Text>
             </Flex>
           )}
           {order.buyer.tel && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">연락처</Text>
+              <Text fontSize="sm" color="gray.500">
+                연락처
+              </Text>
               <Text fontSize="sm">{order.buyer.tel}</Text>
             </Flex>
           )}
           <Flex justify="space-between">
-            <Text fontSize="sm" color="gray.500">수령인</Text>
+            <Text fontSize="sm" color="gray.500">
+              수령인
+            </Text>
             <Text fontSize="sm">{order.shipping.receiver || "-"}</Text>
           </Flex>
           <Flex justify="space-between">
-            <Text fontSize="sm" color="gray.500">배송지</Text>
+            <Text fontSize="sm" color="gray.500">
+              배송지
+            </Text>
             <Text fontSize="sm" textAlign="right" maxW="60%">
               {order.shipping.shippingAddress}
             </Text>
           </Flex>
           {order.shipping.shippingMessage && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">배송 메모</Text>
-              <Text fontSize="sm" textAlign="right" maxW="60%">{order.shipping.shippingMessage}</Text>
+              <Text fontSize="sm" color="gray.500">
+                배송 메모
+              </Text>
+              <Text fontSize="sm" textAlign="right" maxW="60%">
+                {order.shipping.shippingMessage}
+              </Text>
             </Flex>
           )}
         </VStack>
@@ -238,14 +359,24 @@ function OrderDetailContent({
           {order.items.map((item) => (
             <Flex key={item.id} justify="space-between" align="center" gap={2}>
               <Box flex={1} minW={0}>
-                <Text fontSize="sm" fontWeight="medium" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
+                <Text
+                  fontSize="sm"
+                  fontWeight="medium"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                >
                   {item.productName}
                 </Text>
                 {item.option && (
-                  <Text fontSize="xs" color="gray.500">{item.option}</Text>
+                  <Text fontSize="xs" color="gray.500">
+                    {item.option}
+                  </Text>
                 )}
               </Box>
-              <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">x{item.quantity}</Text>
+              <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                x{item.quantity}
+              </Text>
               <Text fontSize="sm" fontWeight="medium" whiteSpace="nowrap">
                 {order.payment.currency} {item.unitPrice.toLocaleString()}
               </Text>
@@ -259,27 +390,45 @@ function OrderDetailContent({
         <VStack gap={1.5} align="stretch">
           {order.payment.orderPrice != null && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">소계</Text>
-              <Text fontSize="sm">{order.payment.currency} {order.payment.orderPrice.toLocaleString()}</Text>
+              <Text fontSize="sm" color="gray.500">
+                소계
+              </Text>
+              <Text fontSize="sm">
+                {order.payment.currency}{" "}
+                {order.payment.orderPrice.toLocaleString()}
+              </Text>
             </Flex>
           )}
           {order.payment.discount != null && order.payment.discount > 0 && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">할인</Text>
-              <Text fontSize="sm" color="red.600">-{order.payment.currency} {order.payment.discount.toLocaleString()}</Text>
+              <Text fontSize="sm" color="gray.500">
+                할인
+              </Text>
+              <Text fontSize="sm" color="red.600">
+                -{order.payment.currency}{" "}
+                {order.payment.discount.toLocaleString()}
+              </Text>
             </Flex>
           )}
           {order.payment.shippingRate != null && (
             <Flex justify="space-between">
-              <Text fontSize="sm" color="gray.500">배송비</Text>
-              <Text fontSize="sm">{order.payment.currency} {order.payment.shippingRate.toLocaleString()}</Text>
+              <Text fontSize="sm" color="gray.500">
+                배송비
+              </Text>
+              <Text fontSize="sm">
+                {order.payment.currency}{" "}
+                {order.payment.shippingRate.toLocaleString()}
+              </Text>
             </Flex>
           )}
           <Box borderTopWidth="1px" borderColor="gray.200" pt={1.5} mt={1}>
             <Flex justify="space-between">
-              <Text fontSize="sm" fontWeight="semibold">합계</Text>
               <Text fontSize="sm" fontWeight="semibold">
-                {order.payment.currency} {order.payment.totalAmount.toLocaleString()}
+                합계
+              </Text>
+              <Text fontSize="sm" fontWeight="semibold">
+                {order.payment.currency}{" "}
+                {order.payment.totalAmount.toLocaleString()}
               </Text>
             </Flex>
           </Box>
@@ -291,7 +440,9 @@ function OrderDetailContent({
         <Section title="배송 처리">
           <VStack gap={3} align="stretch">
             <Box>
-              <Text fontSize="xs" color="gray.500" mb={1}>택배사 ID (선택)</Text>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                택배사 ID (선택)
+              </Text>
               <Input
                 size="sm"
                 placeholder="예: yamato, cj, japanpost"
@@ -300,7 +451,9 @@ function OrderDetailContent({
               />
             </Box>
             <Box>
-              <Text fontSize="xs" color="gray.500" mb={1}>운송장 번호 (선택)</Text>
+              <Text fontSize="xs" color="gray.500" mb={1}>
+                운송장 번호 (선택)
+              </Text>
               <Input
                 size="sm"
                 placeholder="예: 1234567890"
@@ -312,7 +465,9 @@ function OrderDetailContent({
               size="sm"
               colorScheme="blue"
               loading={fulfill.isPending}
-              onClick={() => { void handleFulfill(); }}
+              onClick={() => {
+                void handleFulfill();
+              }}
             >
               <Package size={14} />
               배송 완료 처리
@@ -326,16 +481,31 @@ function OrderDetailContent({
         <Section title="주문 취소">
           {showCancelConfirm ? (
             <VStack gap={3} align="stretch">
-              <Text fontSize="sm" color="gray.700">정말 주문을 취소하시겠습니까?</Text>
+              <Text fontSize="sm" color="gray.700">
+                정말 주문을 취소하시겠습니까?
+              </Text>
               <Box>
-                <Text fontSize="xs" color="gray.500" mb={1}>취소 사유</Text>
+                <Text fontSize="xs" color="gray.500" mb={1}>
+                  취소 사유
+                </Text>
                 <select
-                  style={{ fontSize: "14px", borderWidth: "1px", borderColor: "#e2e8f0", borderRadius: "6px", padding: "6px 8px", width: "100%" }}
+                  style={{
+                    fontSize: "14px",
+                    borderWidth: "1px",
+                    borderColor: "#e2e8f0",
+                    borderRadius: "6px",
+                    padding: "6px 8px",
+                    width: "100%",
+                  }}
                   value={cancelReason}
-                  onChange={(e) => setCancelReason(e.target.value as OrderCancelReason)}
+                  onChange={(e) =>
+                    setCancelReason(e.target.value as OrderCancelReason)
+                  }
                 >
                   {CANCEL_REASONS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
                   ))}
                 </select>
               </Box>
@@ -344,7 +514,9 @@ function OrderDetailContent({
                   size="sm"
                   colorScheme="red"
                   loading={cancel.isPending}
-                  onClick={() => { void handleCancel(); }}
+                  onClick={() => {
+                    void handleCancel();
+                  }}
                 >
                   <XCircle size={14} />
                   취소 확인
@@ -426,7 +598,9 @@ export function ShopifyOrderDetailModal({
           borderColor="gray.200"
           flexShrink={0}
         >
-          <Text fontWeight="semibold" fontSize="md">주문 상세</Text>
+          <Text fontWeight="semibold" fontSize="md">
+            주문 상세
+          </Text>
           <Box
             as="button"
             onClick={onClose}
@@ -446,9 +620,21 @@ export function ShopifyOrderDetailModal({
               <Spinner color="gray.400" />
             </Flex>
           ) : error ? (
-            <Flex align="flex-start" gap={3} p={3} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
-              <Box mt={0.5} color="red.500"><AlertTriangle size={16} /></Box>
-              <Text fontSize="sm" color="red.700">{error.message}</Text>
+            <Flex
+              align="flex-start"
+              gap={3}
+              p={3}
+              bg="red.50"
+              borderRadius="md"
+              borderWidth="1px"
+              borderColor="red.200"
+            >
+              <Box mt={0.5} color="red.500">
+                <AlertTriangle size={16} />
+              </Box>
+              <Text fontSize="sm" color="red.700">
+                {error.message}
+              </Text>
             </Flex>
           ) : order ? (
             <OrderDetailContent order={order} onClose={onClose} />

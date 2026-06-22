@@ -58,7 +58,11 @@ export function SignupPage(): React.JSX.Element {
       const msg = isAxiosError(err)
         ? (err.response?.data?.message ?? "회원가입 중 오류가 발생했습니다.")
         : "회원가입 중 오류가 발생했습니다.";
-      appToaster.create({ type: "error", title: "회원가입 실패", description: msg });
+      appToaster.create({
+        type: "error",
+        title: "회원가입 실패",
+        description: msg,
+      });
     }
   };
 
@@ -127,7 +131,9 @@ export function SignupPage(): React.JSX.Element {
                     borderColor={errors.name ? "red.300" : "gray.200"}
                   />
                   {errors.name && (
-                    <Text color="red.500" fontSize="xs">{errors.name.message}</Text>
+                    <Text color="red.500" fontSize="xs">
+                      {errors.name.message}
+                    </Text>
                   )}
                 </Stack>
 
@@ -150,7 +156,9 @@ export function SignupPage(): React.JSX.Element {
                     borderColor={errors.email ? "red.300" : "gray.200"}
                   />
                   {errors.email && (
-                    <Text color="red.500" fontSize="xs">{errors.email.message}</Text>
+                    <Text color="red.500" fontSize="xs">
+                      {errors.email.message}
+                    </Text>
                   )}
                 </Stack>
 
@@ -163,7 +171,10 @@ export function SignupPage(): React.JSX.Element {
                     <Input
                       {...register("password", {
                         required: "비밀번호를 입력해주세요",
-                        minLength: { value: 8, message: "비밀번호는 8자 이상이어야 합니다" },
+                        minLength: {
+                          value: 8,
+                          message: "비밀번호는 8자 이상이어야 합니다",
+                        },
                       })}
                       placeholder="8자 이상 입력"
                       type={showPassword ? "text" : "password"}
@@ -187,11 +198,17 @@ export function SignupPage(): React.JSX.Element {
                         color: "inherit",
                       }}
                     >
-                      <Icon as={showPassword ? EyeOff : Eye} boxSize={4} color="gray.400" />
+                      <Icon
+                        as={showPassword ? EyeOff : Eye}
+                        boxSize={4}
+                        color="gray.400"
+                      />
                     </button>
                   </Box>
                   {errors.password && (
-                    <Text color="red.500" fontSize="xs">{errors.password.message}</Text>
+                    <Text color="red.500" fontSize="xs">
+                      {errors.password.message}
+                    </Text>
                   )}
                 </Stack>
 
@@ -204,13 +221,16 @@ export function SignupPage(): React.JSX.Element {
                     <Input
                       {...register("confirmPassword", {
                         required: "비밀번호 확인을 입력해주세요",
-                        validate: (v) => v === passwordValue || "비밀번호가 일치하지 않습니다",
+                        validate: (v) =>
+                          v === passwordValue || "비밀번호가 일치하지 않습니다",
                       })}
                       placeholder="비밀번호 재입력"
                       type={showConfirm ? "text" : "password"}
                       size="md"
                       pr={10}
-                      borderColor={errors.confirmPassword ? "red.300" : "gray.200"}
+                      borderColor={
+                        errors.confirmPassword ? "red.300" : "gray.200"
+                      }
                     />
                     <button
                       type="button"
@@ -228,11 +248,17 @@ export function SignupPage(): React.JSX.Element {
                         color: "inherit",
                       }}
                     >
-                      <Icon as={showConfirm ? EyeOff : Eye} boxSize={4} color="gray.400" />
+                      <Icon
+                        as={showConfirm ? EyeOff : Eye}
+                        boxSize={4}
+                        color="gray.400"
+                      />
                     </button>
                   </Box>
                   {errors.confirmPassword && (
-                    <Text color="red.500" fontSize="xs">{errors.confirmPassword.message}</Text>
+                    <Text color="red.500" fontSize="xs">
+                      {errors.confirmPassword.message}
+                    </Text>
                   )}
                 </Stack>
 
@@ -253,7 +279,9 @@ export function SignupPage(): React.JSX.Element {
 
             <Flex align="center" gap={3}>
               <Box flex="1" h="1px" bg="gray.100" />
-              <Text fontSize="xs" color="gray.400">또는</Text>
+              <Text fontSize="xs" color="gray.400">
+                또는
+              </Text>
               <Box flex="1" h="1px" bg="gray.100" />
             </Flex>
 

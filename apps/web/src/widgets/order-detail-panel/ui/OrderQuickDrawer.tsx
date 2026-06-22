@@ -1,7 +1,16 @@
 "use client";
 
-import { Box, Button, Flex, SimpleGrid, Spinner, Stack, Text } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Flex,
+  SimpleGrid,
+  Spinner,
+  Stack,
+  Text,
+} from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import type { Order } from "@/entities/order";
 import { ClaimStatusBadge, StatusBadge } from "@/entities/order";
@@ -64,7 +73,12 @@ const SectionCard = ({
       borderBottom="1px solid"
       borderColor="gray.200"
     >
-      <Text fontSize="xs" fontWeight="semibold" color="gray.500" letterSpacing="wide">
+      <Text
+        fontSize="xs"
+        fontWeight="semibold"
+        color="gray.500"
+        letterSpacing="wide"
+      >
         {title}
       </Text>
     </Box>
@@ -79,8 +93,10 @@ export function OrderQuickDrawer({
   onOpenChange,
   order,
 }: OrderQuickDrawerProps): React.JSX.Element | null {
-  const qoo10ChannelUuid = useChannelUuid('qoo10');
-  const isQoo10Channel = !!order && !!qoo10ChannelUuid && order.channelId === qoo10ChannelUuid;
+  const tChannels = useTranslations("config.channels");
+  const qoo10ChannelUuid = useChannelUuid("qoo10");
+  const isQoo10Channel =
+    !!order && !!qoo10ChannelUuid && order.channelId === qoo10ChannelUuid;
 
   // Qoo10 채널만 상세 API 조회 (Shopee 등 타 채널은 Order 객체 데이터로 표시)
   const { data: detail, isLoading: isDetailLoading } = useQoo10OrderDetail(
@@ -90,6 +106,12 @@ export function OrderQuickDrawer({
   if (!open || !order) return null;
 
   const channel = CHANNEL_CONFIG[order.channelId];
+  let channelName: string = channel?.name ?? order.channelId;
+  try {
+    channelName = tChannels(`${order.channelId}.name`);
+  } catch {
+    channelName = channel?.name ?? order.channelId;
+  }
 
   // COD 관련 데이터가 있는지 여부
   const hasCodInfo =
@@ -102,7 +124,8 @@ export function OrderQuickDrawer({
   const hasNrInfo = detail && !!detail.nrDutyTarget;
 
   // 반품 수거지 데이터가 있는지 여부
-  const hasReturnPickup = detail && (!!detail.pickupAddress || !!detail.pickupzipCode);
+  const hasReturnPickup =
+    detail && (!!detail.pickupAddress || !!detail.pickupzipCode);
 
   return (
     <>
@@ -163,7 +186,11 @@ export function OrderQuickDrawer({
             </Text>
             {isDetailLoading && <Spinner size="xs" color="gray.400" />}
             <Box flex="1" />
-            <Button size="sm" variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+            >
               닫기
             </Button>
           </Flex>
@@ -188,7 +215,7 @@ export function OrderQuickDrawer({
                   fontSize="xs"
                   color="gray.700"
                 >
-                  {channel?.name ?? order.channelId}
+                  {channelName}
                 </Box>
                 {detail?.OrderType && (
                   <Box
@@ -219,14 +246,20 @@ export function OrderQuickDrawer({
               <SectionCard title="구매자 연락처">
                 <InfoRow label="구매자" value={order.buyerName} />
                 <InfoRow label="구매자(카타카나)" value={order.buyerKana} />
-                <InfoRow label="전화번호" value={order.buyerTel ?? order.buyerPhone} />
+                <InfoRow
+                  label="전화번호"
+                  value={order.buyerTel ?? order.buyerPhone}
+                />
                 <InfoRow label="휴대폰" value={order.buyerMobile} />
                 <InfoRow label="이메일" value={order.buyerEmail} />
               </SectionCard>
 
               {/* 배송지 상세 */}
               <SectionCard title="배송지 상세">
-                <InfoRow label="배송지 국가" value={detail?.shippingCountry ?? "—"} />
+                <InfoRow
+                  label="배송지 국가"
+                  value={detail?.shippingCountry ?? "—"}
+                />
                 <InfoRow label="전체 주소" value={order.shippingAddress} />
                 <InfoRow label="Address1" value={order.address1} />
                 <InfoRow label="Address2" value={order.address2} />
@@ -235,13 +268,19 @@ export function OrderQuickDrawer({
                 <InfoRow label="수취인(카타카나)" value={order.receiverKana} />
                 <InfoRow label="수취인 전화" value={order.receiverTel} />
                 <InfoRow label="수취인 휴대폰" value={order.receiverMobile} />
-                <InfoRow label="배송 희망일" value={order.desiredDeliveryDate} />
+                <InfoRow
+                  label="배송 희망일"
+                  value={order.desiredDeliveryDate}
+                />
                 <InfoRow label="배송 메시지" value={order.shippingMessage} />
               </SectionCard>
 
               {/* 결제 상세 */}
               <SectionCard title="결제 상세">
-                <InfoRow label="주문 국가" value={detail?.paymentNation ?? "—"} />
+                <InfoRow
+                  label="주문 국가"
+                  value={detail?.paymentNation ?? "—"}
+                />
                 <InfoRow label="결제수단" value={order.paymentMethod} />
                 <InfoRow
                   label="상품 금액"
@@ -302,10 +341,24 @@ export function OrderQuickDrawer({
               {/* 배송 상세 */}
               <SectionCard title="배송 상세">
                 <InfoRow label="배송방법" value={order.shippingWay} />
-                <InfoRow label="배송사" value={detail?.deliveryCompany ?? order.carrierId ?? "—"} />
-                <InfoRow label="운송장 번호" value={detail?.trackingNo ?? order.trackingNumber ?? "—"} />
-                <InfoRow label="발송일" value={formatDate(detail?.shippingDate ?? order.shipDate ?? undefined)} />
-                <InfoRow label="배송완료일" value={formatDate(detail?.DeliveredDate)} />
+                <InfoRow
+                  label="배송사"
+                  value={detail?.deliveryCompany ?? order.carrierId ?? "—"}
+                />
+                <InfoRow
+                  label="운송장 번호"
+                  value={detail?.trackingNo ?? order.trackingNumber ?? "—"}
+                />
+                <InfoRow
+                  label="발송일"
+                  value={formatDate(
+                    detail?.shippingDate ?? order.shipDate ?? undefined,
+                  )}
+                />
+                <InfoRow
+                  label="배송완료일"
+                  value={formatDate(detail?.DeliveredDate)}
+                />
                 <InfoRow label="Packing No" value={order.packingNo} />
                 <InfoRow label="셀러 배송번호" value={order.sellerDeliveryNo} />
               </SectionCard>
@@ -337,7 +390,10 @@ export function OrderQuickDrawer({
                         : undefined
                     }
                   />
-                  <InfoRow label="관련 주문" value={detail.CODCancelRelatedOrder} />
+                  <InfoRow
+                    label="관련 주문"
+                    value={detail.CODCancelRelatedOrder}
+                  />
                 </SectionCard>
               )}
 
@@ -348,7 +404,10 @@ export function OrderQuickDrawer({
                     label="클레임 상태"
                     value={detail?.claimStatus ?? order.claimStatus}
                   />
-                  <InfoRow label="사유" value={detail?.reason ?? order.reason} />
+                  <InfoRow
+                    label="사유"
+                    value={detail?.reason ?? order.reason}
+                  />
                   <InfoRow
                     label="요청일"
                     value={detail?.requestDate ?? order.requestDate}
@@ -359,7 +418,10 @@ export function OrderQuickDrawer({
                   />
                   <InfoRow
                     label="반품 택배사"
-                    value={detail?.deliveryCompanyReturn ?? order.deliveryCompanyReturn}
+                    value={
+                      detail?.deliveryCompanyReturn ??
+                      order.deliveryCompanyReturn
+                    }
                   />
                   <InfoRow
                     label="반품 운송장 번호"
@@ -367,8 +429,14 @@ export function OrderQuickDrawer({
                   />
                   {hasReturnPickup && (
                     <>
-                      <InfoRow label="수거지 우편번호" value={detail?.pickupzipCode} />
-                      <InfoRow label="수거지 주소" value={detail?.pickupAddress} />
+                      <InfoRow
+                        label="수거지 우편번호"
+                        value={detail?.pickupzipCode}
+                      />
+                      <InfoRow
+                        label="수거지 주소"
+                        value={detail?.pickupAddress}
+                      />
                     </>
                   )}
                   {detail?.paymentReturnShipping && (
@@ -378,7 +446,10 @@ export function OrderQuickDrawer({
                     />
                   )}
                   {detail?.itemCondition && (
-                    <InfoRow label="반품 상품 상태" value={detail.itemCondition} />
+                    <InfoRow
+                      label="반품 상품 상태"
+                      value={detail.itemCondition}
+                    />
                   )}
                 </SectionCard>
               )}
@@ -407,7 +478,10 @@ export function OrderQuickDrawer({
                     }
                   />
                   {detail.nrPartRefundCnt > 0 && (
-                    <InfoRow label="부분 환불 수량" value={detail.nrPartRefundCnt} />
+                    <InfoRow
+                      label="부분 환불 수량"
+                      value={detail.nrPartRefundCnt}
+                    />
                   )}
                   {detail.nrPartRefundBalance > 0 && (
                     <InfoRow

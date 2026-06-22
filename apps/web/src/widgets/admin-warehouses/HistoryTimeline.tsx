@@ -1,21 +1,43 @@
 "use client";
 
 import { Badge, Box, Flex, HStack, Stack, Text } from "@chakra-ui/react";
-import { ArrowRightLeft, PackageMinus, PackagePlus, Settings2 } from "lucide-react";
+import {
+  ArrowRightLeft,
+  PackageMinus,
+  PackagePlus,
+  Settings2,
+} from "lucide-react";
 import type { ReactElement } from "react";
 import type { HistoryEvent, MovementType } from "@oms/types";
 
 const TYPE_META: Record<
   MovementType,
-  { label: string; palette: string; icon: typeof PackagePlus; deltaSign: 1 | -1 | 0 }
+  {
+    label: string;
+    palette: string;
+    icon: typeof PackagePlus;
+    deltaSign: 1 | -1 | 0;
+  }
 > = {
   inbound: { label: "입고", palette: "blue", icon: PackagePlus, deltaSign: 1 },
-  outbound: { label: "출고", palette: "purple", icon: PackageMinus, deltaSign: -1 },
-  transfer: { label: "이동", palette: "teal", icon: ArrowRightLeft, deltaSign: 0 },
+  outbound: {
+    label: "출고",
+    palette: "purple",
+    icon: PackageMinus,
+    deltaSign: -1,
+  },
+  transfer: {
+    label: "이동",
+    palette: "teal",
+    icon: ArrowRightLeft,
+    deltaSign: 0,
+  },
   adjustment: { label: "조정", palette: "gray", icon: Settings2, deltaSign: 0 },
 };
 
-function groupByDate(events: HistoryEvent[]): Array<{ date: string; events: HistoryEvent[] }> {
+function groupByDate(
+  events: HistoryEvent[],
+): Array<{ date: string; events: HistoryEvent[] }> {
   const map = new Map<string, HistoryEvent[]>();
   for (const ev of events) {
     const date = ev.occurredAt.slice(0, 10);
@@ -98,11 +120,12 @@ function EventCard({
   const meta = TYPE_META[event.type];
   const Icon = meta.icon;
   const isExternal = event.sourceVendor !== "self";
-  const signed = meta.deltaSign === 1
-    ? event.quantity
-    : meta.deltaSign === -1
-      ? -Math.abs(event.quantity)
-      : event.quantity;
+  const signed =
+    meta.deltaSign === 1
+      ? event.quantity
+      : meta.deltaSign === -1
+        ? -Math.abs(event.quantity)
+        : event.quantity;
   const deltaColor =
     meta.deltaSign === 1
       ? "green.700"

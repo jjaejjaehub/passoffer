@@ -30,12 +30,7 @@ export function AdjustmentBeforeAfterPanel({
     <Stack gap={3}>
       <Flex align="stretch" gap={3}>
         <SidePanel data={source} />
-        <Flex
-          align="center"
-          justify="center"
-          minW="60px"
-          color="gray.500"
-        >
+        <Flex align="center" justify="center" minW="60px" color="gray.500">
           <Stack align="center" gap={1}>
             <ArrowRight size={28} />
             <Text fontSize="sm" fontFamily="mono" fontWeight="bold">
@@ -50,8 +45,7 @@ export function AdjustmentBeforeAfterPanel({
 }
 
 function SidePanel({ data }: { data: BeforeAfterRow }): ReactElement {
-  const afterColor =
-    data.tone === "decrease" ? "red.600" : "blue.600";
+  const afterColor = data.tone === "decrease" ? "red.600" : "blue.600";
   const isNegativeAfter = data.after < 0;
 
   return (
@@ -91,7 +85,13 @@ function SidePanel({ data }: { data: BeforeAfterRow }): ReactElement {
             {data.lotCode ? `LOT ${data.lotCode}` : "LOT 없음"}
           </Text>
         </Box>
-        <Flex align="baseline" justify="space-between" pt={2} borderTopWidth="1px" borderColor="gray.100">
+        <Flex
+          align="baseline"
+          justify="space-between"
+          pt={2}
+          borderTopWidth="1px"
+          borderColor="gray.100"
+        >
           <Stack gap={0}>
             <Text fontSize="xs" color="gray.500">
               이전 수량

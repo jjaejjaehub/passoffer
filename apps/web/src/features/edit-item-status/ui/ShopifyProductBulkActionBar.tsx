@@ -103,7 +103,13 @@ export function ShopifyBulkDeleteDialog({
 
   return (
     <>
-      <Box position="fixed" inset={0} bg="blackAlpha.400" zIndex={1400} onClick={onClose} />
+      <Box
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.400"
+        zIndex={1400}
+        onClick={onClose}
+      />
       <Box
         position="fixed"
         top="50%"
@@ -123,7 +129,12 @@ export function ShopifyBulkDeleteDialog({
           선택한 상품이 Shopify에서 완전히 제거되며 복구할 수 없습니다.
         </Text>
         <Flex justify="flex-end" gap={2}>
-          <Button size="sm" variant="outline" onClick={onClose} disabled={isPending}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onClose}
+            disabled={isPending}
+          >
             취소
           </Button>
           <Button
@@ -132,7 +143,9 @@ export function ShopifyBulkDeleteDialog({
             color="white"
             _hover={{ bg: "red.600" }}
             loading={isPending}
-            onClick={() => { void handleConfirm(); }}
+            onClick={() => {
+              void handleConfirm();
+            }}
           >
             {count}개 삭제
           </Button>

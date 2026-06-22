@@ -94,7 +94,8 @@ export function ExcelUploadDropzone({
             엑셀 파일을 드래그하거나 클릭하여 업로드
           </Text>
           <Text fontSize="xs" color="gray.500">
-            지원 형식: xlsx, xls, csv · 필수 컬럼: master_product_code, quantity, expected_at
+            지원 형식: xlsx, xls, csv · 필수 컬럼: master_product_code,
+            quantity, expected_at
           </Text>
           <Button
             mt={2}

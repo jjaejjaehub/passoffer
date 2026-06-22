@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { format, startOfMonth } from 'date-fns';
+import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { format, startOfMonth } from "date-fns";
 
-import { useActiveChannel, useChannelUuid } from '@/entities/channel';
-import { http } from '@/shared/api';
-import { ROUTES } from '@/shared/config';
-import { shopifyOrderQueries, qoo10OrderQueries } from '@/entities/order';
-import { shopifyProductQueries } from '@/entities/product';
-import { credentialQueries } from '@/shared/lib/useChannelApiKey';
-import type { ShopifyApiKeys, Qoo10ApiKeys } from '@/shared/config';
+import { useActiveChannel, useChannelUuid } from "@/entities/channel";
+import { http } from "@/shared/api";
+import { ROUTES } from "@/shared/config";
+import { shopifyOrderQueries, qoo10OrderQueries } from "@/entities/order";
+import { shopifyProductQueries } from "@/entities/product";
+import { credentialQueries } from "@/shared/lib/useChannelApiKey";
+import type { ShopifyApiKeys, Qoo10ApiKeys } from "@/shared/config";
 
 const PREFETCH_STALE_TIME = 5 * 60 * 1000;
 
@@ -26,29 +26,33 @@ export function usePrefetchRoute(): {
 } {
   const queryClient = useQueryClient();
   const { activeChannel } = useActiveChannel();
-  const shopifyChannelUuid = useChannelUuid('shopify');
+  const shopifyChannelUuid = useChannelUuid("shopify");
 
   const prefetch = useCallback(
     (route: string): void => {
       // TanStack Query 캐시에서 credential을 직접 읽는다 (네트워크 요청 없음)
       const shopifyKeys = queryClient.getQueryData<ShopifyApiKeys | null>(
-        credentialQueries.channel('shopify'),
+        credentialQueries.channel("shopify"),
       );
       const qoo10Keys = queryClient.getQueryData<Qoo10ApiKeys | null>(
-        credentialQueries.channel('qoo10'),
+        credentialQueries.channel("qoo10"),
       );
 
-      const hasShopify = shopifyKeys !== null && shopifyKeys !== undefined
-        && shopifyKeys.clientId.length > 0
-        && shopifyKeys.accessToken.length > 0;
-      const hasQoo10 = qoo10Keys !== null && qoo10Keys !== undefined
-        && qoo10Keys.certificationKey.length > 0;
+      const hasShopify =
+        shopifyKeys !== null &&
+        shopifyKeys !== undefined &&
+        shopifyKeys.clientId.length > 0 &&
+        shopifyKeys.accessToken.length > 0;
+      const hasQoo10 =
+        qoo10Keys !== null &&
+        qoo10Keys !== undefined &&
+        qoo10Keys.certificationKey.length > 0;
 
-      const dateFrom = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+      const dateFrom = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
-      // /orders 또는 /claims → 주문/클레임 목록 prefetch
-      if (route.startsWith(ROUTES.orders)) {
-        if (activeChannel === 'shopify' && hasShopify && shopifyChannelUuid) {
+      // /orders/* (결제관리·신규주문 등) → 주문 목록 prefetch
+      if (route.startsWith("/orders")) {
+        if (activeChannel === "shopify" && hasShopify && shopifyChannelUuid) {
           const listParams = {
             pageSize: 50,
             after: undefined,
@@ -58,28 +62,31 @@ export function usePrefetchRoute(): {
             dateFrom,
             dateTo: undefined,
           };
-          const startDate = dateFrom.replace(/-/g, '');
+          const startDate = dateFrom.replace(/-/g, "");
           void queryClient.prefetchQuery({
             queryKey: shopifyOrderQueries.list(listParams),
             queryFn: () =>
               http.get(
-                `/api/orders?channelId=${shopifyChannelUuid}&startDate=${startDate}&endDate=${format(new Date(), 'yyyyMMdd')}`,
+                `/api/orders?channelId=${shopifyChannelUuid}&startDate=${startDate}&endDate=${format(new Date(), "yyyyMMdd")}`,
               ),
             staleTime: PREFETCH_STALE_TIME,
           });
         }
 
-        if ((activeChannel === 'qoo10' || !activeChannel) && hasQoo10) {
+        if ((activeChannel === "qoo10" || !activeChannel) && hasQoo10) {
           const today = new Date();
           const defaultParams = {
-            ShippingStatus: '' as const,
-            SearchStartDate: format(new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), 'yyyyMMdd'),
-            SearchEndDate: format(today, 'yyyyMMdd'),
-            SearchCondition: '1' as const,
+            ShippingStatus: "" as const,
+            SearchStartDate: format(
+              new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
+              "yyyyMMdd",
+            ),
+            SearchEndDate: format(today, "yyyyMMdd"),
+            SearchCondition: "1" as const,
           };
           void queryClient.prefetchQuery({
             queryKey: qoo10OrderQueries.list(defaultParams),
-            queryFn: () => http.post('/api/qoo10/shipping', defaultParams),
+            queryFn: () => http.post("/api/qoo10/shipping", defaultParams),
             staleTime: PREFETCH_STALE_TIME,
           });
         }
@@ -88,7 +95,7 @@ export function usePrefetchRoute(): {
 
       // /products → 상품 목록 prefetch
       if (route === ROUTES.products) {
-        if (activeChannel === 'shopify' && hasShopify && shopifyChannelUuid) {
+        if (activeChannel === "shopify" && hasShopify && shopifyChannelUuid) {
           const listParams = {
             pageSize: 50,
             after: undefined,
@@ -98,7 +105,9 @@ export function usePrefetchRoute(): {
           void queryClient.prefetchQuery({
             queryKey: shopifyProductQueries.list(listParams),
             queryFn: () =>
-              http.get(`/api/products?channelId=${shopifyChannelUuid}&pageSize=50`),
+              http.get(
+                `/api/products?channelId=${shopifyChannelUuid}&pageSize=50`,
+              ),
             staleTime: PREFETCH_STALE_TIME,
           });
         }
@@ -108,12 +117,12 @@ export function usePrefetchRoute(): {
       // /dashboard → 주문 통계 prefetch
       if (route === ROUTES.dashboard) {
         if (hasShopify && shopifyChannelUuid) {
-          const startDate = dateFrom.replace(/-/g, '');
+          const startDate = dateFrom.replace(/-/g, "");
           void queryClient.prefetchQuery({
             queryKey: shopifyOrderQueries.stats({ dateFrom }),
             queryFn: () =>
               http.get(
-                `/api/orders?channelId=${shopifyChannelUuid}&startDate=${startDate}&endDate=${format(new Date(), 'yyyyMMdd')}`,
+                `/api/orders?channelId=${shopifyChannelUuid}&startDate=${startDate}&endDate=${format(new Date(), "yyyyMMdd")}`,
               ),
             staleTime: PREFETCH_STALE_TIME,
           });

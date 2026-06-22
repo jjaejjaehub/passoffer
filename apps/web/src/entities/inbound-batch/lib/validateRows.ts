@@ -7,11 +7,10 @@ interface ValidateInput {
   skuSet: Set<string>;
 }
 
-export function validateRows({
-  rows,
-  presentColumns,
-  skuSet,
-}: ValidateInput): { rows: ParsedRow[]; missingColumns: string[] } {
+export function validateRows({ rows, presentColumns, skuSet }: ValidateInput): {
+  rows: ParsedRow[];
+  missingColumns: string[];
+} {
   const missingColumns = REQUIRED_COLUMNS.filter(
     (col) => !presentColumns.has(col),
   );

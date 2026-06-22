@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Box, Flex, Skeleton } from "@chakra-ui/react";
 
@@ -22,7 +22,12 @@ export function TableSkeleton({
       {showFilterBar && (
         <Flex gap={2} mb={4} align="center">
           {[80, 70, 72, 68, 80].map((w, i) => (
-            <Skeleton key={i} height="28px" width={`${w}px`} borderRadius="md" />
+            <Skeleton
+              key={i}
+              height="28px"
+              width={`${w}px`}
+              borderRadius="md"
+            />
           ))}
           <Box flex="1" />
           <Skeleton height="28px" width="200px" borderRadius="md" />
@@ -47,7 +52,12 @@ export function TableSkeleton({
           bg="gray.50"
           align="center"
         >
-          <Skeleton height="14px" width="14px" borderRadius="sm" flexShrink={0} />
+          <Skeleton
+            height="14px"
+            width="14px"
+            borderRadius="sm"
+            flexShrink={0}
+          />
           {Array.from({ length: cols }).map((_, i) => (
             <Skeleton
               key={i}
@@ -69,7 +79,12 @@ export function TableSkeleton({
             borderColor="gray.100"
             align="center"
           >
-            <Skeleton height="14px" width="14px" borderRadius="sm" flexShrink={0} />
+            <Skeleton
+              height="14px"
+              width="14px"
+              borderRadius="sm"
+              flexShrink={0}
+            />
             {Array.from({ length: cols }).map((_, colIdx) => (
               <Skeleton
                 key={colIdx}

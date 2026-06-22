@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { Box, Button, Heading, Text } from '@chakra-ui/react';
+import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 
 interface ErrorPageProps {
   title?: string;
@@ -9,20 +10,21 @@ interface ErrorPageProps {
 }
 
 export function ErrorPage({
-  title = '문제가 발생했습니다.',
-  description = '잠시 후 다시 시도해 주세요.',
+  title,
+  description,
   reset,
 }: ErrorPageProps): React.JSX.Element {
+  const t = useTranslations("pages.errorBoundary");
   return (
     <Box py={16} textAlign="center">
       <Heading as="h2" size="lg" mb={4}>
-        {title}
+        {title ?? t("fallbackTitle")}
       </Heading>
       <Text mb={8} color="gray.600">
-        {description}
+        {description ?? t("description")}
       </Text>
-      <Button onClick={reset} colorScheme="blue">
-        다시 시도
+      <Button onClick={reset} colorPalette="blue">
+        {t("retry")}
       </Button>
     </Box>
   );

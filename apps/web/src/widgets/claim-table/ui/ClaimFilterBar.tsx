@@ -25,6 +25,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { Search, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { CHANNEL_CONFIG, LIVE_CHANNELS } from "@/shared/config";
 import type { ChannelId } from "@/shared/config";
@@ -100,6 +101,7 @@ export function ClaimFilterBar({
   onDateChange,
   onSearchChange,
 }: ClaimFilterBarProps): React.JSX.Element {
+  const t = useTranslations("widgets.claimFilterBar");
   const [searchValue, setSearchValue] = useState<string>(search);
   const [customOpen, setCustomOpen] = useState(false);
   const [customStart, setCustomStart] = useState<Date | null>(null);
@@ -162,11 +164,11 @@ export function ClaimFilterBar({
 
   const renderMonthGrid = (monthDays: Date[]): React.JSX.Element => {
     const month = monthDays[0] ?? currentMonth;
-    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekdays = t.raw("calendar.weekdays") as string[];
     return (
       <Box flex="1">
         <Text fontSize="sm" fontWeight="medium" textAlign="center" mb={2}>
-          {formatDateFns(month, "yyyy년 M월")}
+          {formatDateFns(month, t("calendar.monthFormat"))}
         </Text>
         <Grid templateColumns="repeat(7, 1fr)" gap={1} mb={1}>
           {weekdays.map((d) => (
@@ -221,7 +223,9 @@ export function ClaimFilterBar({
   };
 
   const channelTabs = LIVE_CHANNELS.filter((ch) =>
-    (["qoo10", "rakuten", "shopify"] as const).includes(ch.id as "qoo10" | "rakuten" | "shopify"),
+    (["qoo10", "rakuten", "shopify"] as const).includes(
+      ch.id as "qoo10" | "rakuten" | "shopify",
+    ),
   ).map((ch) => ({ id: ch.id, name: ch.name }));
 
   return (
@@ -245,7 +249,8 @@ export function ClaimFilterBar({
       >
         {channelTabs.map((ch) => {
           const isSelected = channelId === ch.id;
-          const isDisabled = CHANNEL_CONFIG[ch.id as ChannelId]?.isLive === false;
+          const isDisabled =
+            CHANNEL_CONFIG[ch.id as ChannelId]?.isLive === false;
           return (
             <Button
               key={ch.id}
@@ -293,47 +298,49 @@ export function ClaimFilterBar({
       </Flex>
 
       {/* Row 1: 클레임 상태 탭 (Shopify 채널에서는 숨김) */}
-      {channelId !== "shopify" && <Flex
-        px={4}
-        py={2}
-        borderBottomWidth="1px"
-        borderColor="gray.100"
-        align="center"
-        overflowX="auto"
-        gap={1}
-      >
-        {CLAIM_STATUS_TABS.map((tab) => {
-          const isSelected = status === tab;
-          return (
-            <Button
-              key={tab}
-              variant={isSelected ? "solid" : "ghost"}
-              size="sm"
-              onClick={() => onStatusChange(tab)}
-              bg={isSelected ? "gray.100" : "transparent"}
-              color={isSelected ? "gray.900" : "gray.500"}
-              _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
-              height="auto"
-              px={3}
-              py={1.5}
-              borderRadius="md"
-              flexShrink={0}
-            >
-              <Flex align="center" gap={1}>
-                <Text fontSize="sm">{tab}</Text>
-                {statusCounts[tab] !== undefined && (
-                  <Text
-                    fontSize="xs"
-                    color={isSelected ? "gray.700" : "gray.400"}
-                  >
-                    ({statusCounts[tab]})
-                  </Text>
-                )}
-              </Flex>
-            </Button>
-          );
-        })}
-      </Flex>}
+      {channelId !== "shopify" && (
+        <Flex
+          px={4}
+          py={2}
+          borderBottomWidth="1px"
+          borderColor="gray.100"
+          align="center"
+          overflowX="auto"
+          gap={1}
+        >
+          {CLAIM_STATUS_TABS.map((tab) => {
+            const isSelected = status === tab;
+            return (
+              <Button
+                key={tab}
+                variant={isSelected ? "solid" : "ghost"}
+                size="sm"
+                onClick={() => onStatusChange(tab)}
+                bg={isSelected ? "gray.100" : "transparent"}
+                color={isSelected ? "gray.900" : "gray.500"}
+                _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
+                height="auto"
+                px={3}
+                py={1.5}
+                borderRadius="md"
+                flexShrink={0}
+              >
+                <Flex align="center" gap={1}>
+                  <Text fontSize="sm">{t(`statuses.${tab}`)}</Text>
+                  {statusCounts[tab] !== undefined && (
+                    <Text
+                      fontSize="xs"
+                      color={isSelected ? "gray.700" : "gray.400"}
+                    >
+                      ({statusCounts[tab]})
+                    </Text>
+                  )}
+                </Flex>
+              </Button>
+            );
+          })}
+        </Flex>
+      )}
 
       {/* Row 2: 날짜 범위 + 검색 (Shopify에서는 날짜 범위 숨김) */}
       <Flex
@@ -345,57 +352,26 @@ export function ClaimFilterBar({
         flexWrap="wrap"
       >
         {/* 날짜 범위 버튼 (Shopify에서는 숨김) */}
-        {channelId !== "shopify" && <Flex borderRadius="md" gap={0}>
-          {DATE_RANGES.map((range, index) => {
-            const isCustom = range === "직접입력";
-            const rangeLabel =
-              isCustom && customStart && customEnd
-                ? formatDisplayRange(customStart, customEnd)
-                : null;
-            const isSelected = isCustom
-              ? dateRange === rangeLabel
-              : dateRange === range;
-            const isFirst = index === 0;
-            const isLast = index === DATE_RANGES.length - 1;
-            const buttonLabel = isCustom && rangeLabel ? rangeLabel : range;
+        {channelId !== "shopify" && (
+          <Flex borderRadius="md" gap={0}>
+            {DATE_RANGES.map((range, index) => {
+              const isCustom = range === "직접입력";
+              const rangeLabel =
+                isCustom && customStart && customEnd
+                  ? formatDisplayRange(customStart, customEnd)
+                  : null;
+              const isSelected = isCustom
+                ? dateRange === rangeLabel
+                : dateRange === range;
+              const isFirst = index === 0;
+              const isLast = index === DATE_RANGES.length - 1;
+              const buttonLabel =
+                isCustom && rangeLabel ? rangeLabel : t(`dateRanges.${range}`);
 
-            if (!isCustom) {
-              return (
-                <Button
-                  key={range}
-                  variant={isSelected ? "solid" : "outline"}
-                  size="sm"
-                  bg={isSelected ? "gray.900" : "white"}
-                  color={isSelected ? "white" : "gray.700"}
-                  borderColor={isSelected ? "gray.900" : "gray.200"}
-                  borderLeftRadius={isFirst ? "md" : 0}
-                  borderRightRadius={isLast ? "md" : 0}
-                  _hover={{ bg: isSelected ? "gray.800" : "gray.50" }}
-                  height="32px"
-                  px={3}
-                  onClick={() => {
-                    if (customStart || customEnd) resetCustomRange();
-                    onDateChange(range);
-                  }}
-                >
-                  {buttonLabel}
-                </Button>
-              );
-            }
-
-            return (
-              <Popover.Root
-                key={range}
-                open={customOpen}
-                onOpenChange={(details) => {
-                  setCustomOpen(details.open);
-                  if (details.open && !customStart && !customEnd)
-                    onDateChange("직접입력");
-                }}
-              >
-                <Popover.Trigger>
+              if (!isCustom) {
+                return (
                   <Button
-                    as="div"
+                    key={range}
                     variant={isSelected ? "solid" : "outline"}
                     size="sm"
                     bg={isSelected ? "gray.900" : "white"}
@@ -406,84 +382,120 @@ export function ClaimFilterBar({
                     _hover={{ bg: isSelected ? "gray.800" : "gray.50" }}
                     height="32px"
                     px={3}
+                    onClick={() => {
+                      if (customStart || customEnd) resetCustomRange();
+                      onDateChange(range);
+                    }}
                   >
                     {buttonLabel}
                   </Button>
-                </Popover.Trigger>
-                <Popover.Positioner>
-                  <Popover.Content
-                    bg="white"
-                    borderRadius="md"
-                    borderWidth="1px"
-                    borderColor="gray.200"
-                    boxShadow="md"
-                    p={3}
-                    minW="580px"
-                  >
-                    <Flex justify="space-between" align="center" mb={3}>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() =>
-                          setCurrentMonth((prev) => addMonths(prev, -1))
-                        }
-                      >
-                        {"< 이전"}
-                      </Button>
-                      <Text fontSize="xs" color="gray.500">
-                        기간을 선택하세요
-                      </Text>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() =>
-                          setCurrentMonth((prev) => addMonths(prev, 1))
-                        }
-                      >
-                        {"다음 >"}
-                      </Button>
-                    </Flex>
-                    <Flex gap={4}>
-                      {renderMonthGrid(
-                        monthDates.filter((d) => isSameMonth(d, currentMonth)),
-                      )}
-                      {renderMonthGrid(
-                        monthDates.filter((d) =>
-                          isSameMonth(d, addMonths(currentMonth, 1)),
-                        ),
-                      )}
-                    </Flex>
-                    <Flex justify="flex-end" gap={2} mt={3}>
-                      <Button
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => {
-                          resetCustomRange();
-                          onDateChange("30일");
-                        }}
-                      >
-                        초기화
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={() => setCustomOpen(false)}
-                      >
-                        닫기
-                      </Button>
-                    </Flex>
-                  </Popover.Content>
-                </Popover.Positioner>
-              </Popover.Root>
-            );
-          })}
-        </Flex>}
+                );
+              }
+
+              return (
+                <Popover.Root
+                  key={range}
+                  open={customOpen}
+                  onOpenChange={(details) => {
+                    setCustomOpen(details.open);
+                    if (details.open && !customStart && !customEnd)
+                      onDateChange("직접입력");
+                  }}
+                >
+                  <Popover.Trigger>
+                    <Button
+                      as="div"
+                      variant={isSelected ? "solid" : "outline"}
+                      size="sm"
+                      bg={isSelected ? "gray.900" : "white"}
+                      color={isSelected ? "white" : "gray.700"}
+                      borderColor={isSelected ? "gray.900" : "gray.200"}
+                      borderLeftRadius={isFirst ? "md" : 0}
+                      borderRightRadius={isLast ? "md" : 0}
+                      _hover={{ bg: isSelected ? "gray.800" : "gray.50" }}
+                      height="32px"
+                      px={3}
+                    >
+                      {buttonLabel}
+                    </Button>
+                  </Popover.Trigger>
+                  <Popover.Positioner>
+                    <Popover.Content
+                      bg="white"
+                      borderRadius="md"
+                      borderWidth="1px"
+                      borderColor="gray.200"
+                      boxShadow="md"
+                      p={3}
+                      minW="580px"
+                    >
+                      <Flex justify="space-between" align="center" mb={3}>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() =>
+                            setCurrentMonth((prev) => addMonths(prev, -1))
+                          }
+                        >
+                          {t("popover.prev")}
+                        </Button>
+                        <Text fontSize="xs" color="gray.500">
+                          {t("popover.instruction")}
+                        </Text>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() =>
+                            setCurrentMonth((prev) => addMonths(prev, 1))
+                          }
+                        >
+                          {t("popover.next")}
+                        </Button>
+                      </Flex>
+                      <Flex gap={4}>
+                        {renderMonthGrid(
+                          monthDates.filter((d) =>
+                            isSameMonth(d, currentMonth),
+                          ),
+                        )}
+                        {renderMonthGrid(
+                          monthDates.filter((d) =>
+                            isSameMonth(d, addMonths(currentMonth, 1)),
+                          ),
+                        )}
+                      </Flex>
+                      <Flex justify="flex-end" gap={2} mt={3}>
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          onClick={() => {
+                            resetCustomRange();
+                            onDateChange("30일");
+                          }}
+                        >
+                          {t("popover.reset")}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => setCustomOpen(false)}
+                        >
+                          {t("popover.close")}
+                        </Button>
+                      </Flex>
+                    </Popover.Content>
+                  </Popover.Positioner>
+                </Popover.Root>
+              );
+            })}
+          </Flex>
+        )}
 
         {/* 검색 */}
         <Flex gap={2} flex="1" justify="flex-end">
           <Box position="relative" minW="260px" maxW="360px" w="100%">
             <Input
-              placeholder="주문번호, 상품명, 구매자 검색"
+              placeholder={t("search.placeholder")}
               size="sm"
               pl={8}
               pr={8}

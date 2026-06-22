@@ -1,34 +1,46 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { server } from '@/shared/mocks/server';
-import { createWrapper } from '@/shared/mocks/test-utils';
-import { TEST_CHANNEL_UUID } from '@/shared/mocks/handlers';
-import { useShopifyProducts } from './shopifyProductQueries';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { server } from "@/shared/mocks/server";
+import { createWrapper } from "@/shared/mocks/test-utils";
+import { TEST_CHANNEL_UUID } from "@/shared/mocks/handlers";
+import { useShopifyProducts } from "./shopifyProductQueries";
 
-vi.mock('@/entities/channel', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/entities/channel')>();
+vi.mock("@/entities/channel", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/entities/channel")>();
   return {
     ...actual,
     useChannelApiKey: (channelId: string) => {
-      if (channelId === 'shopify') {
-        return { keys: {}, hasKey: true, isLoading: false, saveKeys: vi.fn(), removeKeys: vi.fn() };
+      if (channelId === "shopify") {
+        return {
+          keys: {},
+          hasKey: true,
+          isLoading: false,
+          saveKeys: vi.fn(),
+          removeKeys: vi.fn(),
+        };
       }
-      return { keys: null, hasKey: false, isLoading: false, saveKeys: vi.fn(), removeKeys: vi.fn() };
+      return {
+        keys: null,
+        hasKey: false,
+        isLoading: false,
+        saveKeys: vi.fn(),
+        removeKeys: vi.fn(),
+      };
     },
     useChannelUuid: (channelId: string) => {
-      if (channelId === 'shopify') return TEST_CHANNEL_UUID;
+      if (channelId === "shopify") return TEST_CHANNEL_UUID;
       return null;
     },
   };
 });
 
-describe('useShopifyProducts', () => {
+describe("useShopifyProducts", () => {
   beforeEach(() => {
     server.resetHandlers();
   });
 
-  it('API 키가 있을 때 상품 목록을 가져온다', async () => {
+  it("API 키가 있을 때 상품 목록을 가져온다", async () => {
     const { result } = renderHook(() => useShopifyProducts(), {
       wrapper: createWrapper(),
     });
@@ -40,12 +52,12 @@ describe('useShopifyProducts', () => {
     });
 
     expect(result.current.data).toHaveLength(1);
-    expect(result.current.data[0].title).toBe('테스트 상품');
-    expect(result.current.data[0].status).toBe('active');
+    expect(result.current.data[0].title).toBe("테스트 상품");
+    expect(result.current.data[0].status).toBe("active");
     expect(result.current.error).toBeNull();
   });
 
-  it('상품 목록에 pageInfo가 포함된다', async () => {
+  it("상품 목록에 pageInfo가 포함된다", async () => {
     const { result } = renderHook(() => useShopifyProducts(), {
       wrapper: createWrapper(),
     });
@@ -60,17 +72,17 @@ describe('useShopifyProducts', () => {
     });
   });
 
-  it('status 필터가 쿼리 파라미터에 포함된다', async () => {
-    let capturedUrl = '';
+  it("status 필터가 쿼리 파라미터에 포함된다", async () => {
+    let capturedUrl = "";
     server.use(
-      http.get('/api/products', ({ request }) => {
+      http.get("/api/products", ({ request }) => {
         capturedUrl = request.url;
         return HttpResponse.json([]);
       }),
     );
 
     const { result } = renderHook(
-      () => useShopifyProducts({ status: 'active' }),
+      () => useShopifyProducts({ status: "active" }),
       { wrapper: createWrapper() },
     );
 
@@ -78,14 +90,14 @@ describe('useShopifyProducts', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(capturedUrl).toContain('itemStatus=active');
+    expect(capturedUrl).toContain("itemStatus=active");
   });
 
-  it('API 오류 시 에러 상태를 반환한다', async () => {
+  it("API 오류 시 에러 상태를 반환한다", async () => {
     server.use(
-      http.get('/api/products', () => {
+      http.get("/api/products", () => {
         return HttpResponse.json(
-          { error: 'AUTH_ERROR', message: '인증 오류' },
+          { error: "AUTH_ERROR", message: "인증 오류" },
           { status: 401 },
         );
       }),
@@ -95,14 +107,17 @@ describe('useShopifyProducts', () => {
       wrapper: createWrapper(),
     });
 
-    await waitFor(() => {
-      expect(result.current.error).not.toBeNull();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(result.current.error).not.toBeNull();
+      },
+      { timeout: 5000 },
+    );
 
-    expect(result.current.error?.type).toBe('AUTH_ERROR');
+    expect(result.current.error?.type).toBe("AUTH_ERROR");
   });
 
-  it('hasApiKey가 true를 반환한다', async () => {
+  it("hasApiKey가 true를 반환한다", async () => {
     const { result } = renderHook(() => useShopifyProducts(), {
       wrapper: createWrapper(),
     });
