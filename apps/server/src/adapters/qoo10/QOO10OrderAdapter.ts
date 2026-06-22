@@ -5,11 +5,13 @@
 import type {
   ClaimStatus,
   ClaimType,
+  ConfirmOrdersPayload,
   IncidentType,
   IOrderAdapter,
   PullOrdersParams,
   PushDispatchDelayPayload,
   PushResult,
+  PushTrackingBulkPayload,
   PushTrackingPayload,
   StandardClaim,
   StandardOrder,
@@ -443,7 +445,8 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
   }
 
   // ── pullOrders — ShippingBasic.GetShippingInfo_v3 ───────────────────────
-  // ShippingStatus '5' 는 전체 — Qoo10 공통 규약([[conventions]]).
+  // Qoo10 명세: ShippingStatus 공백 → 1~3(배송대기/배송요청/배송준비) 자동 조회.
+  // PlayAuto의 "주문 수집"(결제완료 + 신규주문 단계)과 동일한 범위.
   // SearchCondition '1' 주문일자 기준.
   async pullOrders(params: PullOrdersParams): Promise<StandardOrder[]> {
     const since = toYYYYMMDD(params.sinceDate);
@@ -451,7 +454,7 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     const items = await this.callQoo10<Qoo10ShippingItem[]>(
       'ShippingBasic.GetShippingInfo_v3',
       {
-        ShippingStatus: '5',
+        ShippingStatus: '',
         SearchStartDate: since,
         SearchEndDate: until,
         SearchCondition: '1',
@@ -612,6 +615,135 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
     }
   }
 
+  // ── pushTrackingBulk — ShippingBasic.SetSendingInfoBulk ────────────────
+  // 스펙: docs/api/qoo10/orders/SetSendingInfoBulk.md
+  //   m_no   : 15773
+  //   Input  : ShippingInfoJson = JSON.stringify(Array<{OrderNo, ShippingCorp, TrackingNo}>)
+  //   Output : ResultObject = Array<{contr_no, result_cd, transc_nm, ResultCode, ResultMsg}>
+  //   제약   : 1회 최대 500건. ShippingCorp Max 200, TrackingNo Max 50.
+  // PushResult 계약상 실패는 throw 대신 { ok:false, message } 반환 (입력 검증 실패만 throw).
+  async pushTrackingBulk(
+    payload: PushTrackingBulkPayload,
+  ): Promise<PushResult[]> {
+    if (payload.items.length === 0) return [];
+    if (payload.items.length > QOO10_BULK_MAX) {
+      throw new Error(
+        `Qoo10 SetSendingInfoBulk: max ${QOO10_BULK_MAX} orders per call, got ${payload.items.length}`,
+      );
+    }
+
+    const sanitized = payload.items.map((item) => ({
+      channelOrderId: item.channelOrderId,
+      shippingCorp: (item.trackingCarrier ?? '').slice(0, 200),
+      trackingNo: (item.trackingNo ?? '').slice(0, 50),
+    }));
+
+    // 필수 필드 누락 항목은 호출 전 단계에서 즉시 실패 표시.
+    const valid = sanitized.filter(
+      (s) => s.channelOrderId && s.shippingCorp && s.trackingNo,
+    );
+    if (valid.length === 0) {
+      return sanitized.map((s) => ({
+        ok: false,
+        channelOrderId: s.channelOrderId,
+        message:
+          'Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required',
+      }));
+    }
+
+    const shippingInfo = valid.map((s) => ({
+      OrderNo: s.channelOrderId,
+      ShippingCorp: s.shippingCorp,
+      TrackingNo: s.trackingNo,
+    }));
+
+    const form = new URLSearchParams({
+      ShippingInfoJson: JSON.stringify(shippingInfo),
+      returnType: 'json',
+    });
+    const url = `${BASE_URL}/ShippingBasic.SetSendingInfoBulk`;
+
+    type BulkRow = {
+      contr_no?: number;
+      result_cd?: number;
+      transc_nm?: string;
+      ResultCode?: number;
+      ResultMsg?: string;
+    };
+
+    let rows: BulkRow[] = [];
+    let topMsg = '';
+    let topCode = 0;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          GiosisCertificationKey: this.certKey,
+          QAPIVersion: '1.0',
+          Accept: 'application/json',
+        },
+        body: form.toString(),
+      });
+      if (!res.ok) {
+        const msg = `Qoo10 HTTP error: ${res.status}`;
+        return sanitized.map((s) => ({
+          ok: false,
+          channelOrderId: s.channelOrderId,
+          message: msg,
+        }));
+      }
+      const data = (await res.json()) as Qoo10ApiResponse<BulkRow[]>;
+      topCode = data.ResultCode;
+      topMsg = data.ResultMsg;
+      rows = Array.isArray(data.ResultObject) ? data.ResultObject : [];
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return sanitized.map((s) => ({
+        ok: false,
+        channelOrderId: s.channelOrderId,
+        message: msg,
+      }));
+    }
+
+    // 전체 호출 실패: 모든 주문에 동일 실패 전파.
+    if (topCode !== 0) {
+      return sanitized.map((s) => ({
+        ok: false,
+        channelOrderId: s.channelOrderId,
+        message: `Qoo10 [${topCode}] ${topMsg}`,
+      }));
+    }
+
+    // 개별 매핑은 contr_no(1-base) 또는 입력 순서로 매칭.
+    // valid만 호출되므로 invalid 항목은 별도로 실패 결과 합성.
+    const validResults: PushResult[] = valid.map((s, idx) => {
+      const row =
+        rows.find((r) => Number(r.contr_no) === idx + 1) ?? rows[idx] ?? {};
+      const ok = Number(row.result_cd) === 0;
+      const carrier = row.transc_nm ? ` (${row.transc_nm})` : '';
+      return {
+        ok,
+        channelOrderId: s.channelOrderId,
+        message: (row.ResultMsg ?? (ok ? topMsg : 'unknown')) + carrier,
+        raw: row,
+      };
+    });
+
+    // sanitized 원래 순서대로 결과 반환 (invalid 항목 채워서).
+    const byId = new Map(validResults.map((r) => [r.channelOrderId, r]));
+    return sanitized.map((s) => {
+      const found = byId.get(s.channelOrderId);
+      if (found) return found;
+      return {
+        ok: false,
+        channelOrderId: s.channelOrderId,
+        message:
+          'Qoo10 SetSendingInfoBulk: OrderNo/ShippingCorp/TrackingNo required',
+      };
+    });
+  }
+
   // ── pushDispatchDelay — ShippingBasic.SetSellerCheckYNBulk ─────────────
   // 스펙: docs/api/qoo10/orders/SetSellerCheckYNBulk.md
   //   Input  : SendPlanDtInfoJson = JSON.stringify(Array<{OrderNo, EstShipDt(YYYYMMDD), DelayType, DelayMemo}>)
@@ -724,6 +856,23 @@ export class QOO10OrderAdapter implements IOrderAdapter<Qoo10ShippingItem> {
         message: row.ResultMsg ?? (ok ? topMsg : 'unknown'),
         raw: row,
       };
+    });
+  }
+
+  // ── confirmOrders — ShippingBasic.SetSellerCheckYNBulk (주문확인/발주확인) ──
+  // 결제완료 → 신규주문 전환 트리거. Qoo10은 별도 "주문확인" 엔드포인트가 없고
+  // SetSellerCheckYNBulk(EstShipDt + DelayType)가 사실상 발주확인 역할을 겸함.
+  // 사용자가 EstShipDt를 선택(오늘 이후만), DelayType은 기본 1(상품준비중).
+  // 500건 초과 시 호출자가 청크 분할.
+  async confirmOrders(payload: ConfirmOrdersPayload): Promise<PushResult[]> {
+    const delayType = payload.delayType ?? 1;
+    if (![1, 2, 3, 4].includes(delayType)) {
+      throw new Error(`Qoo10 DelayType must be 1~4, got ${delayType}`);
+    }
+    return this.pushDispatchDelay({
+      channelOrderIds: payload.channelOrderIds,
+      delayType: delayType as 1 | 2 | 3 | 4,
+      estimatedShippingDate: payload.estimatedShippingDate,
     });
   }
 }

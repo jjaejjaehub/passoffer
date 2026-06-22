@@ -137,7 +137,8 @@ export function CollectOrdersModal({ open, onClose }: Props): React.JSX.Element 
           주문 수집
         </Text>
         <Text fontSize="sm" color="gray.500" mb={5}>
-          선택한 채널에서 기간 내 주문을 가져옵니다.
+          선택한 채널에서 기간 내 출고 전(결제완료·신규주문) 단계의 주문을
+          가져옵니다.
         </Text>
 
         <Stack gap={4} mb={5}>

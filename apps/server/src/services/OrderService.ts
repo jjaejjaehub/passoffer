@@ -118,6 +118,17 @@ export class OrderService {
           sinceDate: params.sinceDate,
           untilDate: params.untilDate,
         });
+        this.app.log.info(
+          {
+            phase: "collect_pull",
+            channelId: row.id,
+            channelKey,
+            pulled: pulled.length,
+            sinceDate: params.sinceDate,
+            untilDate: params.untilDate,
+          },
+          "collectOrders pulled",
+        );
         for (const std of pulled) {
           result.processed += 1;
           try {
