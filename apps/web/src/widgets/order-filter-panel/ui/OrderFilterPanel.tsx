@@ -185,6 +185,30 @@ export function OrderFilterPanel({
           )}
         </Box>
 
+        {/* 중복의심만 토글 */}
+        <label
+          htmlFor="dup-only-toggle"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            cursor: "pointer",
+            userSelect: "none",
+            fontSize: 12,
+            color: value.duplicateOnly ? "#dc2626" : "#4b5563",
+            fontWeight: value.duplicateOnly ? 600 : 400,
+          }}
+        >
+          <input
+            id="dup-only-toggle"
+            type="checkbox"
+            checked={!!value.duplicateOnly}
+            onChange={(e) => patch({ duplicateOnly: e.target.checked })}
+            style={{ cursor: "pointer" }}
+          />
+          중복의심만
+        </label>
+
         {/* 초기화 */}
         <Button
           size="sm"

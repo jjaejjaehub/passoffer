@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { ChannelService } from '../../services/ChannelService';
 import { OrderService } from '../../services/OrderService';
-import { orders, orderItems, masterProductVariants, masterProducts } from '../../db/schema';
+import { orders, orderItems, masterProductVariants, masterProducts, skus } from '../../db/schema';
 
 // fulfillment rank → 의미 키 매핑 (counts 응답용)
 const RANK_TO_SEMANTIC: Record<number, string> = {
@@ -61,7 +61,20 @@ const listOrdersQuery = z.object({
     .enum(['orderedAt', 'paidAt', 'shippedAt', 'fulfillmentStatus', 'total', 'channelOrderId', 'createdAt', 'updatedAt'])
     .default('orderedAt'),
   sortDir: z.enum(['asc', 'desc']).default('desc'),
+  // SKU 매칭 탭 필터
+  autoMatched: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
+  matchedBy: z.enum(['auto', 'manual', 'rule']).optional(),
+  matchState: z.enum(['unmatched', 'partial', 'fully']).optional(),
+  duplicateOnly: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
 });
+
+const DUPLICATE_LOOKBACK_DAYS = 30;
 
 const cancelBody = z.object({
   reason: z.string().optional(),
@@ -125,8 +138,9 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: 'INVALID_QUERY', details: parsed.error.flatten() });
     }
 
-    const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir } = parsed.data;
+    const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir, autoMatched, matchedBy, matchState, duplicateOnly } = parsed.data;
     const userId = request.user.userId;
+    const dupLookbackCutoff = new Date(Date.now() - DUPLICATE_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
 
     // status 필터를 제외한 공통 조건 — counts/items 양쪽에서 공유
     const baseConds = [eq(orders.userId, userId)];
@@ -139,11 +153,51 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     if (status && status.length > 0) {
       itemsConds.push(inArray(orders.fulfillmentStatus, status));
     }
+    if (autoMatched !== undefined) {
+      itemsConds.push(eq(orders.autoMatched, autoMatched));
+    }
+    if (matchedBy) {
+      itemsConds.push(eq(orders.matchedBy, matchedBy));
+    }
+    // matchState 필터 — orderItems 의 skuId NULL 분포 기반
+    // unmatched: 모든 items.skuId IS NULL
+    // partial:   일부 items.skuId IS NULL, 일부 NOT NULL
+    // fully:     모든 items.skuId IS NOT NULL
+    if (matchState) {
+      const matchedCountSql = sql<number>`(
+        SELECT count(*)::int FROM ${orderItems}
+        WHERE ${orderItems.orderId} = ${orders.id}
+          AND ${orderItems.skuId} IS NOT NULL
+      )`;
+      const totalCountSql = sql<number>`(
+        SELECT count(*)::int FROM ${orderItems}
+        WHERE ${orderItems.orderId} = ${orders.id}
+      )`;
+      if (matchState === 'unmatched') {
+        itemsConds.push(sql`${matchedCountSql} = 0 AND ${totalCountSql} > 0`);
+      } else if (matchState === 'fully') {
+        itemsConds.push(sql`${matchedCountSql} = ${totalCountSql} AND ${totalCountSql} > 0`);
+      } else if (matchState === 'partial') {
+        itemsConds.push(sql`${matchedCountSql} > 0 AND ${matchedCountSql} < ${totalCountSql}`);
+      }
+    }
+    if (duplicateOnly) {
+      itemsConds.push(
+        sql`${orders.duplicateGroupKey} IS NOT NULL AND ${orders.duplicateGroupKey} IN (
+          SELECT duplicate_group_key FROM ${orders}
+          WHERE user_id = ${userId}
+            AND duplicate_group_key IS NOT NULL
+            AND ordered_at >= ${dupLookbackCutoff}
+          GROUP BY duplicate_group_key
+          HAVING count(*) > 1
+        )`,
+      );
+    }
 
     const orderByCol = SORT_COLUMNS[sortBy];
     const orderBy = sortDir === 'asc' ? asc(orderByCol) : desc(orderByCol);
 
-    const [items, totalRow, rankRows, holdRows, claimRow, allRow] = await Promise.all([
+    const [rawItems, totalRow, rankRows, holdRows, claimRow, allRow] = await Promise.all([
       app.db
         .select()
         .from(orders)
@@ -202,6 +256,40 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       else if (row.holdStatus === 'dispatch_hold') counts.hold_dispatch = row.n;
     }
     counts.claim_any = claimRow[0]?.n ?? 0;
+
+    // duplicateGroupKey 별 같은 유저 30일 윈도우 카운트 (페이지 결과에 머지)
+    const dupKeys = Array.from(
+      new Set(
+        rawItems
+          .map((r) => r.duplicateGroupKey)
+          .filter((k): k is string => typeof k === 'string' && k.length > 0),
+      ),
+    );
+    const dupCountMap = new Map<string, number>();
+    if (dupKeys.length > 0) {
+      const dupRows = await app.db
+        .select({
+          key: orders.duplicateGroupKey,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.userId, userId),
+            inArray(orders.duplicateGroupKey, dupKeys),
+            gte(orders.orderedAt, dupLookbackCutoff),
+          ),
+        )
+        .groupBy(orders.duplicateGroupKey);
+      for (const r of dupRows) {
+        if (r.key) dupCountMap.set(r.key, r.n);
+      }
+    }
+
+    const items = rawItems.map((row) => ({
+      ...row,
+      duplicateCount: row.duplicateGroupKey ? dupCountMap.get(row.duplicateGroupKey) ?? null : null,
+    }));
 
     return {
       items,
@@ -615,6 +703,128 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
+  // GET /api/orders/:orderId/items — SKU 매칭 워크스페이스용 라인아이템 + 현재 SKU 상태
+  app.get<{ Params: { orderId: string } }>(
+    '/orders/:orderId/items',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const userId = request.user.userId;
+      const { orderId } = request.params;
+
+      const [ownerRow] = await app.db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+        .limit(1);
+      if (!ownerRow) {
+        return reply.status(404).send({ error: 'ORDER_NOT_FOUND' });
+      }
+
+      const rows = await app.db
+        .select({
+          id: orderItems.id,
+          channelItemCode: orderItems.channelItemCode,
+          channelItemTitle: orderItems.channelItemTitle,
+          channelOption: orderItems.channelOption,
+          channelOptionCode: orderItems.channelOptionCode,
+          orderQty: orderItems.orderQty,
+          unitPrice: orderItems.unitPrice,
+          totalPrice: orderItems.totalPrice,
+          skuId: orderItems.skuId,
+          skuCode: orderItems.skuCode,
+          skuName: orderItems.skuName,
+          outputQty: orderItems.outputQty,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, orderId));
+
+      return { items: rows };
+    },
+  );
+
+  // PATCH /api/orders/:orderId/items/:itemId/sku — 단건 SKU 수동 매칭
+  app.patch<{ Params: { orderId: string; itemId: string } }>(
+    '/orders/:orderId/items/:itemId/sku',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const parsed = z
+        .object({
+          skuId: z.string().uuid().nullable(),
+          outputQty: z.number().int().min(0).optional(),
+        })
+        .safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+      }
+      const userId = request.user.userId;
+      const { orderId, itemId } = request.params;
+      const { skuId, outputQty } = parsed.data;
+
+      try {
+        const result = await applySingleSkuMatch(app, { userId, orderId, itemId, skuId, outputQty });
+        return result;
+      } catch (err: unknown) {
+        const code = err instanceof Error && 'code' in err ? (err as { code: string }).code : null;
+        if (code === 'ORDER_ITEM_NOT_FOUND') {
+          return reply.status(404).send({ error: 'ORDER_ITEM_NOT_FOUND' });
+        }
+        if (code === 'SKU_NOT_FOUND') {
+          return reply.status(404).send({ error: 'SKU_NOT_FOUND' });
+        }
+        app.log.error(err);
+        const message = err instanceof Error ? err.message : 'SKU 매칭 중 오류가 발생했습니다.';
+        return reply.status(500).send({ error: 'SKU_MATCH_FAILED', message });
+      }
+    },
+  );
+
+  // POST /api/orders/items/bulk-sku — 다건 SKU 수동 매칭
+  app.post('/orders/items/bulk-sku', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = z
+      .object({
+        items: z
+          .array(
+            z.object({
+              orderId: z.string().uuid(),
+              itemId: z.string().uuid(),
+              skuId: z.string().uuid().nullable(),
+              outputQty: z.number().int().min(0).optional(),
+            }),
+          )
+          .min(1)
+          .max(500),
+      })
+      .safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+
+    const userId = request.user.userId;
+    const failed: Array<{ itemId: string; reason: string }> = [];
+    let ok = 0;
+    for (const it of parsed.data.items) {
+      try {
+        await applySingleSkuMatch(app, {
+          userId,
+          orderId: it.orderId,
+          itemId: it.itemId,
+          skuId: it.skuId,
+          outputQty: it.outputQty,
+        });
+        ok += 1;
+      } catch (err) {
+        const reason =
+          err instanceof Error && 'code' in err
+            ? (err as { code: string }).code
+            : err instanceof Error
+              ? err.message
+              : 'UNKNOWN';
+        failed.push({ itemId: it.itemId, reason });
+      }
+    }
+    return { ok, failed, totalRequested: parsed.data.items.length };
+  });
+
   // PATCH /api/orders/:channelId/:orderId/note
   app.patch<{ Params: { channelId: string; orderId: string } }>(
     '/orders/:channelId/:orderId/note',
@@ -637,4 +847,81 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       return { ok: true };
     },
   );
+}
+
+/**
+ * 단건 SKU 수동 매칭 — orderItem 의 skuId/skuCode/skuName 갱신,
+ * 부모 order 의 matchedBy='manual', autoMatched 재계산.
+ * 에러는 code 프로퍼티(ORDER_ITEM_NOT_FOUND / SKU_NOT_FOUND)로 식별.
+ */
+async function applySingleSkuMatch(
+  app: FastifyInstance,
+  params: {
+    userId: string;
+    orderId: string;
+    itemId: string;
+    skuId: string | null;
+    outputQty?: number;
+  },
+): Promise<{ ok: true; orderId: string; itemId: string; autoMatched: boolean }> {
+  const { userId, orderId, itemId, skuId, outputQty } = params;
+
+  // 1) orderItem 이 본인 userId 소속인지 검증 (order join)
+  const [row] = await app.db
+    .select({
+      itemId: orderItems.id,
+      orderId: orderItems.orderId,
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(and(eq(orderItems.id, itemId), eq(orderItems.orderId, orderId), eq(orders.userId, userId)))
+    .limit(1);
+  if (!row) {
+    const err = new Error('order item not found') as Error & { code: string };
+    err.code = 'ORDER_ITEM_NOT_FOUND';
+    throw err;
+  }
+
+  // 2) skuId 가 제공되면 본인 SKU 인지 검증 + code/name 조회
+  let skuCode: string | null = null;
+  let skuName: string | null = null;
+  if (skuId) {
+    const [s] = await app.db
+      .select({ id: skus.id, code: skus.code, name: skus.name })
+      .from(skus)
+      .where(and(eq(skus.id, skuId), eq(skus.userId, userId)))
+      .limit(1);
+    if (!s) {
+      const err = new Error('sku not found') as Error & { code: string };
+      err.code = 'SKU_NOT_FOUND';
+      throw err;
+    }
+    skuCode = s.code;
+    skuName = s.name;
+  }
+
+  // 3) orderItem 갱신
+  const patch: Record<string, unknown> = {
+    skuId: skuId,
+    skuCode: skuCode,
+    skuName: skuName,
+  };
+  if (outputQty !== undefined) patch.outputQty = outputQty;
+  await app.db.update(orderItems).set(patch).where(eq(orderItems.id, itemId));
+
+  // 4) 부모 order — autoMatched 재계산 + matchedBy='manual'
+  const itemsAll = await app.db
+    .select({ id: orderItems.id, skuId: orderItems.skuId })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+  const total = itemsAll.length;
+  const matched = itemsAll.filter((i) => i.skuId).length;
+  const autoMatched = total > 0 && matched === total;
+
+  await app.db
+    .update(orders)
+    .set({ autoMatched, matchedBy: 'manual', updatedAt: new Date() })
+    .where(eq(orders.id, orderId));
+
+  return { ok: true, orderId, itemId, autoMatched };
 }

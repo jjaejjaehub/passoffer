@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { orders } from '../../db/schema';
+import { OrderService } from '../../services/OrderService';
 
 const RANK_TO_SEMANTIC: Record<number, string> = {
   10: 'paid',
@@ -36,6 +37,26 @@ const SORT_COLUMNS = {
   createdAt: orders.createdAt,
   updatedAt: orders.updatedAt,
 } as const;
+
+// JST 기준 오늘 YYYY-MM-DD (Asia/Tokyo)
+function todayYmdJst(): string {
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return fmt.format(new Date()); // en-CA → YYYY-MM-DD
+}
+
+const confirmOrdersBody = z.object({
+  orderIds: z.array(z.string().uuid()).min(1).max(5000),
+  estimatedShippingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'YYYY-MM-DD 형식이어야 합니다.'),
+  delayType: z
+    .union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
+    .optional()
+    .default(1),
+});
 
 const listPaymentsQuery = z.object({
   status: z
@@ -198,5 +219,37 @@ export async function paymentsRoutes(app: FastifyInstance): Promise<void> {
         byCurrency,
       },
     };
+  });
+
+  // POST /api/payments/confirm — 결제완료(10) → 신규주문(20) 전환
+  // Qoo10: SetSellerCheckYNBulk(15772) 호출. Shopify: API 호출 없이 즉시 rank 전환.
+  app.post('/payments/confirm', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = confirmOrdersBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+
+    // EstShipDt: 오늘 이후만 허용 (Qoo10 -10018 회피)
+    const today = todayYmdJst();
+    if (parsed.data.estimatedShippingDate <= today) {
+      return reply
+        .status(400)
+        .send({ error: 'INVALID_DATE', message: '발송예정일은 오늘 이후 날짜만 선택할 수 있습니다.' });
+    }
+
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.confirmOrders({
+        userId: request.user.userId,
+        orderIds: parsed.data.orderIds,
+        estimatedShippingDate: parsed.data.estimatedShippingDate,
+        delayType: parsed.data.delayType,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '주문확인 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'CONFIRM_FAILED', message });
+    }
   });
 }

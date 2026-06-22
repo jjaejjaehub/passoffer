@@ -10,6 +10,7 @@ import { paymentsRoutes } from './routes/payments/index';
 import { newOrdersRoutes } from './routes/new-orders/index';
 import { dispatchRoutes } from './routes/dispatch/index';
 import { shippingRoutes } from './routes/shipping/index';
+import { barcodeDispatchRoutes } from './routes/barcode-dispatch/index';
 import { allOrdersRoutes } from './routes/all-orders/index';
 import { productRoutes } from './routes/products/index';
 import { claimRoutes } from './routes/claims/index';
@@ -20,6 +21,8 @@ import { skuRoutes } from './routes/skus/index';
 import { warehouseRoutes } from './routes/warehouses/index';
 import { userSettingsRoutes } from './routes/user-settings/index';
 import { orderEventLogRoutes } from './routes/order-event-logs/index';
+import { matchingRuleRoutes } from './routes/matching-rules/index';
+import { giftRuleRoutes } from './routes/gift-rules/index';
 
 const app = Fastify({ logger: { level: 'info' } });
 
@@ -43,6 +46,7 @@ async function main() {
   await app.register(newOrdersRoutes, { prefix: '/api' });
   await app.register(dispatchRoutes, { prefix: '/api' });
   await app.register(shippingRoutes, { prefix: '/api' });
+  await app.register(barcodeDispatchRoutes, { prefix: '/api' });
   await app.register(allOrdersRoutes, { prefix: '/api' });
   await app.register(productRoutes, { prefix: '/api' });
   await app.register(claimRoutes, { prefix: '/api' });
@@ -53,6 +57,8 @@ async function main() {
   await app.register(warehouseRoutes, { prefix: '/api' });
   await app.register(userSettingsRoutes, { prefix: '/api' });
   await app.register(orderEventLogRoutes, { prefix: '/api' });
+  await app.register(matchingRuleRoutes, { prefix: '/api' });
+  await app.register(giftRuleRoutes, { prefix: '/api' });
 
   const port = app.config.PORT ?? 4000;
   await app.listen({ port, host: '0.0.0.0' });

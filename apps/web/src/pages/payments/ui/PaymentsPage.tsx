@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Box, Flex, HStack, Text, Badge } from "@chakra-ui/react";
+import { Box, Button, Flex, HStack, Text, Badge } from "@chakra-ui/react";
+import { CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import {
   usePayments,
+  useConfirmOrders,
   type OrderListItem,
   type OrderListParams,
 } from "@/entities/order";
@@ -15,7 +17,9 @@ import { OrderTableV2 } from "@/widgets/order-table-v2";
 import { OrdersAuxPanel } from "@/widgets/orders-aux-panel";
 import { OrderDetailModal } from "@/features/order-detail-modal";
 import { OrderSyncButtons } from "@/features/sync-orders";
+import { ConfirmOrdersModal } from "@/features/confirm-orders";
 import { PageHeader } from "@/shared/ui";
+import { appToaster } from "@/shared/ui/app-toaster";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
 import {
   DEFAULT_PAGE_SIZE,
@@ -49,8 +53,37 @@ export function PaymentsPage(): React.JSX.Element {
   const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(
     null,
   );
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const { items, total, counts, paymentSummary, isLoading } = usePayments(params);
+  const confirmMutation = useConfirmOrders();
+
+  const handleConfirm = async (input: {
+    estimatedShippingDate: string;
+    delayType: 1 | 2 | 3 | 4;
+  }): Promise<void> => {
+    const orderIds = Array.from(selectedOrderIds);
+    if (orderIds.length === 0) return;
+    const result = await confirmMutation.mutateAsync({
+      orderIds,
+      estimatedShippingDate: input.estimatedShippingDate,
+      delayType: input.delayType,
+    });
+    const parts: string[] = [
+      `${result.totalConfirmed.toLocaleString()}건 확인`,
+    ];
+    if (result.totalFailed > 0) parts.push(`${result.totalFailed.toLocaleString()}건 실패`);
+    if (result.skipped > 0) parts.push(`${result.skipped.toLocaleString()}건 스킵`);
+    appToaster.create({
+      title: parts.join(' / '),
+      type: result.totalFailed > 0 ? 'warning' : 'success',
+    });
+    setSelectedOrderIds(new Set());
+    setConfirmOpen(false);
+  };
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -58,7 +91,22 @@ export function PaymentsPage(): React.JSX.Element {
         title={t("title")}
         description={t("description")}
         mb={2}
-        actions={<OrderSyncButtons showCollect />}
+        actions={
+          <HStack gap={2}>
+            <Button
+              size="sm"
+              colorScheme="blue"
+              disabled={selectedOrderIds.size === 0 || confirmMutation.isPending}
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Flex align="center" gap={1.5}>
+                <CheckCircle2 size={14} />
+                주문확인 ({selectedOrderIds.size.toLocaleString()})
+              </Flex>
+            </Button>
+            <OrderSyncButtons showCollect />
+          </HStack>
+        }
       />
 
       <Flex gap={3} align="flex-start" flex={1} minH={0}>
@@ -121,6 +169,8 @@ export function PaymentsPage(): React.JSX.Element {
             onParamsChange={setParams}
             onRowClick={setSelectedOrder}
             isLoading={isLoading}
+            selectedIds={selectedOrderIds}
+            onSelectionChange={setSelectedOrderIds}
           />
         </Flex>
       </Flex>
@@ -129,6 +179,15 @@ export function PaymentsPage(): React.JSX.Element {
         order={selectedOrder}
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
+      />
+
+      <ConfirmOrdersModal
+        open={confirmOpen}
+        onClose={() => {
+          if (!confirmMutation.isPending) setConfirmOpen(false);
+        }}
+        orderCount={selectedOrderIds.size}
+        onConfirm={handleConfirm}
       />
     </Box>
   );

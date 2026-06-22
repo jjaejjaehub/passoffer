@@ -172,12 +172,31 @@ export interface PushTrackingPayload {
   shippedAt?: string | null;
 }
 
+export interface PushTrackingBulkItem {
+  channelOrderId: string;
+  trackingCarrier: string;
+  trackingNo: string;
+  shippedAt?: string | null;
+}
+
+export interface PushTrackingBulkPayload {
+  items: PushTrackingBulkItem[];
+}
+
 export interface PushDispatchDelayPayload {
   channelOrderIds: string[];
   /** 1~4 — Qoo10 DelayType, 채널별 의미는 어댑터가 해석 */
   delayType: 1 | 2 | 3 | 4;
   /** YYYY-MM-DD (JST) */
   estimatedShippingDate: string;
+}
+
+export interface ConfirmOrdersPayload {
+  channelOrderIds: string[];
+  /** YYYY-MM-DD (JST). Qoo10 -10018 회피용 — 오늘 이후만 허용 */
+  estimatedShippingDate: string;
+  /** Qoo10 DelayType (1=상품준비중, 2=주문제작, 3=고객요청, 4=기타). 기본 1 */
+  delayType?: 1 | 2 | 3 | 4;
 }
 
 export interface PushResult {
@@ -200,8 +219,12 @@ export interface IOrderAdapter<TRaw = unknown> {
   pullClaims(params: PullOrdersParams): Promise<StandardClaim[]>;
   /** 운송장 push — 채널별 fulfillment_status 갱신 트리거 */
   pushTracking(payload: PushTrackingPayload): Promise<PushResult>;
+  /** 운송장 일괄 push — Qoo10 SetSendingInfoBulk(15773), 최대 500건/호출 */
+  pushTrackingBulk?(payload: PushTrackingBulkPayload): Promise<PushResult[]>;
   /** 발송예정일 push — Qoo10 SetSellerCheckYNBulk 등 */
   pushDispatchDelay(payload: PushDispatchDelayPayload): Promise<PushResult[]>;
+  /** 주문확인(발주확인) — Qoo10 SetSellerCheckYNBulk(15772), Shopify 면제 */
+  confirmOrders?(payload: ConfirmOrdersPayload): Promise<PushResult[]>;
 }
 
 // ─── AdapterCapabilities — schema channel_capabilities 미러 ────

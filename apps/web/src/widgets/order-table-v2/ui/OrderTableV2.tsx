@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Badge,
   Box,
   Button,
   chakra,
@@ -24,7 +25,6 @@ import { useTranslations } from "next-intl";
 
 const ROW_HEIGHT = 36;
 import {
-  type ChannelId,
   DEFAULT_COLUMN_ORDER,
   type DefaultColumnKey,
   type FulfillmentRank,
@@ -36,6 +36,7 @@ import {
 } from "@/shared/config";
 import { useLocalStoragePref } from "@/shared/lib";
 import type { OrderListItem, OrderListParams } from "@/entities/order";
+import { useChannels } from "@/entities/channel/api/channelQueries";
 
 interface OrderTableV2Props {
   items: OrderListItem[];
@@ -44,6 +45,8 @@ interface OrderTableV2Props {
   params: OrderListParams;
   onParamsChange: (next: OrderListParams) => void;
   onRowClick?: (row: OrderListItem) => void;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
 }
 
 // 65필드 전체 노출용 컬럼 키 (OrderListItem 키 그대로 사용 — id 등 일부 제외)
@@ -144,12 +147,21 @@ export function OrderTableV2({
   params,
   onParamsChange,
   onRowClick,
+  selectedIds,
+  onSelectionChange,
 }: OrderTableV2Props): React.JSX.Element {
+  const selectionEnabled = !!selectedIds && !!onSelectionChange;
   const t = useTranslations("widgets.orderTableV2");
   const tCols = useTranslations("config.orderColumns");
   const tFulfillment = useTranslations("config.fulfillmentRank");
   const tSortFields = useTranslations("config.sortFields");
   const tChannels = useTranslations("config.channels");
+  const { data: channelList } = useChannels();
+  const channelMap = useMemo(() => {
+    const m = new Map<string, { name: string; channelType: string }>();
+    for (const c of channelList ?? []) m.set(c.id, { name: c.name, channelType: c.channelType });
+    return m;
+  }, [channelList]);
   const [pageSize, setPageSize] = useLocalStoragePref<PageSize>(
     LS_KEYS.pageSize,
     (params.pageSize as PageSize) ?? 100,
@@ -173,10 +185,70 @@ export function OrderTableV2({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageSize]);
 
-  // 컬럼 정의 — 기본 모드 OR 65필드 모드
+  // 헤더 체크박스 상태 — 현재 페이지의 모든 행이 선택되었는지
+  const allVisibleSelected =
+    selectionEnabled &&
+    items.length > 0 &&
+    items.every((it) => selectedIds!.has(it.id));
+  const someVisibleSelected =
+    selectionEnabled &&
+    !allVisibleSelected &&
+    items.some((it) => selectedIds!.has(it.id));
+
+  function toggleAllVisible(checked: boolean): void {
+    if (!selectionEnabled) return;
+    const next = new Set(selectedIds);
+    if (checked) {
+      for (const it of items) next.add(it.id);
+    } else {
+      for (const it of items) next.delete(it.id);
+    }
+    onSelectionChange!(next);
+  }
+
+  function toggleRow(id: string, checked: boolean): void {
+    if (!selectionEnabled) return;
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    onSelectionChange!(next);
+  }
+
+  // 컬럼 정의 — 기본 모드 OR 65필드 모드 (selection 활성화 시 position 0에 checkbox 주입)
   const columns = useMemo<ColumnDef<OrderListItem>[]>(() => {
+    const selectionCol: ColumnDef<OrderListItem> | null = selectionEnabled
+      ? {
+          id: "__selection",
+          header: () => (
+            <input
+              type="checkbox"
+              checked={allVisibleSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = !!someVisibleSelected;
+              }}
+              onChange={(e) => toggleAllVisible(e.currentTarget.checked)}
+              onClick={(e) => e.stopPropagation()}
+              style={{ cursor: "pointer" }}
+              aria-label="select all"
+            />
+          ),
+          cell: ({ row }) => (
+            <input
+              type="checkbox"
+              checked={selectedIds!.has(row.original.id)}
+              onChange={(e) =>
+                toggleRow(row.original.id, e.currentTarget.checked)
+              }
+              onClick={(e) => e.stopPropagation()}
+              style={{ cursor: "pointer" }}
+              aria-label="select row"
+            />
+          ),
+        }
+      : null;
+
     if (exposeAll65) {
-      return ALL_FIELD_KEYS.map((key) => ({
+      const cols = ALL_FIELD_KEYS.map<ColumnDef<OrderListItem>>((key) => ({
         id: String(key),
         header: String(key),
         accessorFn: (row) => row[key],
@@ -186,6 +258,7 @@ export function OrderTableV2({
           </Text>
         ),
       }));
+      return selectionCol ? [selectionCol, ...cols] : cols;
     }
 
     const defs: Record<DefaultColumnKey, ColumnDef<OrderListItem>> = {
@@ -202,16 +275,15 @@ export function OrderTableV2({
         id: "channelId",
         header: tCols("channelId"),
         cell: ({ row }) => {
-          const id = row.original.channelId as ChannelId;
-          let name: string = id;
-          try {
-            name = tChannels(`${id}.name`);
-          } catch {
-            name = id;
-          }
+          const id = row.original.channelId;
+          const entry = channelMap.get(id);
+          const typeLabel =
+            entry && tChannels.has(`${entry.channelType}.name`)
+              ? tChannels(`${entry.channelType}.name`)
+              : entry?.channelType ?? id;
           return (
             <Text fontSize="xs" color="gray.700">
-              {name}
+              {entry?.name ?? typeLabel}
             </Text>
           );
         },
@@ -228,11 +300,21 @@ export function OrderTableV2({
       buyerName: {
         id: "buyerName",
         header: tCols("buyerName"),
-        cell: ({ row }) => (
-          <Text fontSize="xs" color="gray.700">
-            {row.original.buyerName ?? "—"}
-          </Text>
-        ),
+        cell: ({ row }) => {
+          const dupCount = row.original.duplicateCount;
+          return (
+            <HStack gap={1.5}>
+              <Text fontSize="xs" color="gray.700">
+                {row.original.buyerName ?? "—"}
+              </Text>
+              {dupCount && dupCount > 1 ? (
+                <Badge colorPalette="red" variant="subtle" fontSize="2xs">
+                  중복의심 {dupCount}
+                </Badge>
+              ) : null}
+            </HStack>
+          );
+        },
       },
       productSummary: {
         id: "productSummary",
@@ -288,8 +370,20 @@ export function OrderTableV2({
     for (const k of DEFAULT_COLUMN_ORDER) {
       if (!columnOrder.includes(k)) ordered.push(defs[k]);
     }
-    return ordered;
-  }, [exposeAll65, columnOrder, tCols, tChannels, tFulfillment]);
+    return selectionCol ? [selectionCol, ...ordered] : ordered;
+  }, [
+    exposeAll65,
+    columnOrder,
+    tCols,
+    tChannels,
+    tFulfillment,
+    channelMap,
+    selectionEnabled,
+    selectedIds,
+    items,
+    allVisibleSelected,
+    someVisibleSelected,
+  ]);
 
   const table = useReactTable<OrderListItem>({
     data: items,

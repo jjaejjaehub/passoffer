@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Badge, Box, Flex, HStack, Text } from "@chakra-ui/react";
+import { Badge, Box, Button, Flex, HStack, Text } from "@chakra-ui/react";
+import { Truck } from "lucide-react";
 
 import {
   useShipping,
@@ -15,6 +16,7 @@ import { OrderTableV2 } from "@/widgets/order-table-v2";
 import { OrdersAuxPanel } from "@/widgets/orders-aux-panel";
 import { OrderDetailModal } from "@/features/order-detail-modal";
 import { OrderSyncButtons } from "@/features/sync-orders";
+import { BulkShippingModal } from "@/features/bulk-shipping";
 import { PageHeader } from "@/shared/ui";
 import { useLocalStoragePref } from "@/shared/lib/useLocalStoragePref";
 import {
@@ -49,9 +51,18 @@ export function ShippingPage(): React.JSX.Element {
   const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(
     null,
   );
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [shippingOpen, setShippingOpen] = useState(false);
 
   const { items, total, counts, shippingSummary, isLoading } =
     useShipping(params);
+
+  const selectedOrders = useMemo(
+    () => items.filter((o) => selectedOrderIds.has(o.id)),
+    [items, selectedOrderIds],
+  );
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -59,7 +70,20 @@ export function ShippingPage(): React.JSX.Element {
         title={t("title")}
         description={t("description")}
         mb={2}
-        actions={<OrderSyncButtons />}
+        actions={
+          <HStack gap={2}>
+            <Button
+              size="sm"
+              colorScheme="blue"
+              disabled={selectedOrderIds.size === 0}
+              onClick={() => setShippingOpen(true)}
+            >
+              <Truck size={16} style={{ marginRight: 6 }} />
+              운송장 전송 ({selectedOrderIds.size})
+            </Button>
+            <OrderSyncButtons />
+          </HStack>
+        }
       />
 
       <Flex gap={3} align="flex-start" flex={1} minH={0}>
@@ -138,6 +162,8 @@ export function ShippingPage(): React.JSX.Element {
             onParamsChange={setParams}
             onRowClick={setSelectedOrder}
             isLoading={isLoading}
+            selectedIds={selectedOrderIds}
+            onSelectionChange={setSelectedOrderIds}
           />
         </Flex>
       </Flex>
@@ -146,6 +172,13 @@ export function ShippingPage(): React.JSX.Element {
         order={selectedOrder}
         open={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
+      />
+
+      <BulkShippingModal
+        open={shippingOpen}
+        onClose={() => setShippingOpen(false)}
+        orders={selectedOrders}
+        onCompleted={() => setSelectedOrderIds(new Set())}
       />
     </Box>
   );

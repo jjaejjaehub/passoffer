@@ -165,6 +165,9 @@ export interface OrderListItem {
   bundleNumber: string | null;
   bundleable: boolean | null;
   bundleRoleIsPrimary: boolean | null;
+  // Duplicate detection
+  duplicateGroupKey: string | null;
+  duplicateCount: number | null;
   // Audit
   autoMatched: boolean | null;
   matchedBy: string | null;
@@ -193,6 +196,9 @@ export type OrderSortField =
   | "createdAt"
   | "updatedAt";
 
+export type OrderMatchedBy = "auto" | "manual" | "rule";
+export type OrderMatchState = "unmatched" | "partial" | "fully";
+
 export interface OrderListParams {
   status?: number[];
   dateField?: OrderDateField;
@@ -203,6 +209,12 @@ export interface OrderListParams {
   pageSize?: number;
   sortBy?: OrderSortField;
   sortDir?: "asc" | "desc";
+  // SKU 매칭 탭 필터
+  autoMatched?: boolean;
+  matchedBy?: OrderMatchedBy;
+  matchState?: OrderMatchState;
+  // 중복의심 필터
+  duplicateOnly?: boolean;
 }
 
 // ─── 결제관리 페이지 전용 응답 ────────────────────────────────

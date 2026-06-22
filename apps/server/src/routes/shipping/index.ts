@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
 import { orders } from '../../db/schema';
+import { OrderService } from '../../services/OrderService';
 
 const RANK_TO_SEMANTIC: Record<number, string> = {
   10: 'paid',
@@ -36,6 +37,40 @@ const SORT_COLUMNS = {
   createdAt: orders.createdAt,
   updatedAt: orders.updatedAt,
 } as const;
+
+const sendShippingBulkBody = z.object({
+  items: z
+    .array(
+      z.object({
+        orderId: z.string().uuid(),
+        shippingCorp: z.string().min(1).max(200),
+        trackingNo: z.string().min(1).max(50),
+      }),
+    )
+    .min(1)
+    .max(5000),
+});
+
+// 발송예정일은 JST 기준 오늘 이후 (Qoo10 -10018 회피)
+const todayYmdJst = (): string => {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(jst.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const dispatchDelayBody = z.object({
+  orderIds: z.array(z.string().uuid()).min(1).max(5000),
+  estimatedShippingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '발송예정일은 YYYY-MM-DD 형식이어야 합니다.')
+    .refine((v) => v >= todayYmdJst(), {
+      message: '발송예정일은 오늘 이후여야 합니다 (JST).',
+    }),
+  delayType: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+});
 
 const listShippingQuery = z.object({
   status: z
@@ -164,5 +199,52 @@ export async function shippingRoutes(app: FastifyInstance): Promise<void> {
         byCarrier,
       },
     };
+  });
+
+  // POST /api/shipping/dispatch-delay — 발송예정일 변경 (배송지연)
+  // 결제완료/신규주문/출고대기/보류/출력 단계 주문 대상.
+  // Qoo10: SetSellerCheckYNBulk(EstShipDt + DelayType) — rank 10 → 20 전환 포함.
+  // Shopify: DB shippingDueDate 만 갱신 (push API 없음).
+  app.post('/shipping/dispatch-delay', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = dispatchDelayBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.pushDispatchDelay({
+        userId: request.user.userId,
+        orderIds: parsed.data.orderIds,
+        estimatedShippingDate: parsed.data.estimatedShippingDate,
+        delayType: parsed.data.delayType,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '발송예정일 변경 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'DISPATCH_DELAY_FAILED', message });
+    }
+  });
+
+  // POST /api/shipping/send-bulk — 운송장 일괄 등록 (출고대기/보류/출력 → 출고완료)
+  // Qoo10: SetSendingInfoBulk(15773) 호출. Shopify: fulfillmentCreate per-order 순차 호출.
+  app.post('/shipping/send-bulk', { preHandler: [app.authenticate] }, async (request, reply) => {
+    const parsed = sendShippingBulkBody.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'INVALID_REQUEST', details: parsed.error.flatten() });
+    }
+
+    try {
+      const svc = new OrderService(app);
+      const result = await svc.setShippingInfo({
+        userId: request.user.userId,
+        items: parsed.data.items,
+      });
+      return result;
+    } catch (err: unknown) {
+      app.log.error(err);
+      const message = err instanceof Error ? err.message : '운송장 전송 중 오류가 발생했습니다.';
+      return reply.status(500).send({ error: 'SEND_FAILED', message });
+    }
   });
 }

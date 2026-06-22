@@ -74,6 +74,7 @@ export const orderEventLogTypeEnum = pgEnum('order_event_log_type', [
   'duplicate_suspect',
   'status_sync',
   'collect_error',
+  'rule_auto_learned',
 ]);
 export const orderEventLogResultEnum = pgEnum('order_event_log_result', ['ok', 'warn', 'error']);
 
@@ -207,6 +208,8 @@ export const orders = pgTable(
     bundleNumber: text('bundle_number'),                              // [[decisions]] A-4 b: 묶음번호만 공유
     bundleable: boolean('bundleable').notNull().default(true),
     bundleRoleIsPrimary: boolean('bundle_role_is_primary').notNull().default(false),
+    // ── Duplicate detection (1) ──────────────────────────────────
+    duplicateGroupKey: text('duplicate_group_key'),                   // 중복의심 감지용 휴리스틱 키
     // ── Audit (5) ────────────────────────────────────────────────
     autoMatched: boolean('auto_matched').notNull().default(false),
     matchedBy: orderMatchedByEnum('matched_by'),
@@ -222,6 +225,7 @@ export const orders = pgTable(
     index('idx_orders_claim_status').on(t.claimStatus),
     index('idx_orders_paid_at').on(t.paidAt),
     index('idx_orders_channel_auto_matched').on(t.channelId, t.autoMatched),
+    index('idx_orders_duplicate_group').on(t.duplicateGroupKey),
   ],
 );
 
@@ -247,6 +251,8 @@ export const orderItems = pgTable('order_items', {
   skuCode: varchar('sku_code', { length: 128 }),
   skuName: varchar('sku_name', { length: 255 }),
   outputQty: integer('output_qty').notNull().default(0),              // 출고수량 = orderQty × BOM qty
+  matchedBy: orderMatchedByEnum('matched_by'),                        // null=미매칭, auto=SKU직매칭, rule=규칙적중, manual=수동
+  matchRuleId: uuid('match_rule_id').references(() => matchRules.id, { onDelete: 'set null' }),
   // ── 사은품 / 창고 ─────────────────────────────────────────────
   appliedGifts: jsonb('applied_gifts').default([]),                   // [{ ruleId, skuId, qty }]
   warehouseId: uuid('warehouse_id').references(() => warehouses.id, { onDelete: 'set null' }),
@@ -731,6 +737,32 @@ export const giftConditionTypeEnum = pgEnum('gift_condition_type', [
   'sku',
   'category',
   'amount',
+  'qty',
+  'all',
+]);
+
+// PlayAuto 2.0 사은품 분배 방식
+// auto: 출고지시 전환 시 자동 평가/적용
+// manual: 수동 분배 (선택 주문 일괄 적용)
+export const giftDistributionModeEnum = pgEnum('gift_distribution_mode', [
+  'auto',
+  'manual',
+]);
+
+// 12통화 지원 (PlayAuto 2.0 사은품규칙 통화 옵션)
+export const giftCurrencyEnum = pgEnum('gift_currency', [
+  'KRW',
+  'JPY',
+  'USD',
+  'EUR',
+  'GBP',
+  'CNY',
+  'TWD',
+  'HKD',
+  'SGD',
+  'AUD',
+  'CAD',
+  'THB',
 ]);
 
 export const nameRuleScopeEnum = pgEnum('name_rule_scope', [
@@ -751,12 +783,74 @@ export const matchRules = pgTable(
     channelId: uuid('channel_id')
       .notNull()
       .references(() => channels.id, { onDelete: 'cascade' }),
+    // ── IF (조건부) ─────────────────────────────────────────────
+    // PlayAuto 2.0 키 조합: 쇼핑몰 + 쇼핑몰상품코드 + 쇼핑몰 상품명 + 주문 옵션선택명 (+ 옵션코드 보조)
     channelItemCode: text('channel_item_code').notNull(),
-    optionCode: text('option_code'),
-    optionName: text('option_name'),
+    channelItemTitle: text('channel_item_title').notNull().default(''),  // 쇼핑몰 상품명
+    optionCode: text('option_code'),                                      // 보조 식별자(판매자관리코드)
+    optionName: text('option_name'),                                      // 주문 옵션선택명
+    // ── THEN (액션부) ───────────────────────────────────────────
     skuId: uuid('sku_id')
       .notNull()
       .references(() => skus.id, { onDelete: 'cascade' }),
+    outputQty: integer('output_qty').notNull().default(1),                // 출고수량
+    warehouseId: uuid('warehouse_id').references(() => warehouses.id, { onDelete: 'set null' }),
+    // ── 메타 ───────────────────────────────────────────────────
+    priority: smallint('priority').notNull().default(100),
+    isActive: boolean('is_active').notNull().default(true),
+    activeFrom: timestamp('active_from'),
+    activeTo: timestamp('active_to'),
+    note: text('note'),
+    autoLearned: boolean('auto_learned').notNull().default(false),        // 자동 학습으로 생성
+    lastMatchedAt: timestamp('last_matched_at'),                          // 마지막 적중 시각
+    matchHitCount: integer('match_hit_count').notNull().default(0),       // 누적 적중 수
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique('uq_match_rules_if').on(
+      t.userId,
+      t.channelId,
+      t.channelItemCode,
+      t.channelItemTitle,
+      t.optionName,
+    ),
+    index('idx_match_rules_channel_item_code').on(t.channelId, t.channelItemCode, t.optionCode),
+    index('idx_match_rules_channel_item_name').on(t.channelId, t.channelItemCode, t.optionName),
+    index('idx_match_rules_sku').on(t.skuId),
+  ],
+);
+
+// gift_rules — 사은품 자동 추가 룰 (PlayAuto 2.0 사은품규칙 4블록 스펙)
+//   블록1 (기본설정): name, distributionMode, priority, isActive, activeFrom/To, channelFilter
+//   블록2 (조건):     conditionType, conditionCurrency, conditionMinAmount, conditionMinQty, conditionPayload
+//   블록3 (선택상품): conditionPayload.skuIds / categoryIds (조건 부속)
+//   블록4 (분배+사은품): giftSkuId, giftQty, maxApplyCount
+export const giftRules = pgTable(
+  'gift_rules',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // ── 블록1 ───────────────────────────────────────────────────
+    distributionMode: giftDistributionModeEnum('distribution_mode').notNull().default('auto'),
+    channelFilter: jsonb('channel_filter'),       // null=전체, { channelIds: string[] }
+    // ── 블록2/3 ─────────────────────────────────────────────────
+    conditionType: giftConditionTypeEnum('condition_type').notNull(),
+    conditionCurrency: giftCurrencyEnum('condition_currency'),                   // amount 조건일 때만
+    conditionMinAmount: numeric('condition_min_amount', { precision: 14, scale: 2 }),
+    conditionMinQty: integer('condition_min_qty'),
+    conditionPayload: jsonb('condition_payload').notNull().default({}),          // { skuIds?, categoryIds? }
+    // ── 블록4 ───────────────────────────────────────────────────
+    giftSkuId: uuid('gift_sku_id')
+      .notNull()
+      .references(() => skus.id, { onDelete: 'cascade' }),
+    giftQty: integer('gift_qty').notNull().default(1),
+    maxApplyCount: integer('max_apply_count'),     // null=무제한, 누적 적용 한도
+    appliedCount: integer('applied_count').notNull().default(0),
+    // ── 메타 ───────────────────────────────────────────────────
     priority: smallint('priority').notNull().default(100),
     isActive: boolean('is_active').notNull().default(true),
     activeFrom: timestamp('active_from'),
@@ -766,37 +860,9 @@ export const matchRules = pgTable(
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
   (t) => [
-    index('idx_match_rules_channel_item_code').on(t.channelId, t.channelItemCode, t.optionCode),
-    index('idx_match_rules_channel_item_name').on(t.channelId, t.channelItemCode, t.optionName),
-    index('idx_match_rules_sku').on(t.skuId),
-  ],
-);
-
-// gift_rules — 사은품 자동 추가 룰
-export const giftRules = pgTable(
-  'gift_rules',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    conditionType: giftConditionTypeEnum('condition_type').notNull(),
-    conditionPayload: jsonb('condition_payload').notNull(),
-    giftSkuId: uuid('gift_sku_id')
-      .notNull()
-      .references(() => skus.id, { onDelete: 'cascade' }),
-    giftQty: integer('gift_qty').notNull().default(1),
-    priority: smallint('priority').notNull().default(100),
-    isActive: boolean('is_active').notNull().default(true),
-    activeFrom: timestamp('active_from'),
-    activeTo: timestamp('active_to'),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  },
-  (t) => [
     index('idx_gift_rules_user_active').on(t.userId, t.isActive),
     index('idx_gift_rules_gift_sku').on(t.giftSkuId),
+    index('idx_gift_rules_distribution').on(t.userId, t.distributionMode, t.isActive),
   ],
 );
 
@@ -898,3 +964,4 @@ export const userSettings = pgTable('user_settings', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+

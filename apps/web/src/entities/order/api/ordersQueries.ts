@@ -25,6 +25,10 @@ function buildParams(params: OrderListParams): Record<string, string> {
   if (params.pageSize) out.pageSize = String(params.pageSize);
   if (params.sortBy) out.sortBy = params.sortBy;
   if (params.sortDir) out.sortDir = params.sortDir;
+  if (params.autoMatched !== undefined) out.autoMatched = String(params.autoMatched);
+  if (params.matchedBy) out.matchedBy = params.matchedBy;
+  if (params.matchState) out.matchState = params.matchState;
+  if (params.duplicateOnly) out.duplicateOnly = "true";
   return out;
 }
 

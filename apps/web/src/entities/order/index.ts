@@ -103,6 +103,81 @@ export type {
   ShopifyReturnsQueryResult,
 } from './api/shopifyReturnQueries';
 
+export { useConfirmOrders } from './api/useConfirmOrders';
+export type {
+  ConfirmOrdersInput,
+  ConfirmOrderResultItem,
+  ConfirmOrdersResult,
+} from './api/useConfirmOrders';
+
+export { useDispatchDelay } from './api/useDispatchDelay';
+export type {
+  DispatchDelayInput,
+  DispatchDelayResultItem,
+  DispatchDelayResult,
+} from './api/useDispatchDelay';
+
+export { useBarcodeVerify } from './api/useBarcodeVerify';
+export type {
+  BarcodeVerifyInput,
+  BarcodeVerifyReason,
+  BarcodeVerifyOrderSummary,
+  BarcodeVerifyResult,
+} from './api/useBarcodeVerify';
+
+export { useBulkSetSendingInfo } from './api/useBulkSetSendingInfo';
+export type {
+  BulkSetSendingInfoItem,
+  BulkSetSendingInfoInput,
+  BulkSetSendingInfoResult,
+  BulkSetSendingInfoResultItem,
+} from './api/useBulkSetSendingInfo';
+
+export { useMatchOrderItemSku } from './api/useMatchOrderItemSku';
+export type {
+  MatchOrderItemSkuInput,
+  MatchOrderItemSkuResult,
+} from './api/useMatchOrderItemSku';
+
+export { useBulkMatchOrderItemSku } from './api/useBulkMatchOrderItemSku';
+export type {
+  BulkMatchOrderItemSkuItem,
+  BulkMatchOrderItemSkuInput,
+  BulkMatchOrderItemSkuResult,
+} from './api/useBulkMatchOrderItemSku';
+
+export {
+  useOrderItemsForMatching,
+  orderItemsForMatchingQueries,
+} from './api/useOrderItemsForMatching';
+export type {
+  OrderItemForMatching,
+  OrderItemsForMatchingResult,
+} from './api/useOrderItemsForMatching';
+
+export {
+  useDispatchOrders,
+  useCopyOrder,
+  useDeleteOrders,
+  useSplitOrder,
+  useBundleOrders,
+} from './api/useNewOrderActions';
+export { useNewOrderItems, newOrderItemsQueries } from './api/useNewOrderItems';
+export type { NewOrderItem, NewOrderItemsResult } from './api/useNewOrderItems';
+export type {
+  DispatchOrdersInput,
+  DispatchOrdersResult,
+  DispatchResultItem,
+  CopyOrderInput,
+  CopyOrderResult,
+  DeleteOrdersInput,
+  DeleteOrdersResult,
+  SplitOrderInput,
+  SplitOrderResult,
+  BundleOrdersInput,
+  BundleOrdersResult,
+} from './api/useNewOrderActions';
+
 export {
   useCollectOrders,
   useSyncOrders,

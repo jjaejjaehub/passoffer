@@ -590,6 +590,22 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
 
   // ── pushTracking ──────────────────────────────────────────────────
 
+  // 우리 UI는 한글 택배사명(CARRIER_OPTIONS)을 shippingCorp로 보냄.
+  // Shopify는 ShippingCompany를 영문/표준명으로 인식하므로 매핑이 필요하다.
+  // 매핑 미정의는 원문 그대로 넘기고, Shopify가 free-text로 받게 둔다.
+  private static readonly CARRIER_NAME_TO_SHOPIFY: Record<string, string> = {
+    'CJ대한통운': 'CJ Logistics',
+    '롯데택배': 'Lotte Global Logistics',
+    '한진택배': 'Hanjin',
+    '우체국택배': 'Korea Post',
+    '기타': 'Other',
+  };
+
+  private resolveCarrierForShopify(raw: string): string {
+    const trimmed = (raw ?? '').trim();
+    return ShopifyOrderAdapter.CARRIER_NAME_TO_SHOPIFY[trimmed] ?? trimmed;
+  }
+
   async pushTracking(payload: PushTrackingPayload): Promise<PushResult> {
     try {
       const orderGid = ensureOrderGid(payload.channelOrderId);
@@ -638,7 +654,7 @@ export class ShopifyOrderAdapter implements IOrderAdapter<ShopifyOrderNode> {
           lineItemsByFulfillmentOrder,
           notifyCustomer: false,
           trackingInfo: {
-            company: payload.trackingCarrier,
+            company: this.resolveCarrierForShopify(payload.trackingCarrier),
             number: payload.trackingNo,
           },
         },

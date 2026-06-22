@@ -27,6 +27,7 @@ function buildParams(params: OrderListParams): Record<string, string> {
   if (params.pageSize) out.pageSize = String(params.pageSize);
   if (params.sortBy) out.sortBy = params.sortBy;
   if (params.sortDir) out.sortDir = params.sortDir;
+  if (params.duplicateOnly) out.duplicateOnly = "true";
   return out;
 }
 

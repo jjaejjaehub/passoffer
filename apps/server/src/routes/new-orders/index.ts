@@ -1,7 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, asc, desc, eq, gte, inArray, isNotNull, lte, sql } from 'drizzle-orm';
-import { orders } from '../../db/schema';
+import { orderItems, orders } from '../../db/schema';
+import { OrderService } from '../../services/OrderService';
 
 const RANK_TO_SEMANTIC: Record<number, string> = {
   10: 'paid',
@@ -63,7 +64,13 @@ const listNewOrdersQuery = z.object({
     .enum(['orderedAt', 'paidAt', 'shippedAt', 'fulfillmentStatus', 'total', 'channelOrderId', 'createdAt', 'updatedAt'])
     .default('orderedAt'),
   sortDir: z.enum(['asc', 'desc']).default('desc'),
+  duplicateOnly: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
 });
+
+const DUPLICATE_LOOKBACK_DAYS = 30;
 
 type UrgencyFlag = 'overdue' | 'due_soon' | 'on_track';
 
@@ -94,11 +101,13 @@ export async function newOrdersRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ error: 'INVALID_QUERY', details: parsed.error.flatten() });
     }
 
-    const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir } = parsed.data;
+    const { status, dateField, dateFrom, dateTo, channelId, page, pageSize, sortBy, sortDir, duplicateOnly } =
+      parsed.data;
     const userId = request.user.userId;
     const now = new Date();
     const overdueCutoff = new Date(now.getTime() - SLA_HOURS * 60 * 60 * 1000);
     const warnCutoff = new Date(now.getTime() - SLA_WARN_HOURS * 60 * 60 * 1000);
+    const dupLookbackCutoff = new Date(now.getTime() - DUPLICATE_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
 
     const baseConds = [eq(orders.userId, userId), inArray(orders.fulfillmentStatus, [...PRESET_RANKS])];
     if (channelId) baseConds.push(eq(orders.channelId, channelId));
@@ -112,6 +121,18 @@ export async function newOrdersRoutes(app: FastifyInstance): Promise<void> {
       if (filtered.length > 0) {
         itemsConds.push(inArray(orders.fulfillmentStatus, filtered));
       }
+    }
+    if (duplicateOnly) {
+      itemsConds.push(
+        sql`${orders.duplicateGroupKey} IS NOT NULL AND ${orders.duplicateGroupKey} IN (
+          SELECT duplicate_group_key FROM ${orders}
+          WHERE user_id = ${userId}
+            AND duplicate_group_key IS NOT NULL
+            AND ordered_at >= ${dupLookbackCutoff}
+          GROUP BY duplicate_group_key
+          HAVING count(*) > 1
+        )`,
+      );
     }
 
     const orderByCol = SORT_COLUMNS[sortBy];
@@ -165,10 +186,40 @@ export async function newOrdersRoutes(app: FastifyInstance): Promise<void> {
         .where(and(...baseConds, lte(orders.orderedAt, warnCutoff), gte(orders.orderedAt, overdueCutoff))),
     ]);
 
-    // SLA 필드를 각 item에 머지
+    // duplicateGroupKey 별 같은 유저 30일 윈도우 카운트 (페이지 결과에 머지)
+    const dupKeys = Array.from(
+      new Set(
+        rawItems
+          .map((r) => r.duplicateGroupKey)
+          .filter((k): k is string => typeof k === 'string' && k.length > 0),
+      ),
+    );
+    const dupCountMap = new Map<string, number>();
+    if (dupKeys.length > 0) {
+      const dupRows = await app.db
+        .select({
+          key: orders.duplicateGroupKey,
+          n: sql<number>`count(*)::int`,
+        })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.userId, userId),
+            inArray(orders.duplicateGroupKey, dupKeys),
+            gte(orders.orderedAt, dupLookbackCutoff),
+          ),
+        )
+        .groupBy(orders.duplicateGroupKey);
+      for (const r of dupRows) {
+        if (r.key) dupCountMap.set(r.key, r.n);
+      }
+    }
+
+    // SLA + duplicateCount 필드를 각 item에 머지
     const items = rawItems.map((row) => ({
       ...row,
       sla: computeUrgency(row.orderedAt, now),
+      duplicateCount: row.duplicateGroupKey ? dupCountMap.get(row.duplicateGroupKey) ?? null : null,
     }));
 
     const counts: Record<string, number> = { all: allRow[0]?.n ?? 0 };
@@ -206,4 +257,210 @@ export async function newOrdersRoutes(app: FastifyInstance): Promise<void> {
       },
     };
   });
+
+  // GET /api/new-orders/:id/items — 주문 line items (분할 모달용)
+  app.get(
+    '/new-orders/:id/items',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const params = z
+        .object({ id: z.string().uuid() })
+        .safeParse(request.params);
+      if (!params.success) {
+        return reply.status(400).send({
+          error: 'INVALID_PARAMS',
+          details: params.error.flatten(),
+        });
+      }
+      const userId = request.user.userId;
+      const [order] = await app.db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(eq(orders.id, params.data.id), eq(orders.userId, userId)))
+        .limit(1);
+      if (!order) {
+        return reply.status(404).send({ error: 'ORDER_NOT_FOUND' });
+      }
+      const rows = await app.db
+        .select({
+          id: orderItems.id,
+          channelItemCode: orderItems.channelItemCode,
+          channelItemTitle: orderItems.channelItemTitle,
+          channelOption: orderItems.channelOption,
+          channelOptionCode: orderItems.channelOptionCode,
+          orderQty: orderItems.orderQty,
+          unitPrice: orderItems.unitPrice,
+          totalPrice: orderItems.totalPrice,
+        })
+        .from(orderItems)
+        .where(eq(orderItems.orderId, params.data.id))
+        .orderBy(asc(orderItems.lineNo));
+      return { items: rows };
+    },
+  );
+
+  // POST /api/new-orders/dispatch — 출고지시 (20 → 30)
+  app.post(
+    '/new-orders/dispatch',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const schema = z.object({
+        orderIds: z.array(z.string().uuid()).min(1),
+        reason: z.string().optional(),
+      });
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'INVALID_BODY',
+          details: parsed.error.flatten(),
+        });
+      }
+      const svc = new OrderService(app);
+      try {
+        const result = await svc.dispatchOrders({
+          userId: request.user.userId,
+          orderIds: parsed.data.orderIds,
+          reason: parsed.data.reason,
+        });
+        return result;
+      } catch (err) {
+        return reply.status(500).send({
+          error: 'DISPATCH_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+  );
+
+  // POST /api/new-orders/copy — 주문 복제
+  app.post(
+    '/new-orders/copy',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const schema = z.object({ orderId: z.string().uuid() });
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'INVALID_BODY',
+          details: parsed.error.flatten(),
+        });
+      }
+      const svc = new OrderService(app);
+      try {
+        const result = await svc.copyOrder({
+          userId: request.user.userId,
+          orderId: parsed.data.orderId,
+        });
+        return result;
+      } catch (err) {
+        return reply.status(400).send({
+          error: 'COPY_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+  );
+
+  // POST /api/new-orders/delete — 주문 삭제 (우리 DB만)
+  app.post(
+    '/new-orders/delete',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const schema = z.object({
+        orderIds: z.array(z.string().uuid()).min(1),
+      });
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'INVALID_BODY',
+          details: parsed.error.flatten(),
+        });
+      }
+      const svc = new OrderService(app);
+      try {
+        const result = await svc.deleteOrders({
+          userId: request.user.userId,
+          orderIds: parsed.data.orderIds,
+        });
+        return result;
+      } catch (err) {
+        return reply.status(500).send({
+          error: 'DELETE_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+  );
+
+  // POST /api/new-orders/split — 주문 분할
+  app.post(
+    '/new-orders/split',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const schema = z.object({
+        orderId: z.string().uuid(),
+        splits: z
+          .array(
+            z.object({
+              itemIds: z.array(z.string().uuid()).min(1),
+            }),
+          )
+          .min(1),
+      });
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'INVALID_BODY',
+          details: parsed.error.flatten(),
+        });
+      }
+      const svc = new OrderService(app);
+      try {
+        const result = await svc.splitOrder({
+          userId: request.user.userId,
+          orderId: parsed.data.orderId,
+          splits: parsed.data.splits,
+        });
+        return result;
+      } catch (err) {
+        return reply.status(400).send({
+          error: 'SPLIT_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+  );
+
+  // POST /api/new-orders/bundle — 합포장
+  app.post(
+    '/new-orders/bundle',
+    { preHandler: [app.authenticate] },
+    async (request, reply) => {
+      const schema = z.object({
+        orderIds: z.array(z.string().uuid()).min(2),
+        primaryOrderId: z.string().uuid().optional(),
+      });
+      const parsed = schema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'INVALID_BODY',
+          details: parsed.error.flatten(),
+        });
+      }
+      const svc = new OrderService(app);
+      try {
+        const result = await svc.bundleOrders({
+          userId: request.user.userId,
+          orderIds: parsed.data.orderIds,
+          primaryOrderId: parsed.data.primaryOrderId,
+        });
+        return result;
+      } catch (err) {
+        return reply.status(400).send({
+          error: 'BUNDLE_FAILED',
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    },
+  );
 }
