@@ -66,7 +66,10 @@ export function LocationDetailPanel({
         </Text>
         <Flex gap={4} mt={2} fontSize="sm" color="gray.700">
           <Text>
-            코드: <Text as="span" fontFamily="mono">{node.code}</Text>
+            코드:{" "}
+            <Text as="span" fontFamily="mono">
+              {node.code}
+            </Text>
           </Text>
           <Text>레벨: {node.level}</Text>
         </Flex>
@@ -144,7 +147,13 @@ export function LocationDetailPanel({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }): ReactElement {
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}): ReactElement {
   return (
     <Box>
       <Text fontSize="xs" color="gray.500">

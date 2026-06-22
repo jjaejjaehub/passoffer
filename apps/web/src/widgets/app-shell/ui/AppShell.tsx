@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { Suspense, type ReactNode } from 'react';
-import { Box, Flex } from '@chakra-ui/react';
-import { usePathname } from 'next/navigation';
-import { ActiveChannelProvider, ChannelUrlSyncer } from '@/entities/channel';
-import { Sidebar } from './Sidebar';
+import { Suspense, type ReactNode } from "react";
+import { Box, Flex } from "@chakra-ui/react";
+import { usePathname } from "next/navigation";
+import { ActiveChannelProvider, ChannelUrlSyncer } from "@/entities/channel";
+import { Sidebar } from "./Sidebar";
 
 interface AppShellProps {
   children: ReactNode;
 }
 
-const AUTH_PATHS = ['/login', '/signup'];
+const AUTH_PATHS = ["/login", "/signup"];
 
 export function AppShell({ children }: AppShellProps): React.JSX.Element {
   const pathname = usePathname();

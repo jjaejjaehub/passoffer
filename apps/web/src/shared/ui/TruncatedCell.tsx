@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import type React from 'react';
-import { Box, Tooltip } from '@chakra-ui/react';
+import type React from "react";
+import { Box, Tooltip } from "@chakra-ui/react";
 
 interface TruncatedCellProps {
   value: string | number | null | undefined;
@@ -12,14 +12,14 @@ interface TruncatedCellProps {
 
 export function TruncatedCell({
   value,
-  maxW = '100%',
+  maxW = "100%",
   disableTooltip,
   tooltipDisabled,
 }: TruncatedCellProps): React.ReactElement {
   const isEmpty =
     value === null ||
     value === undefined ||
-    (typeof value === 'string' && value.trim() === '');
+    (typeof value === "string" && value.trim() === "");
 
   if (isEmpty) {
     return <Box color="gray.400">—</Box>;
@@ -50,4 +50,3 @@ export function TruncatedCell({
     </Tooltip.Root>
   );
 }
-

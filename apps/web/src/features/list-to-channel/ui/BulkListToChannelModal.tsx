@@ -37,11 +37,18 @@ interface ProductResult {
   error?: string;
 }
 
-export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess }: Props): React.JSX.Element | null {
+export function BulkListToChannelModal({
+  products,
+  open,
+  onOpenChange,
+  onSuccess,
+}: Props): React.JSX.Element | null {
   const { data: channels, isLoading: loadingChannels } = useChannels();
   const { data: platformData } = usePlatformConstraints();
 
-  const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(
+    null,
+  );
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [results, setResults] = useState<ProductResult[] | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -66,7 +73,8 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
     for (const field of requiredFields) {
       const raw = overrides[field.key];
       if (raw !== undefined && raw !== "") {
-        parsedOverrides[field.key] = field.type === "number" ? Number(raw) : raw;
+        parsedOverrides[field.key] =
+          field.type === "number" ? Number(raw) : raw;
       }
     }
 
@@ -88,7 +96,10 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
 
       try {
         // Merge product-level saved attributes with modal overrides
-        const productAttrs = (p.attributes as Record<string, unknown>)?.[selectedChannel.channelType.toLowerCase()] ?? {};
+        const productAttrs =
+          (p.attributes as Record<string, unknown>)?.[
+            selectedChannel.channelType.toLowerCase()
+          ] ?? {};
         const mergedOverrides: Record<string, unknown> = {
           ...(productAttrs as Record<string, unknown>),
           ...parsedOverrides,
@@ -112,7 +123,8 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
   };
 
   const isDone = results !== null && !isRunning;
-  const successCount = results?.filter((r) => r.status === "success").length ?? 0;
+  const successCount =
+    results?.filter((r) => r.status === "success").length ?? 0;
   const errorCount = results?.filter((r) => r.status === "error").length ?? 0;
 
   const handleClose = (): void => {
@@ -148,10 +160,20 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
       >
         <Flex justify="space-between" align="center" mb={5}>
           <Box>
-            <Text fontWeight="semibold" fontSize="md">채널 일괄 등록</Text>
-            <Text fontSize="xs" color="gray.500" mt={0.5}>{products.length}개 상품 선택됨</Text>
+            <Text fontWeight="semibold" fontSize="md">
+              채널 일괄 등록
+            </Text>
+            <Text fontSize="xs" color="gray.500" mt={0.5}>
+              {products.length}개 상품 선택됨
+            </Text>
           </Box>
-          <Button variant="ghost" size="sm" p={1} onClick={handleClose} disabled={isRunning}>
+          <Button
+            variant="ghost"
+            size="sm"
+            p={1}
+            onClick={handleClose}
+            disabled={isRunning}
+          >
             <X size={16} />
           </Button>
         </Flex>
@@ -160,25 +182,66 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
         {results !== null ? (
           <Box>
             {isDone && (
-              <Box mb={4} p={3} borderRadius="md" bg={errorCount === 0 ? "green.50" : "orange.50"} borderWidth="1px" borderColor={errorCount === 0 ? "green.200" : "orange.200"}>
-                <Text fontSize="sm" fontWeight="medium" color={errorCount === 0 ? "green.700" : "orange.700"}>
-                  완료: 성공 {successCount}개{errorCount > 0 ? `, 실패 ${errorCount}개` : ""}
+              <Box
+                mb={4}
+                p={3}
+                borderRadius="md"
+                bg={errorCount === 0 ? "green.50" : "orange.50"}
+                borderWidth="1px"
+                borderColor={errorCount === 0 ? "green.200" : "orange.200"}
+              >
+                <Text
+                  fontSize="sm"
+                  fontWeight="medium"
+                  color={errorCount === 0 ? "green.700" : "orange.700"}
+                >
+                  완료: 성공 {successCount}개
+                  {errorCount > 0 ? `, 실패 ${errorCount}개` : ""}
                 </Text>
               </Box>
             )}
             <Stack gap={1.5} mb={5}>
               {results.map((r) => (
-                <Flex key={r.id} align="flex-start" gap={2} px={3} py={2} borderRadius="md" bg="gray.50">
+                <Flex
+                  key={r.id}
+                  align="flex-start"
+                  gap={2}
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  bg="gray.50"
+                >
                   <Box pt={0.5} flexShrink={0}>
-                    {r.status === "pending" && <Box w={4} h={4} borderRadius="full" bg="gray.300" />}
-                    {r.status === "running" && <Spinner size="xs" color="blue.500" />}
-                    {r.status === "success" && <CheckCircle size={16} color="var(--chakra-colors-green-500)" />}
-                    {r.status === "error" && <XCircle size={16} color="var(--chakra-colors-red-500)" />}
+                    {r.status === "pending" && (
+                      <Box w={4} h={4} borderRadius="full" bg="gray.300" />
+                    )}
+                    {r.status === "running" && (
+                      <Spinner size="xs" color="blue.500" />
+                    )}
+                    {r.status === "success" && (
+                      <CheckCircle
+                        size={16}
+                        color="var(--chakra-colors-green-500)"
+                      />
+                    )}
+                    {r.status === "error" && (
+                      <XCircle size={16} color="var(--chakra-colors-red-500)" />
+                    )}
                   </Box>
                   <Box flex={1} minW={0}>
-                    <Text fontSize="sm" fontWeight="medium" truncate>{r.title}</Text>
+                    <Text fontSize="sm" fontWeight="medium" truncate>
+                      {r.title}
+                    </Text>
                     {r.error && (
-                      <Text fontSize="xs" color="red.600" mt={0.5} whiteSpace="pre-wrap" wordBreak="break-word">{r.error}</Text>
+                      <Text
+                        fontSize="xs"
+                        color="red.600"
+                        mt={0.5}
+                        whiteSpace="pre-wrap"
+                        wordBreak="break-word"
+                      >
+                        {r.error}
+                      </Text>
                     )}
                   </Box>
                 </Flex>
@@ -187,7 +250,13 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
 
             {isDone && (
               <Flex justify="flex-end">
-                <Button size="sm" bg="gray.900" color="white" _hover={{ bg: "gray.800" }} onClick={handleClose}>
+                <Button
+                  size="sm"
+                  bg="gray.900"
+                  color="white"
+                  _hover={{ bg: "gray.800" }}
+                  onClick={handleClose}
+                >
                   닫기
                 </Button>
               </Flex>
@@ -197,11 +266,17 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
           <>
             {/* Step 1: 채널 선택 */}
             <Box mb={5}>
-              <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>1. 채널 선택</Text>
+              <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>
+                1. 채널 선택
+              </Text>
               {loadingChannels ? (
-                <Flex justify="center" py={4}><Spinner size="sm" /></Flex>
+                <Flex justify="center" py={4}>
+                  <Spinner size="sm" />
+                </Flex>
               ) : !channels?.length ? (
-                <Text fontSize="sm" color="gray.500">연결된 채널이 없습니다.</Text>
+                <Text fontSize="sm" color="gray.500">
+                  연결된 채널이 없습니다.
+                </Text>
               ) : (
                 <Stack gap={2}>
                   {channels.map((ch) => (
@@ -212,7 +287,9 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
                       px={3}
                       py={2.5}
                       cursor="pointer"
-                      borderColor={selectedChannel?.id === ch.id ? "gray.800" : "gray.200"}
+                      borderColor={
+                        selectedChannel?.id === ch.id ? "gray.800" : "gray.200"
+                      }
                       bg={selectedChannel?.id === ch.id ? "gray.50" : "white"}
                       onClick={() => handleChannelSelect(ch)}
                       _hover={{ borderColor: "gray.400" }}
@@ -220,10 +297,19 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
                     >
                       <Flex justify="space-between" align="center">
                         <Box>
-                          <Text fontSize="sm" fontWeight="medium">{ch.name}</Text>
-                          <Text fontSize="xs" color="gray.500">{ch.channelType}</Text>
+                          <Text fontSize="sm" fontWeight="medium">
+                            {ch.name}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            {ch.channelType}
+                          </Text>
                         </Box>
-                        <Box w={2} h={2} borderRadius="full" bg={ch.status === "ACTIVE" ? "green.400" : "gray.300"} />
+                        <Box
+                          w={2}
+                          h={2}
+                          borderRadius="full"
+                          bg={ch.status === "ACTIVE" ? "green.400" : "gray.300"}
+                        />
                       </Flex>
                     </Box>
                   ))}
@@ -234,25 +320,46 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
             {/* Step 2: 채널 전용 필드 */}
             {selectedChannel && requiredFields.length > 0 && (
               <Box mb={5}>
-                <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={1}>2. 채널 전용 정보 입력</Text>
-                <Text fontSize="xs" color="gray.400" mb={3}>각 상품에 저장된 값이 있으면 자동 적용됩니다. 여기서 입력하면 전체 선택 상품에 덮어씁니다.</Text>
+                <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={1}>
+                  2. 채널 전용 정보 입력
+                </Text>
+                <Text fontSize="xs" color="gray.400" mb={3}>
+                  각 상품에 저장된 값이 있으면 자동 적용됩니다. 여기서 입력하면
+                  전체 선택 상품에 덮어씁니다.
+                </Text>
                 <Stack gap={3}>
                   {requiredFields.map((field) => (
                     <Box key={field.key}>
                       <Text fontSize="xs" color="gray.600" mb={1}>
                         {field.label}
-                        {field.note && <Text as="span" color="gray.400" ml={1.5} fontSize="xs">({field.note})</Text>}
+                        {field.note && (
+                          <Text
+                            as="span"
+                            color="gray.400"
+                            ml={1.5}
+                            fontSize="xs"
+                          >
+                            ({field.note})
+                          </Text>
+                        )}
                       </Text>
                       {field.type === "select" && field.options ? (
                         <NativeSelect.Root size="sm">
                           <NativeSelect.Field
                             value={String(overrides[field.key] ?? "")}
-                            onChange={(e) => setOverrides((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                            onChange={(e) =>
+                              setOverrides((prev) => ({
+                                ...prev,
+                                [field.key]: e.target.value,
+                              }))
+                            }
                             borderColor="gray.200"
                           >
                             <option value="">각 상품 저장값 사용</option>
                             {field.options.map((opt) => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
                             ))}
                           </NativeSelect.Field>
                           <NativeSelect.Indicator />
@@ -263,7 +370,12 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
                           type={field.type === "number" ? "number" : "text"}
                           placeholder="각 상품 저장값 사용"
                           value={overrides[field.key] ?? ""}
-                          onChange={(e) => setOverrides((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                          onChange={(e) =>
+                            setOverrides((prev) => ({
+                              ...prev,
+                              [field.key]: e.target.value,
+                            }))
+                          }
                           borderColor="gray.200"
                         />
                       )}
@@ -274,39 +386,85 @@ export function BulkListToChannelModal({ products, open, onOpenChange, onSuccess
             )}
 
             {/* 플랫폼 제약 안내 */}
-            {selectedChannel && platformData?.constraints[selectedChannel.channelType] && (
-              <Box mb={5} bg="amber.50" borderWidth="1px" borderColor="amber.200" borderRadius="md" p={3}>
-                <Text fontSize="xs" fontWeight="medium" color="amber.700" mb={1.5}>플랫폼 제약 안내</Text>
-                {(() => {
-                  const c = platformData.constraints[selectedChannel.channelType];
-                  const notes: string[] = [];
-                  if (c.title.maxLength) notes.push(`상품명 최대 ${c.title.maxLength}자`);
-                  if (c.title.forbiddenChars?.length) notes.push(`상품명 사용 불가 문자: ${c.title.forbiddenChars.join(" ")}`);
-                  if (c.images.maxCount) notes.push(`이미지 최대 ${c.images.maxCount}장`);
-                  if (c.title.note) notes.push(c.title.note);
-                  if (c.images.note) notes.push(c.images.note);
-                  return notes.map((note, i) => (
-                    <Text key={i} fontSize="xs" color="amber.700">• {note}</Text>
-                  ));
-                })()}
-              </Box>
-            )}
+            {selectedChannel &&
+              platformData?.constraints[selectedChannel.channelType] && (
+                <Box
+                  mb={5}
+                  bg="amber.50"
+                  borderWidth="1px"
+                  borderColor="amber.200"
+                  borderRadius="md"
+                  p={3}
+                >
+                  <Text
+                    fontSize="xs"
+                    fontWeight="medium"
+                    color="amber.700"
+                    mb={1.5}
+                  >
+                    플랫폼 제약 안내
+                  </Text>
+                  {(() => {
+                    const c =
+                      platformData.constraints[selectedChannel.channelType];
+                    const notes: string[] = [];
+                    if (c.title.maxLength)
+                      notes.push(`상품명 최대 ${c.title.maxLength}자`);
+                    if (c.title.forbiddenChars?.length)
+                      notes.push(
+                        `상품명 사용 불가 문자: ${c.title.forbiddenChars.join(" ")}`,
+                      );
+                    if (c.images.maxCount)
+                      notes.push(`이미지 최대 ${c.images.maxCount}장`);
+                    if (c.title.note) notes.push(c.title.note);
+                    if (c.images.note) notes.push(c.images.note);
+                    return notes.map((note, i) => (
+                      <Text key={i} fontSize="xs" color="amber.700">
+                        • {note}
+                      </Text>
+                    ));
+                  })()}
+                </Box>
+              )}
 
             {/* 선택 상품 미리보기 */}
             <Box mb={5}>
-              <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>선택된 상품</Text>
+              <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>
+                선택된 상품
+              </Text>
               <Stack gap={1}>
                 {products.map((p) => (
-                  <Flex key={p.id} align="center" gap={2} px={2.5} py={1.5} bg="gray.50" borderRadius="md">
-                    <Box w={1.5} h={1.5} borderRadius="full" bg="gray.400" flexShrink={0} />
-                    <Text fontSize="xs" color="gray.700" truncate>{p.title}</Text>
+                  <Flex
+                    key={p.id}
+                    align="center"
+                    gap={2}
+                    px={2.5}
+                    py={1.5}
+                    bg="gray.50"
+                    borderRadius="md"
+                  >
+                    <Box
+                      w={1.5}
+                      h={1.5}
+                      borderRadius="full"
+                      bg="gray.400"
+                      flexShrink={0}
+                    />
+                    <Text fontSize="xs" color="gray.700" truncate>
+                      {p.title}
+                    </Text>
                   </Flex>
                 ))}
               </Stack>
             </Box>
 
             <Flex justify="flex-end" gap={2}>
-              <Button size="sm" variant="outline" borderColor="gray.300" onClick={handleClose}>
+              <Button
+                size="sm"
+                variant="outline"
+                borderColor="gray.300"
+                onClick={handleClose}
+              >
                 취소
               </Button>
               <Button

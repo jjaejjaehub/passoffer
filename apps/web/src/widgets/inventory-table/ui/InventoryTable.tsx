@@ -132,7 +132,12 @@ export function InventoryTable({
                 bg="white"
               >
                 <Box as="td" px={4} py={3}>
-                  <Box as="span" fontFamily="mono" fontSize="sm" color="gray.900">
+                  <Box
+                    as="span"
+                    fontFamily="mono"
+                    fontSize="sm"
+                    color="gray.900"
+                  >
                     {row.item.id}
                   </Box>
                 </Box>
@@ -156,7 +161,12 @@ export function InventoryTable({
                       옵션별
                     </Box>
                   ) : row.qty !== undefined ? (
-                    <Box as="span" fontFamily="mono" fontSize="sm" color="gray.900">
+                    <Box
+                      as="span"
+                      fontFamily="mono"
+                      fontSize="sm"
+                      color="gray.900"
+                    >
                       {row.qty.toLocaleString()}
                     </Box>
                   ) : (

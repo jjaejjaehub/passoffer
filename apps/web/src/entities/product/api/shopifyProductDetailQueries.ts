@@ -5,7 +5,10 @@ import { isAxiosError } from "axios";
 
 import { useChannelApiKey, useChannelUuid } from "@/entities/channel";
 import { http } from "@/shared/api";
-import { parseShopifyProductError, shopifyProductsQueryRoot } from "./shopifyProductQueries";
+import {
+  parseShopifyProductError,
+  shopifyProductsQueryRoot,
+} from "./shopifyProductQueries";
 import type { ShopifyQueryError } from "./shopifyProductQueries";
 
 // ─── 타입 ─────────────────────────────────────────────────────
@@ -60,9 +63,7 @@ export const shopifyProductDetailQueries = {
 
 // ─── 훅 ───────────────────────────────────────────────────────
 
-export function useShopifyProductDetail(
-  productId: string | null | undefined,
-): {
+export function useShopifyProductDetail(productId: string | null | undefined): {
   data: ShopifyProductDetail | null;
   isLoading: boolean;
   error: ShopifyQueryError | null;
@@ -93,6 +94,8 @@ export function useShopifyProductDetail(
     data: query.data ?? null,
     isLoading: query.isLoading && hasKey && !!productId,
     error: query.error ? parseShopifyProductError(query.error) : null,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

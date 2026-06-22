@@ -23,7 +23,8 @@ export function useShopeeRegisterProductMutation() {
     mutationFn: async (
       values: ShopeeRegisterFormValues,
     ): Promise<ShopeeRegisterProductResponse> => {
-      if (!hasKey || !channelUuid) throw new Error("Shopee 채널이 연결되지 않았습니다.");
+      if (!hasKey || !channelUuid)
+        throw new Error("Shopee 채널이 연결되지 않았습니다.");
 
       return http.post<ShopeeRegisterProductResponse>(
         `/api/products/${channelUuid}`,

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * 에러 리포팅 유틸리티
@@ -16,8 +16,8 @@
  * 3. 아래 implementation을 `Sentry.captureException(error)` 으로 교체
  */
 export function reportError(error: Error & { digest?: string }): void {
-  if (process.env.NODE_ENV !== 'production') {
-    console.error('[ErrorReporter]', error);
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[ErrorReporter]", error);
     return;
   }
 

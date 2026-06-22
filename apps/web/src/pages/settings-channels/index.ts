@@ -1,2 +1,1 @@
-export * from './ui/ChannelsSettingsPage';
-
+export * from "./ui/ChannelsSettingsPage";

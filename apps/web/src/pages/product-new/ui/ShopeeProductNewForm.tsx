@@ -189,7 +189,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
   ) => {
     const firstKey = Object.keys(fieldErrors)[0];
     if (!firstKey) return;
-    document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    document
+      .getElementById(firstKey)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const onValid = async (values: ShopeeRegisterFormValues): Promise<void> => {
@@ -235,11 +237,15 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                   placeholder="상품명을 입력해 주세요"
                   value={itemName}
                   onChange={(e) =>
-                    setValue("item_name", e.target.value, { shouldValidate: true })
+                    setValue("item_name", e.target.value, {
+                      shouldValidate: true,
+                    })
                   }
                 />
                 <Flex justify="space-between" mt={1}>
-                  <Text fontSize="xs" color="gray.400">최대 120자</Text>
+                  <Text fontSize="xs" color="gray.400">
+                    최대 120자
+                  </Text>
                   <Text
                     fontSize="xs"
                     color={titleRemaining < 10 ? "red.500" : "gray.400"}
@@ -259,7 +265,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                     placeholder="선택"
                     {...register("item_sku")}
                   />
-                  <FormErrorMessage>{errors.item_sku?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.item_sku?.message}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <FormControl isInvalid={Boolean(errors.condition)}>
@@ -281,7 +289,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                       </Select>
                     )}
                   />
-                  <FormErrorMessage>{errors.condition?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.condition?.message}
+                  </FormErrorMessage>
                 </FormControl>
               </Stack>
 
@@ -305,9 +315,12 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                   )}
                 />
                 <Text fontSize="xs" color="gray.400" mt={1}>
-                  UNLIST로 등록 후 검토 완료 시 NORMAL로 변경하는 것을 권장합니다.
+                  UNLIST로 등록 후 검토 완료 시 NORMAL로 변경하는 것을
+                  권장합니다.
                 </Text>
-                <FormErrorMessage>{errors.item_status?.message}</FormErrorMessage>
+                <FormErrorMessage>
+                  {errors.item_status?.message}
+                </FormErrorMessage>
               </FormControl>
             </Stack>
           </Section>
@@ -327,7 +340,8 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                 })}
               />
               <Text fontSize="xs" color="gray.400" mt={1}>
-                Shopee 셀러 센터 또는 category.get_category API에서 확인할 수 있습니다.
+                Shopee 셀러 센터 또는 category.get_category API에서 확인할 수
+                있습니다.
               </Text>
               <FormErrorMessage>{errors.category_id?.message}</FormErrorMessage>
             </FormControl>
@@ -349,7 +363,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                       setValueAs: (v) => (v === "" ? undefined : Number(v)),
                     })}
                   />
-                  <FormErrorMessage>{errors.original_price?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.original_price?.message}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <FormControl isInvalid={Boolean(errors.stock)}>
@@ -380,10 +396,12 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                 {...register("image_id_list")}
               />
               <Text fontSize="xs" color="gray.400" mt={1}>
-                Shopee 미디어 업로드 API(media.upload_image)로 이미지를 먼저 업로드한 후
-                반환된 image_id를 콤마(,)로 구분하여 입력해 주세요.
+                Shopee 미디어 업로드 API(media.upload_image)로 이미지를 먼저
+                업로드한 후 반환된 image_id를 콤마(,)로 구분하여 입력해 주세요.
               </Text>
-              <FormErrorMessage>{errors.image_id_list?.message}</FormErrorMessage>
+              <FormErrorMessage>
+                {errors.image_id_list?.message}
+              </FormErrorMessage>
             </FormControl>
           </Section>
 
@@ -433,7 +451,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                       setValueAs: (v) => (v === "" ? undefined : Number(v)),
                     })}
                   />
-                  <FormErrorMessage>{errors.package_length?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.package_length?.message}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <FormControl isInvalid={Boolean(errors.package_width)}>
@@ -448,7 +468,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                       setValueAs: (v) => (v === "" ? undefined : Number(v)),
                     })}
                   />
-                  <FormErrorMessage>{errors.package_width?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.package_width?.message}
+                  </FormErrorMessage>
                 </FormControl>
 
                 <FormControl isInvalid={Boolean(errors.package_height)}>
@@ -463,7 +485,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                       setValueAs: (v) => (v === "" ? undefined : Number(v)),
                     })}
                   />
-                  <FormErrorMessage>{errors.package_height?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.package_height?.message}
+                  </FormErrorMessage>
                 </FormControl>
               </Stack>
             </Stack>
@@ -487,7 +511,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                 <Text fontSize="xs" color="gray.400" mt={1}>
                   logistics.get_channel_list API에서 확인할 수 있습니다.
                 </Text>
-                <FormErrorMessage>{errors.logistic_id?.message}</FormErrorMessage>
+                <FormErrorMessage>
+                  {errors.logistic_id?.message}
+                </FormErrorMessage>
               </FormControl>
 
               <FormControl>
@@ -496,7 +522,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                     type="checkbox"
                     id="logistic_is_free"
                     checked={logisticIsFree}
-                    onChange={(e) => setValue("logistic_is_free", e.target.checked)}
+                    onChange={(e) =>
+                      setValue("logistic_is_free", e.target.checked)
+                    }
                   />
                   <Text fontSize="sm" color="gray.700">
                     무료 배송
@@ -552,7 +580,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                     placeholder="브랜드명을 입력해 주세요"
                     {...register("brand_name")}
                   />
-                  <FormErrorMessage>{errors.brand_name?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.brand_name?.message}
+                  </FormErrorMessage>
                 </FormControl>
               )}
             </Stack>
@@ -592,7 +622,9 @@ export function ShopeeProductNewForm(): React.JSX.Element {
                   <Text fontSize="xs" color="gray.400" mt={1}>
                     get_dts_limit API에서 카테고리별 허용 범위를 확인하세요.
                   </Text>
-                  <FormErrorMessage>{errors.days_to_ship?.message}</FormErrorMessage>
+                  <FormErrorMessage>
+                    {errors.days_to_ship?.message}
+                  </FormErrorMessage>
                 </FormControl>
               )}
             </Stack>

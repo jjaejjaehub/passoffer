@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Box, Button, Flex, HStack, Text, VStack } from "@chakra-ui/react";
 import {
-  Box,
-  Button,
-  Flex,
-  HStack,
-  Text,
-  VStack,
-} from "@chakra-ui/react";
-import { AlertTriangle, CheckCircle, ThumbsDown, ThumbsUp, X } from "lucide-react";
+  AlertTriangle,
+  CheckCircle,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import { isAxiosError } from "axios";
 
 import {
@@ -59,18 +58,45 @@ const DECLINE_REASONS: { value: ReturnDeclineReason; label: string }[] = [
 
 // ─── 섹션 래퍼 ─────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }): React.JSX.Element {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="md" overflow="hidden">
-      <Box px={4} py={2.5} bg="gray.50" borderBottomWidth="1px" borderColor="gray.200">
-        <Text fontSize="sm" fontWeight="semibold" color="gray.700">{title}</Text>
+    <Box
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="md"
+      overflow="hidden"
+    >
+      <Box
+        px={4}
+        py={2.5}
+        bg="gray.50"
+        borderBottomWidth="1px"
+        borderColor="gray.200"
+      >
+        <Text fontSize="sm" fontWeight="semibold" color="gray.700">
+          {title}
+        </Text>
       </Box>
-      <Box px={4} py={3}>{children}</Box>
+      <Box px={4} py={3}>
+        {children}
+      </Box>
     </Box>
   );
 }
 
-function StatusChip({ label, color }: { label: string; color: string }): React.JSX.Element {
+function StatusChip({
+  label,
+  color,
+}: {
+  label: string;
+  color: string;
+}): React.JSX.Element {
   return (
     <Box
       display="inline-block"
@@ -89,8 +115,15 @@ function StatusChip({ label, color }: { label: string; color: string }): React.J
 
 // ─── 반품 상세 내용 ────────────────────────────────────────────
 
-function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClose: () => void }): React.JSX.Element {
-  const [declineReason, setDeclineReason] = useState<ReturnDeclineReason>("OTHER");
+function ReturnDetailContent({
+  item,
+  onClose,
+}: {
+  item: ShopifyReturnItem;
+  onClose: () => void;
+}): React.JSX.Element {
+  const [declineReason, setDeclineReason] =
+    useState<ReturnDeclineReason>("OTHER");
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [showRefundConfirm, setShowRefundConfirm] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -147,7 +180,10 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
 
   const isRequested = item.status === "REQUESTED";
   const isOpen = item.status === "OPEN";
-  const isClosed = item.status === "CLOSED" || item.status === "DECLINED" || item.status === "CANCELLED";
+  const isClosed =
+    item.status === "CLOSED" ||
+    item.status === "DECLINED" ||
+    item.status === "CANCELLED";
   const canApprove = isRequested;
   const canDecline = isRequested;
   const canRefund = isOpen;
@@ -157,15 +193,35 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
   return (
     <VStack gap={4} align="stretch">
       {successMsg && (
-        <Flex align="center" gap={2} p={3} bg="green.50" borderRadius="md" borderWidth="1px" borderColor="green.200">
+        <Flex
+          align="center"
+          gap={2}
+          p={3}
+          bg="green.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="green.200"
+        >
           <CheckCircle size={16} color="var(--chakra-colors-green-600)" />
-          <Text fontSize="sm" color="green.700">{successMsg}</Text>
+          <Text fontSize="sm" color="green.700">
+            {successMsg}
+          </Text>
         </Flex>
       )}
       {errorMsg && (
-        <Flex align="center" gap={2} p={3} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
+        <Flex
+          align="center"
+          gap={2}
+          p={3}
+          bg="red.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="red.200"
+        >
           <AlertTriangle size={16} color="var(--chakra-colors-red-600)" />
-          <Text fontSize="sm" color="red.700">{errorMsg}</Text>
+          <Text fontSize="sm" color="red.700">
+            {errorMsg}
+          </Text>
         </Flex>
       )}
 
@@ -173,30 +229,49 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
       <Section title="반품 정보">
         <VStack gap={2} align="stretch">
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">반품번호</Text>
-            <Text fontSize="sm" fontWeight="semibold" fontFamily="mono">{item.returnName}</Text>
+            <Text fontSize="sm" color="gray.500">
+              반품번호
+            </Text>
+            <Text fontSize="sm" fontWeight="semibold" fontFamily="mono">
+              {item.returnName}
+            </Text>
           </Flex>
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">연결 주문</Text>
-            <Text fontSize="sm" fontFamily="mono">{item.orderName}</Text>
+            <Text fontSize="sm" color="gray.500">
+              연결 주문
+            </Text>
+            <Text fontSize="sm" fontFamily="mono">
+              {item.orderName}
+            </Text>
           </Flex>
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">상태</Text>
-            <StatusChip label={RETURN_STATUS_LABEL[item.status] ?? item.status} color={color} />
+            <Text fontSize="sm" color="gray.500">
+              상태
+            </Text>
+            <StatusChip
+              label={RETURN_STATUS_LABEL[item.status] ?? item.status}
+              color={color}
+            />
           </Flex>
           <Flex justify="space-between" align="center">
-            <Text fontSize="sm" color="gray.500">요청일</Text>
+            <Text fontSize="sm" color="gray.500">
+              요청일
+            </Text>
             <Text fontSize="sm">{item.createdAt.slice(0, 10)}</Text>
           </Flex>
           {item.closedAt && (
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.500">완료일</Text>
+              <Text fontSize="sm" color="gray.500">
+                완료일
+              </Text>
               <Text fontSize="sm">{item.closedAt.slice(0, 10)}</Text>
             </Flex>
           )}
           {item.customerName && (
             <Flex justify="space-between" align="center">
-              <Text fontSize="sm" color="gray.500">구매자</Text>
+              <Text fontSize="sm" color="gray.500">
+                구매자
+              </Text>
               <Text fontSize="sm">{item.customerName}</Text>
             </Flex>
           )}
@@ -210,21 +285,30 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
             <Box key={li.id}>
               <Flex justify="space-between" align="flex-start" gap={2}>
                 <Box flex={1}>
-                  <Text fontSize="sm" fontWeight="medium">{li.lineItemName}</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {li.lineItemName}
+                  </Text>
                   {li.lineItemSku && (
-                    <Text fontSize="xs" color="gray.400">SKU: {li.lineItemSku}</Text>
+                    <Text fontSize="xs" color="gray.400">
+                      SKU: {li.lineItemSku}
+                    </Text>
                   )}
                 </Box>
-                <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">x{li.quantity}</Text>
+                <Text fontSize="sm" color="gray.600" whiteSpace="nowrap">
+                  x{li.quantity}
+                </Text>
               </Flex>
               {li.returnReason && (
                 <Text fontSize="xs" color="gray.500" mt={0.5}>
-                  사유: {RETURN_REASON_LABEL[li.returnReason] ?? li.returnReason}
+                  사유:{" "}
+                  {RETURN_REASON_LABEL[li.returnReason] ?? li.returnReason}
                   {li.returnReasonNote && ` — ${li.returnReasonNote}`}
                 </Text>
               )}
               {li.customerNote && !li.returnReasonNote && (
-                <Text fontSize="xs" color="gray.500" mt={0.5}>메모: {li.customerNote}</Text>
+                <Text fontSize="xs" color="gray.500" mt={0.5}>
+                  메모: {li.customerNote}
+                </Text>
               )}
             </Box>
           ))}
@@ -235,9 +319,12 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
       {parseFloat(item.totalRefunded) > 0 && (
         <Section title="환불 금액">
           <Flex justify="space-between">
-            <Text fontSize="sm" color="gray.500">환불 완료액</Text>
+            <Text fontSize="sm" color="gray.500">
+              환불 완료액
+            </Text>
             <Text fontSize="sm" fontWeight="semibold" color="green.700">
-              {parseFloat(item.totalRefunded).toLocaleString()} {item.currencyCode}
+              {parseFloat(item.totalRefunded).toLocaleString()}{" "}
+              {item.currencyCode}
             </Text>
           </Flex>
         </Section>
@@ -253,7 +340,9 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
                 size="sm"
                 colorScheme="blue"
                 loading={approve.isPending}
-                onClick={() => { void handleApprove(); }}
+                onClick={() => {
+                  void handleApprove();
+                }}
               >
                 <ThumbsUp size={14} />
                 반품 요청 승인
@@ -264,31 +353,72 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
             {canDecline && (
               <>
                 {showDeclineConfirm ? (
-                  <VStack gap={2} align="stretch" p={3} bg="red.50" borderRadius="md" borderWidth="1px" borderColor="red.200">
-                    <Text fontSize="sm" color="red.700" fontWeight="medium">반품 요청을 거절하시겠습니까?</Text>
+                  <VStack
+                    gap={2}
+                    align="stretch"
+                    p={3}
+                    bg="red.50"
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor="red.200"
+                  >
+                    <Text fontSize="sm" color="red.700" fontWeight="medium">
+                      반품 요청을 거절하시겠습니까?
+                    </Text>
                     <Box>
-                      <Text fontSize="xs" color="gray.500" mb={1}>거절 사유</Text>
+                      <Text fontSize="xs" color="gray.500" mb={1}>
+                        거절 사유
+                      </Text>
                       <select
-                        style={{ fontSize: "13px", borderWidth: "1px", borderColor: "#e2e8f0", borderRadius: "6px", padding: "5px 8px", width: "100%" }}
+                        style={{
+                          fontSize: "13px",
+                          borderWidth: "1px",
+                          borderColor: "#e2e8f0",
+                          borderRadius: "6px",
+                          padding: "5px 8px",
+                          width: "100%",
+                        }}
                         value={declineReason}
-                        onChange={(e) => setDeclineReason(e.target.value as ReturnDeclineReason)}
+                        onChange={(e) =>
+                          setDeclineReason(
+                            e.target.value as ReturnDeclineReason,
+                          )
+                        }
                       >
                         {DECLINE_REASONS.map((r) => (
-                          <option key={r.value} value={r.value}>{r.label}</option>
+                          <option key={r.value} value={r.value}>
+                            {r.label}
+                          </option>
                         ))}
                       </select>
                     </Box>
                     <HStack gap={2}>
-                      <Button size="sm" colorScheme="red" loading={decline.isPending} onClick={() => { void handleDecline(); }}>
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        loading={decline.isPending}
+                        onClick={() => {
+                          void handleDecline();
+                        }}
+                      >
                         거절 확인
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowDeclineConfirm(false)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowDeclineConfirm(false)}
+                      >
                         취소
                       </Button>
                     </HStack>
                   </VStack>
                 ) : (
-                  <Button size="sm" variant="outline" colorScheme="red" onClick={() => setShowDeclineConfirm(true)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorScheme="red"
+                    onClick={() => setShowDeclineConfirm(true)}
+                  >
                     <ThumbsDown size={14} />
                     반품 요청 거절
                   </Button>
@@ -300,19 +430,44 @@ function ReturnDetailContent({ item, onClose }: { item: ShopifyReturnItem; onClo
             {canRefund && (
               <>
                 {showRefundConfirm ? (
-                  <VStack gap={2} align="stretch" p={3} bg="orange.50" borderRadius="md" borderWidth="1px" borderColor="orange.200">
-                    <Text fontSize="sm" color="orange.800">반품 상품 전체를 환불 처리하시겠습니까?</Text>
+                  <VStack
+                    gap={2}
+                    align="stretch"
+                    p={3}
+                    bg="orange.50"
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor="orange.200"
+                  >
+                    <Text fontSize="sm" color="orange.800">
+                      반품 상품 전체를 환불 처리하시겠습니까?
+                    </Text>
                     <HStack gap={2}>
-                      <Button size="sm" colorScheme="orange" loading={refund.isPending} onClick={() => { void handleRefund(); }}>
+                      <Button
+                        size="sm"
+                        colorScheme="orange"
+                        loading={refund.isPending}
+                        onClick={() => {
+                          void handleRefund();
+                        }}
+                      >
                         환불 확인
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowRefundConfirm(false)}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowRefundConfirm(false)}
+                      >
                         취소
                       </Button>
                     </HStack>
                   </VStack>
                 ) : (
-                  <Button size="sm" colorScheme="orange" onClick={() => setShowRefundConfirm(true)}>
+                  <Button
+                    size="sm"
+                    colorScheme="orange"
+                    onClick={() => setShowRefundConfirm(true)}
+                  >
                     환불 처리
                   </Button>
                 )}
@@ -368,7 +523,9 @@ export function ShopifyReturnDetailModal({
           borderColor="gray.200"
           flexShrink={0}
         >
-          <Text fontWeight="semibold" fontSize="md">반품 상세</Text>
+          <Text fontWeight="semibold" fontSize="md">
+            반품 상세
+          </Text>
           <Box
             as="button"
             onClick={onClose}

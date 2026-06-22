@@ -9,11 +9,7 @@ import {
   type OptionAxisState,
 } from "./qoo10OptionSerializer";
 
-function makeAxis(
-  id: string,
-  name: string,
-  values: string[],
-): OptionAxisState {
+function makeAxis(id: string, name: string, values: string[]): OptionAxisState {
   return { id, name, values, _rawValues: values.join(", ") };
 }
 
@@ -40,13 +36,9 @@ function emptyInventoryRow(
 
 function getKey(item: InventoryOptionItem): string {
   if (item._rowId) return item._rowId;
-  return [
-    item.Value1,
-    item.Value2,
-    item.Value3,
-    item.Value4,
-    item.Value5,
-  ].join("__");
+  return [item.Value1, item.Value2, item.Value3, item.Value4, item.Value5].join(
+    "__",
+  );
 }
 
 describe("cartesianProduct", () => {
@@ -247,7 +239,11 @@ describe("draft 추가/삭제 흐름 모델", () => {
     };
 
     const afterAdd = [initialRow, otherRow, draftRow];
-    expect(afterAdd.map(getKey)).toEqual(["S________", "M________", "manual-2"]);
+    expect(afterAdd.map(getKey)).toEqual([
+      "S________",
+      "M________",
+      "manual-2",
+    ]);
 
     const afterDelete = afterAdd.filter((r) => r._rowId !== "manual-2");
     const axes = inventoryItemsToAxes(afterDelete);

@@ -3,7 +3,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { http } from "@/shared/api";
 import { masterProductsQueryRoot } from "./masterProductQueries";
-import type { MasterProduct, MasterProductOptionGroup, MasterProductVariant } from "../model/types";
+import type {
+  MasterProduct,
+  MasterProductOptionGroup,
+  MasterProductVariant,
+} from "../model/types";
 
 export interface CreateMasterProductInput {
   code: string;
@@ -20,7 +24,8 @@ export interface CreateMasterProductInput {
   attributes?: Record<string, unknown>;
 }
 
-export interface UpdateMasterProductInput extends Partial<CreateMasterProductInput> {}
+export interface UpdateMasterProductInput
+  extends Partial<CreateMasterProductInput> {}
 
 export interface VariantOptionValueInput {
   groupName: string;
@@ -45,8 +50,13 @@ export function useSetOptionGroups(masterProductId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: SetOptionGroupsInput): Promise<MasterProductOptionGroup[]> =>
-      http.put<MasterProductOptionGroup[]>(`/api/master-products/${masterProductId}/option-groups`, input),
+    mutationFn: (
+      input: SetOptionGroupsInput,
+    ): Promise<MasterProductOptionGroup[]> =>
+      http.put<MasterProductOptionGroup[]>(
+        `/api/master-products/${masterProductId}/option-groups`,
+        input,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -73,7 +83,9 @@ export function useUpdateMasterProduct(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: UpdateMasterProductInput): Promise<UpdateMasterProductResult> =>
+    mutationFn: (
+      input: UpdateMasterProductInput,
+    ): Promise<UpdateMasterProductResult> =>
       http.put<UpdateMasterProductResult>(`/api/master-products/${id}`, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
@@ -85,8 +97,13 @@ export function useSyncListedProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (listedProductId: string): Promise<{ syncStatus: string; lastSyncedAt: string }> =>
-      http.post<{ syncStatus: string; lastSyncedAt: string }>(`/api/listed-products/${listedProductId}/sync-info`, {}),
+    mutationFn: (
+      listedProductId: string,
+    ): Promise<{ syncStatus: string; lastSyncedAt: string }> =>
+      http.post<{ syncStatus: string; lastSyncedAt: string }>(
+        `/api/listed-products/${listedProductId}/sync-info`,
+        {},
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -100,7 +117,12 @@ export interface ChannelCheckDiff {
 }
 
 export interface ChannelCheckResult {
-  status: 'IN_SYNC' | 'OUT_OF_SYNC' | 'CHANNEL_DELETED' | 'NO_ITEM_CODE' | 'UNSUPPORTED';
+  status:
+    | "IN_SYNC"
+    | "OUT_OF_SYNC"
+    | "CHANNEL_DELETED"
+    | "NO_ITEM_CODE"
+    | "UNSUPPORTED";
   message?: string;
   diffs?: ChannelCheckDiff[];
   channelProduct?: unknown;
@@ -111,7 +133,10 @@ export function useCheckListedProductFromChannel() {
 
   return useMutation({
     mutationFn: (listedProductId: string): Promise<ChannelCheckResult> =>
-      http.post<ChannelCheckResult>(`/api/listed-products/${listedProductId}/check-channel`, {}),
+      http.post<ChannelCheckResult>(
+        `/api/listed-products/${listedProductId}/check-channel`,
+        {},
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -126,7 +151,7 @@ export interface PullSalesDeduction {
 }
 
 export interface PullSalesResult {
-  status: 'OK' | 'NO_MASTER' | 'NO_ITEM_CODE' | 'NO_VARIANTS' | 'UNSUPPORTED';
+  status: "OK" | "NO_MASTER" | "NO_ITEM_CODE" | "NO_VARIANTS" | "UNSUPPORTED";
   message?: string;
   window?: { from: string; to: string };
   processedOrderCount?: number;
@@ -138,7 +163,10 @@ export function usePullSalesFromChannel() {
 
   return useMutation({
     mutationFn: (listedProductId: string): Promise<PullSalesResult> =>
-      http.post<PullSalesResult>(`/api/listed-products/${listedProductId}/pull-sales`, {}),
+      http.post<PullSalesResult>(
+        `/api/listed-products/${listedProductId}/pull-sales`,
+        {},
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -150,10 +178,14 @@ export function usePullSalesFromAllChannels() {
 
   return useMutation({
     mutationFn: (masterProductId: string) =>
-      http.post<{ status: string; results: Array<{ listedProductId: string; status: string; deductions?: unknown }> }>(
-        `/api/master-products/${masterProductId}/pull-sales`,
-        {},
-      ),
+      http.post<{
+        status: string;
+        results: Array<{
+          listedProductId: string;
+          status: string;
+          deductions?: unknown;
+        }>;
+      }>(`/api/master-products/${masterProductId}/pull-sales`, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -165,10 +197,10 @@ export function usePushMasterStockToAllChannels() {
 
   return useMutation({
     mutationFn: (masterProductId: string) =>
-      http.post<{ status: string; results: Array<{ listedProductId: string; status: string }> }>(
-        `/api/master-products/${masterProductId}/push-stock`,
-        {},
-      ),
+      http.post<{
+        status: string;
+        results: Array<{ listedProductId: string; status: string }>;
+      }>(`/api/master-products/${masterProductId}/push-stock`, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -180,10 +212,14 @@ export function usePushStockToChannel() {
 
   return useMutation({
     mutationFn: (listedProductId: string) =>
-      http.post<{ status: string; updates?: Array<{ channelVariantId: string; stock: number; status: string }> }>(
-        `/api/listed-products/${listedProductId}/push-stock`,
-        {},
-      ),
+      http.post<{
+        status: string;
+        updates?: Array<{
+          channelVariantId: string;
+          stock: number;
+          status: string;
+        }>;
+      }>(`/api/listed-products/${listedProductId}/push-stock`, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -222,7 +258,10 @@ export function useAddVariant(masterProductId: string) {
 
   return useMutation({
     mutationFn: (input: AddVariantInput): Promise<MasterProductVariant> =>
-      http.post<MasterProductVariant>(`/api/master-products/${masterProductId}/variants`, input),
+      http.post<MasterProductVariant>(
+        `/api/master-products/${masterProductId}/variants`,
+        input,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -233,8 +272,17 @@ export function useUpdateVariant(masterProductId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ variantId, input }: { variantId: string; input: UpdateVariantInput }): Promise<MasterProductVariant> =>
-      http.put<MasterProductVariant>(`/api/master-products/${masterProductId}/variants/${variantId}`, input),
+    mutationFn: ({
+      variantId,
+      input,
+    }: {
+      variantId: string;
+      input: UpdateVariantInput;
+    }): Promise<MasterProductVariant> =>
+      http.put<MasterProductVariant>(
+        `/api/master-products/${masterProductId}/variants/${variantId}`,
+        input,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -246,7 +294,9 @@ export function useDeleteVariant(masterProductId: string) {
 
   return useMutation({
     mutationFn: (variantId: string): Promise<void> =>
-      http.delete<void>(`/api/master-products/${masterProductId}/variants/${variantId}`),
+      http.delete<void>(
+        `/api/master-products/${masterProductId}/variants/${variantId}`,
+      ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });
     },
@@ -257,7 +307,10 @@ export function useListToChannel(masterProductId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { channelId: string; overrides?: Record<string, unknown> }): Promise<void> =>
+    mutationFn: (input: {
+      channelId: string;
+      overrides?: Record<string, unknown>;
+    }): Promise<void> =>
       http.post<void>(`/api/master-products/${masterProductId}/list`, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: masterProductsQueryRoot });

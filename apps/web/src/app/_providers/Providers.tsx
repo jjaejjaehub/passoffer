@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import type { ReactNode } from 'react';
-import { AppToasterHost } from '@/shared/ui';
-import { ChakraClientProvider } from './ChakraClientProvider';
-import { QueryProvider } from './QueryProvider';
+import type { ReactNode } from "react";
+import { AppToasterHost } from "@/shared/ui";
+import { ChakraClientProvider } from "./ChakraClientProvider";
+import { QueryProvider } from "./QueryProvider";
 
 export function Providers({
   children,
@@ -19,4 +19,3 @@ export function Providers({
     </QueryProvider>
   );
 }
-

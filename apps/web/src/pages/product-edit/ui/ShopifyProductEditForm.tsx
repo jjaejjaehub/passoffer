@@ -17,7 +17,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef } from "react";
-import { Controller, useFieldArray, type Resolver, type SubmitErrorHandler, useForm } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  type Resolver,
+  type SubmitErrorHandler,
+  useForm,
+} from "react-hook-form";
 
 import { useChannelApiKey, useChannelProduct } from "@/entities/channel";
 import {
@@ -51,7 +57,9 @@ function isDefaultVariant(product: ShopifyProductDetail): boolean {
   );
 }
 
-function buildFormDefaults(product: ShopifyProductDetail): ShopifyRegisterFormValues {
+function buildFormDefaults(
+  product: ShopifyProductDetail,
+): ShopifyRegisterFormValues {
   const singleVariant = isDefaultVariant(product);
 
   const imageUrls = product.media.nodes
@@ -71,7 +79,9 @@ function buildFormDefaults(product: ShopifyProductDetail): ShopifyRegisterFormVa
       hasOptions: false,
       options: [],
       price: parseFloat(v.price),
-      compareAtPrice: v.compareAtPrice ? parseFloat(v.compareAtPrice) : undefined,
+      compareAtPrice: v.compareAtPrice
+        ? parseFloat(v.compareAtPrice)
+        : undefined,
       sku: v.sku ?? "",
       inventoryQuantity: v.inventoryQuantity,
       trackInventory: v.inventoryItem.tracked,
@@ -111,7 +121,9 @@ function buildFormDefaults(product: ShopifyProductDetail): ShopifyRegisterFormVa
     variantRows: product.variants.nodes.map((v) => ({
       combination: v.selectedOptions.map((o) => o.value).join(" / "),
       price: parseFloat(v.price),
-      compareAtPrice: v.compareAtPrice ? parseFloat(v.compareAtPrice) : undefined,
+      compareAtPrice: v.compareAtPrice
+        ? parseFloat(v.compareAtPrice)
+        : undefined,
       sku: v.sku ?? "",
       inventoryQuantity: v.inventoryQuantity,
     })),
@@ -146,7 +158,9 @@ function EditFormSkeleton(): React.JSX.Element {
 
 // ─── variant combination 생성 헬퍼 ────────────────────────────
 
-function buildCombinations(options: Array<{ name: string; values: string }>): string[] {
+function buildCombinations(
+  options: Array<{ name: string; values: string }>,
+): string[] {
   const parsed = options
     .map((o) =>
       o.values
@@ -158,13 +172,10 @@ function buildCombinations(options: Array<{ name: string; values: string }>): st
 
   if (parsed.length === 0) return [];
 
-  return parsed.reduce<string[]>(
-    (acc, vals) => {
-      if (acc.length === 0) return vals;
-      return acc.flatMap((a) => vals.map((v) => `${a} / ${v}`));
-    },
-    [],
-  );
+  return parsed.reduce<string[]>((acc, vals) => {
+    if (acc.length === 0) return vals;
+    return acc.flatMap((a) => vals.map((v) => `${a} / ${v}`));
+  }, []);
 }
 
 // ─── 옵션 섹션 (편집 가능) ────────────────────────────────────
@@ -180,7 +191,9 @@ function EditOptionsSection({
   control: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["control"];
   register: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["register"];
   watch: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["watch"];
-  errors: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["formState"]["errors"];
+  errors: ReturnType<
+    typeof useForm<ShopifyRegisterFormValues>
+  >["formState"]["errors"];
   setValue: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["setValue"];
   isMasterLinked: boolean;
 }): React.JSX.Element {
@@ -188,7 +201,10 @@ function EditOptionsSection({
   const variantRows = watch("variantRows");
   const trackInventory = watch("trackInventory");
 
-  const { fields, append, remove } = useFieldArray({ control, name: "options" });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "options",
+  });
 
   const combinations = useMemo(() => buildCombinations(options), [options]);
 
@@ -197,10 +213,18 @@ function EditOptionsSection({
     const prev = variantRows ?? [];
     const next = combinations.map((combo) => {
       const existing = prev.find((r) => r.combination === combo);
-      return existing ?? { combination: combo, price: 0, compareAtPrice: undefined, sku: "", inventoryQuantity: 0 };
+      return (
+        existing ?? {
+          combination: combo,
+          price: 0,
+          compareAtPrice: undefined,
+          sku: "",
+          inventoryQuantity: 0,
+        }
+      );
     });
     setValue("variantRows", next, { shouldValidate: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combinations.join("|")]);
 
   return (
@@ -209,7 +233,14 @@ function EditOptionsSection({
         {/* 옵션 목록 */}
         <Stack gap={3}>
           {fields.map((field, idx) => (
-            <Box key={field.id} p={4} borderWidth="1px" borderRadius="md" borderColor="gray.200" bg="white">
+            <Box
+              key={field.id}
+              p={4}
+              borderWidth="1px"
+              borderRadius="md"
+              borderColor="gray.200"
+              bg="white"
+            >
               <Flex gap={3} align="flex-start">
                 <Stack flex="1" gap={3}>
                   <Box>
@@ -232,8 +263,13 @@ function EditOptionsSection({
                       bg={isMasterLinked ? "gray.50" : undefined}
                       {...register(`options.${idx}.values`)}
                     />
-                    <HelperText>콤마(,)로 구분. 값 추가/삭제 시 variant 조합이 자동 갱신됩니다.</HelperText>
-                    <ErrorMsg>{errors.options?.[idx]?.values?.message}</ErrorMsg>
+                    <HelperText>
+                      콤마(,)로 구분. 값 추가/삭제 시 variant 조합이 자동
+                      갱신됩니다.
+                    </HelperText>
+                    <ErrorMsg>
+                      {errors.options?.[idx]?.values?.message}
+                    </ErrorMsg>
                   </Box>
                 </Stack>
                 {fields.length > 1 && (
@@ -271,7 +307,9 @@ function EditOptionsSection({
             </Button>
           )}
           {fields.length >= 3 && (
-            <Text fontSize="xs" color="gray.400">Shopify는 옵션을 최대 3개까지 지원합니다.</Text>
+            <Text fontSize="xs" color="gray.400">
+              Shopify는 옵션을 최대 3개까지 지원합니다.
+            </Text>
           )}
         </Stack>
 
@@ -281,15 +319,27 @@ function EditOptionsSection({
             <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.700">
               옵션 조합별 가격 / 재고 ({variantRows?.length ?? 0}개 variant)
             </Text>
-            <Box overflowX="auto" borderWidth="1px" borderRadius="md" borderColor="gray.200">
+            <Box
+              overflowX="auto"
+              borderWidth="1px"
+              borderRadius="md"
+              borderColor="gray.200"
+            >
               <Table.Root size="sm">
                 <Table.Header>
                   <Table.Row bg="gray.50">
-                    <Table.ColumnHeader minW="160px">옵션 조합</Table.ColumnHeader>
-                    <Table.ColumnHeader minW="120px">
-                      판매가 <Text as="span" color="gray.400">*</Text>
+                    <Table.ColumnHeader minW="160px">
+                      옵션 조합
                     </Table.ColumnHeader>
-                    <Table.ColumnHeader minW="120px">정가 (할인 전)</Table.ColumnHeader>
+                    <Table.ColumnHeader minW="120px">
+                      판매가{" "}
+                      <Text as="span" color="gray.400">
+                        *
+                      </Text>
+                    </Table.ColumnHeader>
+                    <Table.ColumnHeader minW="120px">
+                      정가 (할인 전)
+                    </Table.ColumnHeader>
                     <Table.ColumnHeader minW="140px">SKU</Table.ColumnHeader>
                     {trackInventory && (
                       <Table.ColumnHeader minW="80px" textAlign="right">
@@ -329,7 +379,9 @@ function EditOptionsSection({
                             setValueAs: (v) => (v === "" ? 0 : Number(v)),
                           })}
                         />
-                        <ErrorMsg>{errors.variantRows?.[idx]?.price?.message}</ErrorMsg>
+                        <ErrorMsg>
+                          {errors.variantRows?.[idx]?.price?.message}
+                        </ErrorMsg>
                       </Table.Cell>
                       <Table.Cell>
                         <Input
@@ -338,7 +390,8 @@ function EditOptionsSection({
                           step={0.01}
                           placeholder="0.00"
                           {...register(`variantRows.${idx}.compareAtPrice`, {
-                            setValueAs: (v) => (v === "" ? undefined : Number(v)),
+                            setValueAs: (v) =>
+                              v === "" ? undefined : Number(v),
                           })}
                         />
                       </Table.Cell>
@@ -359,9 +412,12 @@ function EditOptionsSection({
                             step={1}
                             textAlign="right"
                             placeholder="0"
-                            {...register(`variantRows.${idx}.inventoryQuantity`, {
-                              setValueAs: (v) => (v === "" ? 0 : Number(v)),
-                            })}
+                            {...register(
+                              `variantRows.${idx}.inventoryQuantity`,
+                              {
+                                setValueAs: (v) => (v === "" ? 0 : Number(v)),
+                              },
+                            )}
                           />
                         </Table.Cell>
                       )}
@@ -370,7 +426,10 @@ function EditOptionsSection({
                 </Table.Body>
               </Table.Root>
             </Box>
-            <HelperText>옵션 값을 수정하면 조합이 자동 갱신됩니다. 기존에 입력한 값은 유지됩니다.</HelperText>
+            <HelperText>
+              옵션 값을 수정하면 조합이 자동 갱신됩니다. 기존에 입력한 값은
+              유지됩니다.
+            </HelperText>
           </Box>
         )}
       </Stack>
@@ -388,7 +447,9 @@ function SingleVariantSection({
   isMasterLinked,
 }: {
   register: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["register"];
-  errors: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["formState"]["errors"];
+  errors: ReturnType<
+    typeof useForm<ShopifyRegisterFormValues>
+  >["formState"]["errors"];
   trackInventory: boolean;
   onTrackInventoryChange: (v: boolean) => void;
   isMasterLinked: boolean;
@@ -487,11 +548,13 @@ function EditFormBody({
   const { mutateAsync, isPending } = useShopifyUpdateProduct();
 
   // 원본 option ID / optionValue ID 보관 (option 수정 시 Shopify API에 전달)
-  const originalOptionsRef = useRef<Array<{
-    id: string;
-    name: string;
-    values: Array<{ id: string; name: string }>;
-  }>>(
+  const originalOptionsRef = useRef<
+    Array<{
+      id: string;
+      name: string;
+      values: Array<{ id: string; name: string }>;
+    }>
+  >(
     (product.options ?? []).map((o) => ({
       id: o.id,
       name: o.name,
@@ -508,7 +571,9 @@ function EditFormBody({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ShopifyRegisterFormValues>({
-    resolver: zodResolver(shopifyRegisterSchema) as Resolver<ShopifyRegisterFormValues>,
+    resolver: zodResolver(
+      shopifyRegisterSchema,
+    ) as Resolver<ShopifyRegisterFormValues>,
     defaultValues: buildFormDefaults(product),
     mode: "onSubmit",
   });
@@ -528,10 +593,14 @@ function EditFormBody({
   const descriptionHtml = watch("descriptionHtml") ?? "";
   const trackInventory = watch("trackInventory");
 
-  const onInvalid: SubmitErrorHandler<ShopifyRegisterFormValues> = (fieldErrors) => {
+  const onInvalid: SubmitErrorHandler<ShopifyRegisterFormValues> = (
+    fieldErrors,
+  ) => {
     const firstKey = Object.keys(fieldErrors)[0];
     if (!firstKey) return;
-    document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    document
+      .getElementById(firstKey)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const onValid = async (values: ShopifyRegisterFormValues): Promise<void> => {
@@ -554,7 +623,9 @@ function EditFormBody({
             id: variantId,
             price: String(values.price ?? 0),
             compareAtPrice:
-              values.compareAtPrice !== undefined ? String(values.compareAtPrice) : null,
+              values.compareAtPrice !== undefined
+                ? String(values.compareAtPrice)
+                : null,
             sku: values.sku,
           },
         ];
@@ -610,7 +681,8 @@ function EditFormBody({
               마스터 상품과 연결된 상품입니다
             </Text>
             <Text fontSize="xs" color="blue.700" mt={1}>
-              마스터 상품에서 가져오는 항목은 수정할 수 없습니다. 가격/재고 등 채널 전용 항목만 수정할 수 있습니다.
+              마스터 상품에서 가져오는 항목은 수정할 수 없습니다. 가격/재고 등
+              채널 전용 항목만 수정할 수 있습니다.
             </Text>
           </Box>
         )}
@@ -663,7 +735,9 @@ function EditFormBody({
                 bg={isMasterLinked ? "gray.50" : undefined}
                 {...register("tags")}
               />
-              <HelperText>태그는 Shopify 검색 및 필터에서 활용됩니다.</HelperText>
+              <HelperText>
+                태그는 Shopify 검색 및 필터에서 활용됩니다.
+              </HelperText>
             </Box>
 
             <Box>
@@ -675,7 +749,9 @@ function EditFormBody({
                   <Select
                     value={field.value}
                     onChange={(e) =>
-                      field.onChange(e.target.value as "ACTIVE" | "DRAFT" | "ARCHIVED")
+                      field.onChange(
+                        e.target.value as "ACTIVE" | "DRAFT" | "ARCHIVED",
+                      )
                     }
                   >
                     <option value="DRAFT">초안 (DRAFT) — 비공개</option>
@@ -696,7 +772,9 @@ function EditFormBody({
         <Section title="상품 설명">
           <RichHtmlEditor
             value={descriptionHtml}
-            onChange={(v) => setValue("descriptionHtml", v, { shouldValidate: true })}
+            onChange={(v) =>
+              setValue("descriptionHtml", v, { shouldValidate: true })
+            }
             isDisabled={isLoading || isMasterLinked}
             minHeight="320px"
           />
@@ -745,11 +823,19 @@ function EditFormBody({
                       borderColor={i === 0 ? "gray.700" : "gray.200"}
                       flexShrink={0}
                     >
-                      <Image src={url} alt="" w="100%" h="100%" objectFit="cover" />
+                      <Image
+                        src={url}
+                        alt=""
+                        w="100%"
+                        h="100%"
+                        objectFit="cover"
+                      />
                     </Box>
                   ))}
               </Flex>
-              <HelperText>이미지 수정 및 삭제는 Shopify 관리자 페이지에서 진행해 주세요.</HelperText>
+              <HelperText>
+                이미지 수정 및 삭제는 Shopify 관리자 페이지에서 진행해 주세요.
+              </HelperText>
             </Box>
           )}
 
@@ -759,7 +845,9 @@ function EditFormBody({
             <Textarea
               size="sm"
               rows={3}
-              placeholder={"https://example.com/image.jpg\nhttps://example.com/image2.jpg"}
+              placeholder={
+                "https://example.com/image.jpg\nhttps://example.com/image2.jpg"
+              }
               readOnly={isMasterLinked}
               bg={isMasterLinked ? "gray.50" : undefined}
               {...register("imageUrls")}
@@ -808,10 +896,18 @@ export function ShopifyProductEditForm({
 }: ShopifyProductEditFormProps): React.JSX.Element {
   const router = useRouter();
   const { hasKey } = useChannelApiKey("shopify");
-  const { data: product, isLoading, error } = useShopifyProductDetail(productId);
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useShopifyProductDetail(productId);
 
   const numericProductId = productId.replace(/^gid:\/\/shopify\/Product\//, "");
-  const { data: channelItem } = useChannelProduct("shopify", numericProductId, !!numericProductId);
+  const { data: channelItem } = useChannelProduct(
+    "shopify",
+    numericProductId,
+    !!numericProductId,
+  );
   const isMasterLinked = channelItem?.linkStatus === "linked";
 
   // variant GID → combination string 맵 (편집 시 variant ID 참조용)
@@ -863,8 +959,14 @@ export function ShopifyProductEditForm({
           }
           action={
             error.type === "AUTH_ERROR"
-              ? { label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }
-              : { label: "목록으로 돌아가기", onClick: () => router.push("/sales-products") }
+              ? {
+                  label: "채널 설정으로 이동",
+                  onClick: () => router.push("/settings/channels"),
+                }
+              : {
+                  label: "목록으로 돌아가기",
+                  onClick: () => router.push("/sales-products"),
+                }
           }
         />
       )}

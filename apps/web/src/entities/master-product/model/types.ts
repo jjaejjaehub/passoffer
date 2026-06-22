@@ -45,7 +45,8 @@ export interface MasterProductOptionGroup {
   values: Array<{ id: string; value: string; position: number }>;
 }
 
-export interface MasterProductDetail extends Omit<MasterProduct, 'variantCount' | 'listedChannelCount'> {
+export interface MasterProductDetail
+  extends Omit<MasterProduct, "variantCount" | "listedChannelCount"> {
   variants: MasterProductVariant[];
   optionGroups: MasterProductOptionGroup[];
   listedProducts: Array<{
@@ -54,7 +55,7 @@ export interface MasterProductDetail extends Omit<MasterProduct, 'variantCount' 
     channelItemCode?: string;
     title?: string;
     status?: string;
-    syncStatus: 'SYNCED' | 'PENDING' | 'FAILED';
+    syncStatus: "SYNCED" | "PENDING" | "FAILED";
     lastSyncedAt?: string;
     channelType: string;
     channelName: string;
@@ -68,7 +69,7 @@ export interface ListedProduct {
   channelItemCode?: string;
   title?: string;
   status?: string;
-  syncStatus: 'SYNCED' | 'PENDING' | 'FAILED';
+  syncStatus: "SYNCED" | "PENDING" | "FAILED";
   lastSyncedAt?: string;
   createdAt: string;
   channelType: string;

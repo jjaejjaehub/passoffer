@@ -15,12 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import type { ReactElement } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  CircleAlert,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert } from "lucide-react";
 import { EmptyState, LoadingState, ErrorState, appToaster } from "@/shared/ui";
 import {
   AdjustmentBeforeAfterPanel,
@@ -44,11 +39,7 @@ import {
   type WizardState,
   type WizardStep,
 } from "@/entities/stock-movement";
-import type {
-  AdjustmentRequest,
-  InventoryRow,
-  LocationNode,
-} from "@oms/types";
+import type { AdjustmentRequest, InventoryRow, LocationNode } from "@oms/types";
 
 const STEPS: { step: WizardStep; label: string; description: string }[] = [
   { step: 1, label: "출발 선택", description: "로케이션과 SKU/LOT" },
@@ -82,7 +73,9 @@ interface AdjustmentWizardProps {
   warehouseId: string;
 }
 
-function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement {
+function AdjustmentWizard({
+  warehouseId,
+}: AdjustmentWizardProps): ReactElement {
   const [state, setState] = useState<WizardState>(INITIAL_WIZARD_STATE);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -152,9 +145,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
     setState((prev) => ({ ...prev, source }));
   };
 
-  const setDestination = (
-    destination: DestinationInput | null,
-  ): void => {
+  const setDestination = (destination: DestinationInput | null): void => {
     setState((prev) => ({ ...prev, destination }));
   };
 
@@ -172,8 +163,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
       state.source.inventoryRow.quantity -
         state.source.inventoryRow.reservedQuantity;
   const canStep3Confirm =
-    canStep2Continue &&
-    state.review.reasonCode.trim().length > 0;
+    canStep2Continue && state.review.reasonCode.trim().length > 0;
 
   const handleConfirm = async (): Promise<void> => {
     if (!state.source || !state.destination) return;
@@ -281,9 +271,7 @@ function AdjustmentWizard({ warehouseId }: AdjustmentWizardProps): ReactElement 
               size="sm"
               onClick={goNext}
               disabled={
-                state.step === 1
-                  ? !canStep1Continue
-                  : !canStep2Continue
+                state.step === 1 ? !canStep1Continue : !canStep2Continue
               }
             >
               다음 <ArrowRight size={14} />
@@ -509,8 +497,7 @@ function Step2Destination({
     });
   };
 
-  const tooMuch =
-    destination !== null && destination.quantity > available;
+  const tooMuch = destination !== null && destination.quantity > available;
   const sameLoc =
     destination !== null && destination.locationCode === source.locationCode;
 
@@ -548,17 +535,13 @@ function Step2Destination({
           {tooMuch ? (
             <Flex align="center" gap={1} mt={1} color="red.600">
               <CircleAlert size={12} />
-              <Text fontSize="xs">
-                가용 수량을 초과합니다.
-              </Text>
+              <Text fontSize="xs">가용 수량을 초과합니다.</Text>
             </Flex>
           ) : null}
           {sameLoc ? (
             <Flex align="center" gap={1} mt={1} color="red.600">
               <CircleAlert size={12} />
-              <Text fontSize="xs">
-                도착 로케이션이 출발과 같습니다.
-              </Text>
+              <Text fontSize="xs">도착 로케이션이 출발과 같습니다.</Text>
             </Flex>
           ) : null}
         </Box>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import type React from 'react';
+import type React from "react";
 import {
   Box,
   Button,
@@ -19,13 +19,13 @@ import {
   SkeletonText,
   Stack,
   Text,
-} from '@chakra-ui/react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+} from "@chakra-ui/react";
+import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import type { AvailableDateType, Product } from '@/entities/product';
-import { useProductDetail } from '@/entities/product';
+import type { AvailableDateType, Product } from "@/entities/product";
+import { useProductDetail } from "@/entities/product";
 
 const MotionDiv = motion.div;
 
@@ -37,45 +37,49 @@ export interface ProductDetailModalProps {
 
 function dashIfEmptyOrZero(value: string): string {
   const v = value.trim();
-  if (v === '' || v === '0') return '-';
+  if (v === "" || v === "0") return "-";
   return v;
 }
 
 function formatJpyOrDash(value: number): string {
-  if (value === 0) return '-';
-  return `¥${value.toLocaleString('ja-JP')}`;
+  if (value === 0) return "-";
+  return `¥${value.toLocaleString("ja-JP")}`;
 }
 
 function formatShippingNo(shippingNo: string): string {
   const v = shippingNo.trim();
-  if (v === '' || v === '0') return '무료(0)';
+  if (v === "" || v === "0") return "무료(0)";
   return v;
 }
 
 function availableDateTypeLabel(type: AvailableDateType): string {
-  if (type === 'normal') {
-    return '일반발송 (3영업일)';
+  if (type === "normal") {
+    return "일반발송 (3영업일)";
   }
-  if (type === 'prep') {
-    return '상품준비일';
+  if (type === "prep") {
+    return "상품준비일";
   }
-  if (type === 'release') {
-    return '출시일';
+  if (type === "release") {
+    return "출시일";
   }
-  return '당일발송';
+  return "당일발송";
 }
 
 function formatNameWithCode(name: string, code: string): string {
   const n = dashIfEmptyOrZero(name);
   const c = dashIfEmptyOrZero(code);
-  if (n === '-' && c === '-') return '-';
-  if (c === '-') return n;
+  if (n === "-" && c === "-") return "-";
+  if (c === "-") return n;
   return `${n} (${c})`;
 }
 
-function ProductStatusBadge({ status }: { status: Product['status'] }): React.JSX.Element {
-  const isActive = status === 'active';
-  const label = isActive ? '판매중' : '판매대기';
+function ProductStatusBadge({
+  status,
+}: {
+  status: Product["status"];
+}): React.JSX.Element {
+  const isActive = status === "active";
+  const label = isActive ? "판매중" : "판매대기";
 
   if (isActive) {
     return (
@@ -128,7 +132,7 @@ function AdultTag({ isAdult }: { isAdult: boolean }): React.JSX.Element {
       bg="gray.100"
       color="gray.700"
     >
-      성인 {isAdult ? 'Y' : 'N'}
+      성인 {isAdult ? "Y" : "N"}
     </Box>
   );
 }
@@ -166,9 +170,9 @@ export function ProductDetailModal({
   );
 
   const errorMessage = ((): string => {
-    if (!error) return '';
-    if (error.type === 'NO_API_KEY') {
-      return 'Qoo10 API 키가 없습니다. 채널 설정에서 키를 등록해 주세요.';
+    if (!error) return "";
+    if (error.type === "NO_API_KEY") {
+      return "Qoo10 API 키가 없습니다. 채널 설정에서 키를 등록해 주세요.";
     }
     return error.message;
   })();
@@ -189,7 +193,11 @@ export function ProductDetailModal({
           }
         }}
       />
-      <DialogPositioner alignItems="center" justifyContent="center" px={{ base: 0, sm: 4 }}>
+      <DialogPositioner
+        alignItems="center"
+        justifyContent="center"
+        px={{ base: 0, sm: 4 }}
+      >
         <DialogContent
           maxW="4xl"
           w="100%"
@@ -216,7 +224,7 @@ export function ProductDetailModal({
                   borderColor="gray.900"
                   color="gray.900"
                   bg="white"
-                  _hover={{ bg: 'gray.50' }}
+                  _hover={{ bg: "gray.50" }}
                   onClick={() => {
                     const seller = (sellerCode ?? "").trim();
                     const qs = new URLSearchParams();
@@ -246,7 +254,7 @@ export function ProductDetailModal({
               right={3}
               top={3}
               bg="transparent"
-              _hover={{ bg: 'gray.100' }}
+              _hover={{ bg: "gray.100" }}
             >
               <X size={16} />
             </DialogCloseTrigger>
@@ -273,13 +281,13 @@ export function ProductDetailModal({
                 <Text fontSize="sm" color="red.600" textAlign="center">
                   {errorMessage}
                 </Text>
-                {error.type === 'NO_API_KEY' ? (
+                {error.type === "NO_API_KEY" ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     colorPalette="blue"
-                    onClick={() => router.push('/settings/channels')}
+                    onClick={() => router.push("/settings/channels")}
                   >
                     채널 설정으로 이동
                   </Button>
@@ -290,7 +298,12 @@ export function ProductDetailModal({
             {hasApiKey && isLoading && isOpen ? (
               <Stack gap={4} px={2}>
                 <Flex gap={3} align="flex-start">
-                  <Skeleton w="88px" h="88px" borderRadius="md" flexShrink={0} />
+                  <Skeleton
+                    w="88px"
+                    h="88px"
+                    borderRadius="md"
+                    flexShrink={0}
+                  />
                   <Stack flex="1" gap={2}>
                     <Skeleton height="20px" width="40%" />
                     <SkeletonText noOfLines={2} rootProps={{ gap: 2 }} />
@@ -304,7 +317,7 @@ export function ProductDetailModal({
             {hasApiKey && product && isOpen && !isLoading && !error ? (
               <AnimatePresence mode="wait">
                 <MotionDiv
-                  key={itemCode ?? 'empty'}
+                  key={itemCode ?? "empty"}
                   initial={{ opacity: 0, x: 12 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 12 }}
@@ -337,7 +350,11 @@ export function ProductDetailModal({
                           <ProductStatusBadge status={product.status} />
                           <AdultTag isAdult={product.isAdult} />
                         </Flex>
-                        <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+                        <Text
+                          fontSize="sm"
+                          fontWeight="semibold"
+                          color="gray.900"
+                        >
                           {dashIfEmptyOrZero(product.title)}
                         </Text>
                         <Text fontSize="xs" color="gray.500">
@@ -347,12 +364,22 @@ export function ProductDetailModal({
                     </Flex>
 
                     {/* 가격/재고 */}
-                    <SimpleGrid columns={3} gap={2} bg="gray.50" p={3} borderRadius="md">
+                    <SimpleGrid
+                      columns={3}
+                      gap={2}
+                      bg="gray.50"
+                      p={3}
+                      borderRadius="md"
+                    >
                       <Stack gap={0.5}>
                         <Text fontSize="xs" color="gray.500">
                           판매가
                         </Text>
-                        <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                        <Text
+                          fontSize="sm"
+                          fontWeight="medium"
+                          color="gray.900"
+                        >
                           {formatJpyOrDash(product.price)}
                         </Text>
                       </Stack>
@@ -360,7 +387,11 @@ export function ProductDetailModal({
                         <Text fontSize="xs" color="gray.500">
                           정산가
                         </Text>
-                        <Text fontSize="sm" fontWeight="medium" color="gray.900">
+                        <Text
+                          fontSize="sm"
+                          fontWeight="medium"
+                          color="gray.900"
+                        >
                           {formatJpyOrDash(product.settlePrice)}
                         </Text>
                       </Stack>
@@ -371,9 +402,9 @@ export function ProductDetailModal({
                         <Text
                           fontSize="sm"
                           fontWeight="medium"
-                          color={product.qty < 10 ? 'red.500' : 'gray.900'}
+                          color={product.qty < 10 ? "red.500" : "gray.900"}
                         >
-                          {product.qty.toLocaleString('ja-JP')}
+                          {product.qty.toLocaleString("ja-JP")}
                         </Text>
                       </Stack>
                     </SimpleGrid>
@@ -383,10 +414,18 @@ export function ProductDetailModal({
 
                     {/* 기본 정보 */}
                     <Stack gap={3}>
-                      <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                      <Text
+                        fontSize="xs"
+                        fontWeight="semibold"
+                        color="gray.500"
+                      >
                         기본 정보
                       </Text>
-                      <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                      <Box
+                        display="grid"
+                        gridTemplateColumns="repeat(2, 1fr)"
+                        gap={4}
+                      >
                         <DetailInfoRow
                           label="상품코드"
                           value={dashIfEmptyOrZero(product.id)}
@@ -405,7 +444,7 @@ export function ProductDetailModal({
                         />
                         <DetailInfoRow
                           label="성인 상품"
-                          value={product.isAdult ? 'Y' : 'N'}
+                          value={product.isAdult ? "Y" : "N"}
                         />
                         <DetailInfoRow
                           label="공급원가(정산가)"
@@ -417,10 +456,18 @@ export function ProductDetailModal({
                     {/* 카테고리 / 원산지 */}
                     <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
                       <Stack gap={3}>
-                        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color="gray.500"
+                        >
                           카테고리 / 원산지
                         </Text>
-                        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(2, 1fr)"
+                          gap={4}
+                        >
                           <DetailInfoRow
                             label="메인 카테고리"
                             value={formatNameWithCode(
@@ -430,11 +477,15 @@ export function ProductDetailModal({
                           />
                           <DetailInfoRow
                             label="서브 카테고리 1"
-                            value={dashIfEmptyOrZero(product.category.sub1.name)}
+                            value={dashIfEmptyOrZero(
+                              product.category.sub1.name,
+                            )}
                           />
                           <DetailInfoRow
                             label="서브 카테고리 2"
-                            value={dashIfEmptyOrZero(product.category.sub2.name)}
+                            value={dashIfEmptyOrZero(
+                              product.category.sub2.name,
+                            )}
                           />
                           <DetailInfoRow
                             label="원산지 타입"
@@ -451,21 +502,35 @@ export function ProductDetailModal({
                     {/* 배송 / 발송 */}
                     <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
                       <Stack gap={3}>
-                        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color="gray.500"
+                        >
                           배송 / 발송
                         </Text>
-                        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(2, 1fr)"
+                          gap={4}
+                        >
                           <DetailInfoRow
                             label="발송 가능일 유형"
-                            value={availableDateTypeLabel(product.availableDate.type)}
+                            value={availableDateTypeLabel(
+                              product.availableDate.type,
+                            )}
                           />
                           <DetailInfoRow
                             label="발송 가능일 값"
-                            value={dashIfEmptyOrZero(product.availableDate.value)}
+                            value={dashIfEmptyOrZero(
+                              product.availableDate.value,
+                            )}
                           />
                           <DetailInfoRow
                             label="희망 배송일"
-                            value={dashIfEmptyOrZero(product.desiredShippingDate)}
+                            value={dashIfEmptyOrZero(
+                              product.desiredShippingDate,
+                            )}
                           />
                           <DetailInfoRow
                             label="배송비 코드"
@@ -478,10 +543,18 @@ export function ProductDetailModal({
                     {/* 판매 기간 / 일정 */}
                     <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
                       <Stack gap={3}>
-                        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color="gray.500"
+                        >
                           판매 기간 / 일정
                         </Text>
-                        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(2, 1fr)"
+                          gap={4}
+                        >
                           <DetailInfoRow
                             label="판매 종료일"
                             value={dashIfEmptyOrZero(product.expireDate)}
@@ -501,10 +574,18 @@ export function ProductDetailModal({
                     {/* 상품 속성 */}
                     <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
                       <Stack gap={3}>
-                        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color="gray.500"
+                        >
                           상품 속성
                         </Text>
-                        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(2, 1fr)"
+                          gap={4}
+                        >
                           <DetailInfoRow
                             label="모델번호"
                             value={dashIfEmptyOrZero(product.modelNm)}
@@ -523,7 +604,9 @@ export function ProductDetailModal({
                           />
                           <DetailInfoRow
                             label="산업코드 타입"
-                            value={dashIfEmptyOrZero(product.industrialCodeType)}
+                            value={dashIfEmptyOrZero(
+                              product.industrialCodeType,
+                            )}
                           />
                           <DetailInfoRow
                             label="산업코드"
@@ -540,34 +623,44 @@ export function ProductDetailModal({
                     {/* 키워드 */}
                     <Box borderTopWidth="1px" borderColor="gray.100" pt={4}>
                       <Stack gap={3}>
-                        <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color="gray.500"
+                        >
                           키워드
                         </Text>
-                        <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={4}>
+                        <Box
+                          display="grid"
+                          gridTemplateColumns="repeat(2, 1fr)"
+                          gap={4}
+                        >
                           <DetailInfoRow
                             label="키워드"
                             value={
                               product.keyword.length > 0 ? (
                                 <Flex gap={1} flexWrap="wrap">
                                   {product.keyword
-                                    .filter((word) => dashIfEmptyOrZero(word) !== '-')
+                                    .filter(
+                                      (word) => dashIfEmptyOrZero(word) !== "-",
+                                    )
                                     .map((word) => (
-                                    <Box
-                                      key={word}
-                                      as="span"
-                                      px={2}
-                                      py={0.5}
-                                      fontSize="xs"
-                                      borderRadius="full"
-                                      bg="gray.100"
-                                      color="gray.700"
-                                    >
-                                      {word}
-                                    </Box>
-                                  ))}
+                                      <Box
+                                        key={word}
+                                        as="span"
+                                        px={2}
+                                        py={0.5}
+                                        fontSize="xs"
+                                        borderRadius="full"
+                                        bg="gray.100"
+                                        color="gray.700"
+                                      >
+                                        {word}
+                                      </Box>
+                                    ))}
                                 </Flex>
                               ) : (
-                                '-'
+                                "-"
                               )
                             }
                           />
@@ -584,4 +677,3 @@ export function ProductDetailModal({
     </DialogRoot>
   );
 }
-

@@ -1,29 +1,23 @@
-'use client';
+"use client";
 
-import { Suspense, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-  Textarea,
-} from '@chakra-ui/react';
-import { KeyIcon, MessageCircle } from 'lucide-react';
+import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Box, Button, Flex, Text, Textarea } from "@chakra-ui/react";
+import { KeyIcon, MessageCircle } from "lucide-react";
 
-import { useChannelApiKey } from '@/entities/channel';
-import { useQoo10Inquiries, useQoo10ReplyInquiry } from '@/entities/inquiry';
-import type { InquiryFilter, InquiryItem } from '@/entities/inquiry';
-import { PageHeader, TableSkeleton } from '@/shared/ui';
-import { EmptyState } from '@/shared/ui/EmptyState';
-import { appToaster } from '@/shared/ui';
+import { useChannelApiKey } from "@/entities/channel";
+import { useQoo10Inquiries, useQoo10ReplyInquiry } from "@/entities/inquiry";
+import type { InquiryFilter, InquiryItem } from "@/entities/inquiry";
+import { PageHeader, TableSkeleton } from "@/shared/ui";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { appToaster } from "@/shared/ui";
 
 // ─── 필터 탭 ──────────────────────────────────────────────────
 
 const FILTER_TABS: Array<{ value: InquiryFilter; label: string }> = [
-  { value: 'ALL', label: '전체' },
-  { value: 'N', label: '미답변' },
-  { value: 'Y', label: '답변완료' },
+  { value: "ALL", label: "전체" },
+  { value: "N", label: "미답변" },
+  { value: "Y", label: "답변완료" },
 ];
 
 // ─── 답변 입력 폼 ──────────────────────────────────────────────
@@ -42,15 +36,22 @@ function ReplyForm({
     if (!answer.trim()) return;
     try {
       await reply.mutateAsync({ qnaNo: item.qnaNo, answer: answer.trim() });
-      appToaster.create({ type: 'success', title: '답변이 등록되었습니다.' });
+      appToaster.create({ type: "success", title: "답변이 등록되었습니다." });
       onClose();
     } catch {
-      appToaster.create({ type: 'error', title: '답변 등록에 실패했습니다.' });
+      appToaster.create({ type: "error", title: "답변 등록에 실패했습니다." });
     }
   };
 
   return (
-    <Box mt={3} p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+    <Box
+      mt={3}
+      p={3}
+      bg="blue.50"
+      borderRadius="md"
+      borderWidth="1px"
+      borderColor="blue.200"
+    >
       <Text fontSize="xs" fontWeight="semibold" color="blue.700" mb={2}>
         답변 작성
       </Text>
@@ -72,12 +73,12 @@ function ReplyForm({
           colorScheme="blue"
           bg="gray.900"
           color="white"
-          _hover={{ bg: 'gray.700' }}
+          _hover={{ bg: "gray.700" }}
           loading={reply.isPending}
           disabled={!answer.trim()}
           onClick={() => void handleSubmit()}
         >
-          {item.isAnswered ? '답변 수정' : '답변 등록'}
+          {item.isAnswered ? "답변 수정" : "답변 등록"}
         </Button>
       </Flex>
     </Box>
@@ -90,12 +91,7 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
   const [isReplying, setIsReplying] = useState(false);
 
   return (
-    <Box
-      borderTopWidth="1px"
-      borderColor="gray.100"
-      px={4}
-      py={3}
-    >
+    <Box borderTopWidth="1px" borderColor="gray.100" px={4} py={3}>
       {/* 메타 정보 */}
       <Flex align="center" gap={2} mb={1}>
         <Box
@@ -105,12 +101,12 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
           borderRadius="sm"
           fontSize="xs"
           fontWeight="medium"
-          bg={item.isAnswered ? 'green.50' : 'orange.50'}
-          color={item.isAnswered ? 'green.700' : 'orange.700'}
+          bg={item.isAnswered ? "green.50" : "orange.50"}
+          color={item.isAnswered ? "green.700" : "orange.700"}
           borderWidth="1px"
-          borderColor={item.isAnswered ? 'green.200' : 'orange.200'}
+          borderColor={item.isAnswered ? "green.200" : "orange.200"}
         >
-          {item.isAnswered ? '답변완료' : '미답변'}
+          {item.isAnswered ? "답변완료" : "미답변"}
         </Box>
         <Text fontSize="xs" color="gray.500">
           {item.buyerNick}
@@ -151,7 +147,7 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
             borderColor="gray.300"
             onClick={() => setIsReplying(true)}
           >
-            {item.isAnswered ? '답변 수정' : '답변하기'}
+            {item.isAnswered ? "답변 수정" : "답변하기"}
           </Button>
         </Flex>
       )}
@@ -163,8 +159,8 @@ function InquiryRow({ item }: { item: InquiryItem }): React.JSX.Element {
 
 function InquiryPageContent(): React.JSX.Element {
   const router = useRouter();
-  const { hasKey } = useChannelApiKey('qoo10');
-  const [filter, setFilter] = useState<InquiryFilter>('ALL');
+  const { hasKey } = useChannelApiKey("qoo10");
+  const [filter, setFilter] = useState<InquiryFilter>("ALL");
   const [page, setPage] = useState(1);
 
   const PAGE_SIZE = 20;
@@ -182,7 +178,10 @@ function InquiryPageContent(): React.JSX.Element {
         icon={<KeyIcon />}
         title="Qoo10 API 키가 없습니다"
         description="채널 설정에서 Qoo10 API 키를 등록하면 상품 문의를 관리할 수 있습니다."
-        action={{ label: '채널 설정으로 이동', onClick: () => router.push('/settings/channels') }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
@@ -209,12 +208,15 @@ function InquiryPageContent(): React.JSX.Element {
           <Button
             key={value}
             size="sm"
-            variant={filter === value ? 'solid' : 'ghost'}
-            bg={filter === value ? 'gray.100' : 'transparent'}
-            color={filter === value ? 'gray.900' : 'gray.500'}
-            _hover={{ bg: filter === value ? 'gray.100' : 'gray.50' }}
+            variant={filter === value ? "solid" : "ghost"}
+            bg={filter === value ? "gray.100" : "transparent"}
+            color={filter === value ? "gray.900" : "gray.500"}
+            _hover={{ bg: filter === value ? "gray.100" : "gray.50" }}
             borderRadius="md"
-            onClick={() => { setFilter(value); setPage(1); }}
+            onClick={() => {
+              setFilter(value);
+              setPage(1);
+            }}
           >
             {label}
           </Button>
@@ -223,8 +225,17 @@ function InquiryPageContent(): React.JSX.Element {
 
       {/* 에러 */}
       {error && (
-        <Box p={3} borderRadius="md" borderWidth="1px" borderColor="red.200" bg="red.50" mb={3}>
-          <Text fontSize="sm" color="red.700">{error.message}</Text>
+        <Box
+          p={3}
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="red.200"
+          bg="red.50"
+          mb={3}
+        >
+          <Text fontSize="sm" color="red.700">
+            {error.message}
+          </Text>
         </Box>
       )}
 

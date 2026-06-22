@@ -1,9 +1,24 @@
-import type { Order, OrderItem, GetOrdersParams, UpdateShipmentData, ProductListResult, IChannelAdapter, ChannelVendor, ChannelCapabilities, SyncMode, ConnectionHealth, ChannelProduct, ListChannelProductsParams, ListChannelProductsResult, UpdateSellerCodeResult } from '@oms/types';
+import type {
+  Order,
+  OrderItem,
+  GetOrdersParams,
+  UpdateShipmentData,
+  ProductListResult,
+  IChannelAdapter,
+  ChannelVendor,
+  ChannelCapabilities,
+  SyncMode,
+  ConnectionHealth,
+  ChannelProduct,
+  ListChannelProductsParams,
+  ListChannelProductsResult,
+  UpdateSellerCodeResult,
+} from "@oms/types";
 
 // Rakuten RMS Order API v2
 // 인증: Basic base64(serviceSecret:licenseKey)
 
-const RAKUTEN_API_BASE = 'https://api.rms.rakuten.co.jp/es/2.0';
+const RAKUTEN_API_BASE = "https://api.rms.rakuten.co.jp/es/2.0";
 
 // ─── Raw Rakuten API types ────────────────────────────────────
 
@@ -49,22 +64,22 @@ interface RakutenSearchOrderResponse {
 }
 
 // orderProgress → OMS OrderStatus 매핑
-const PROGRESS_TO_STATUS: Record<number, Order['status']> = {
-  100: 'PAID',
-  200: 'PAID',
-  300: 'SHIPPED',
-  400: 'DELIVERED',
-  500: 'CANCELLED',
-  600: 'CANCELLED',
-  700: 'DELIVERED',
-  800: 'RETURNED',
+const PROGRESS_TO_STATUS: Record<number, Order["status"]> = {
+  100: "PAID",
+  200: "PAID",
+  300: "SHIPPED",
+  400: "DELIVERED",
+  500: "CANCELLED",
+  600: "CANCELLED",
+  700: "DELIVERED",
+  800: "RETURNED",
 };
 
 // ─── RakutenAdapter ───────────────────────────────────────────
 
 export class RakutenAdapter implements IChannelAdapter {
-  readonly vendor: ChannelVendor = 'RAKUTEN';
-  readonly syncMode: SyncMode = 'polling_1h';
+  readonly vendor: ChannelVendor = "RAKUTEN";
+  readonly syncMode: SyncMode = "polling_1h";
   readonly capabilities: ChannelCapabilities = {
     supportsOrderFetch: true,
     supportsClaimFetch: false,
@@ -79,20 +94,20 @@ export class RakutenAdapter implements IChannelAdapter {
   private readonly auth: string;
 
   constructor(opts: { serviceSecret: string; licenseKey: string }) {
-    this.auth = `Basic ${Buffer.from(`${opts.serviceSecret}:${opts.licenseKey}`).toString('base64')}`;
+    this.auth = `Basic ${Buffer.from(`${opts.serviceSecret}:${opts.licenseKey}`).toString("base64")}`;
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${RAKUTEN_API_BASE}${path}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
+        "Content-Type": "application/json; charset=UTF-8",
         Authorization: this.auth,
       },
       body: JSON.stringify(body),
     });
     if (!res.ok) {
-      const text = await res.text().catch(() => '');
+      const text = await res.text().catch(() => "");
       throw new Error(`Rakuten API error [${res.status}]: ${text}`);
     }
     return res.json() as Promise<T>;
@@ -100,7 +115,7 @@ export class RakutenAdapter implements IChannelAdapter {
 
   async validateCredential(): Promise<boolean> {
     try {
-      await this.post<RakutenSearchOrderResponse>('/order/searchOrder', {
+      await this.post<RakutenSearchOrderResponse>("/order/searchOrder", {
         PaginationRequestModel: { requestRecordsAmount: 1, requestPage: 1 },
       });
       return true;
@@ -113,7 +128,7 @@ export class RakutenAdapter implements IChannelAdapter {
     const start = Date.now();
     const ok = await this.validateCredential();
     return {
-      status: ok ? 'connected' : 'disconnected',
+      status: ok ? "connected" : "disconnected",
       latencyMs: Date.now() - start,
       checkedAt: new Date().toISOString(),
     };
@@ -130,16 +145,16 @@ export class RakutenAdapter implements IChannelAdapter {
     }));
 
     const buyerName =
-      `${o.ordererModel.ordererLastName ?? ''} ${o.ordererModel.ordererFirstName ?? ''}`.trim();
+      `${o.ordererModel.ordererLastName ?? ""} ${o.ordererModel.ordererFirstName ?? ""}`.trim();
     const receiverName = o.senderModel
-      ? `${o.senderModel.senderLastName ?? ''} ${o.senderModel.senderFirstName ?? ''}`.trim()
+      ? `${o.senderModel.senderLastName ?? ""} ${o.senderModel.senderFirstName ?? ""}`.trim()
       : buyerName;
 
     return {
       id: o.orderNumber,
-      channelId: '',
+      channelId: "",
       channelOrderId: o.orderNumber,
-      status: PROGRESS_TO_STATUS[o.orderProgress] ?? 'PENDING',
+      status: PROGRESS_TO_STATUS[o.orderProgress] ?? "PENDING",
       buyer: {
         name: buyerName,
         email: o.ordererModel.ordererMailAddress ?? null,
@@ -153,16 +168,16 @@ export class RakutenAdapter implements IChannelAdapter {
           o.senderModel?.senderAddress,
         ]
           .filter(Boolean)
-          .join(' '),
+          .join(" "),
         zipCode: o.senderModel?.senderZipCode ?? undefined,
         receiverTel: o.senderModel?.senderPhoneNumber1 ?? undefined,
       },
       payment: {
-        currency: 'JPY',
+        currency: "JPY",
         totalAmount: o.totalPrice,
         krwAmount: o.totalPrice,
         originalAmount: o.goodsPrice,
-        paymentMethod: '',
+        paymentMethod: "",
         shippingRate: o.postagePrice,
       },
       items,
@@ -191,8 +206,13 @@ export class RakutenAdapter implements IChannelAdapter {
     let totalPages = 1;
 
     do {
-      (searchBody.PaginationRequestModel as Record<string, unknown>).requestPage = page;
-      const searchData = await this.post<RakutenSearchOrderResponse>('/order/searchOrder', searchBody);
+      (
+        searchBody.PaginationRequestModel as Record<string, unknown>
+      ).requestPage = page;
+      const searchData = await this.post<RakutenSearchOrderResponse>(
+        "/order/searchOrder",
+        searchBody,
+      );
       allOrderNumbers.push(...(searchData.orderNumberList ?? []));
       totalPages = searchData.PaginationResponseModel?.pageCount ?? 1;
       page++;
@@ -204,10 +224,9 @@ export class RakutenAdapter implements IChannelAdapter {
     const orders: Order[] = [];
     for (let i = 0; i < allOrderNumbers.length; i += 100) {
       const batch = allOrderNumbers.slice(i, i + 100);
-      const detailData = await this.post<{ OrderModelList?: RakutenOrderItem[] }>(
-        '/order/getOrder',
-        { orderNumberList: batch },
-      );
+      const detailData = await this.post<{
+        OrderModelList?: RakutenOrderItem[];
+      }>("/order/getOrder", { orderNumberList: batch });
       for (const o of detailData.OrderModelList ?? []) {
         orders.push(this.mapOrder(o));
       }
@@ -218,7 +237,7 @@ export class RakutenAdapter implements IChannelAdapter {
 
   async getOrderDetail(orderId: string): Promise<Order> {
     const detailData = await this.post<{ OrderModelList?: RakutenOrderItem[] }>(
-      '/order/getOrder',
+      "/order/getOrder",
       { orderNumberList: [orderId] },
     );
     const o = detailData.OrderModelList?.[0];
@@ -228,7 +247,7 @@ export class RakutenAdapter implements IChannelAdapter {
 
   async updateShipment(data: UpdateShipmentData): Promise<void> {
     // Rakuten RMS: updateOrderShipping
-    await this.post('/order/updateOrderShipping', {
+    await this.post("/order/updateOrderShipping", {
       orderUpdateInfoModelList: [
         {
           orderNumber: String(data.orderNo),
@@ -246,19 +265,32 @@ export class RakutenAdapter implements IChannelAdapter {
     return { items: [], totalItems: 0, totalPages: 0 };
   }
 
-  async listChannelProducts(_params: ListChannelProductsParams): Promise<ListChannelProductsResult> {
+  async listChannelProducts(
+    _params: ListChannelProductsParams,
+  ): Promise<ListChannelProductsResult> {
     return { items: [], totalItems: 0, totalPages: 0, currentPage: 1 };
   }
 
   async getChannelProduct(channelItemId: string): Promise<ChannelProduct> {
-    return { channelItemId, title: '', images: [], variants: [] };
+    return { channelItemId, title: "", images: [], variants: [] };
   }
 
-  async updateSellerCode(channelVariantId: string, newCode: string): Promise<UpdateSellerCodeResult> {
-    return { channelVariantId, oldCode: '', newCode, status: 'FAILED', error: 'Rakuten updateSellerCode not implemented' };
+  async updateSellerCode(
+    channelVariantId: string,
+    newCode: string,
+  ): Promise<UpdateSellerCodeResult> {
+    return {
+      channelVariantId,
+      oldCode: "",
+      newCode,
+      status: "FAILED",
+      error: "Rakuten updateSellerCode not implemented",
+    };
   }
 
-  async registerProduct(input: unknown): Promise<{ productId: string; title: string }> {
+  async registerProduct(
+    input: unknown,
+  ): Promise<{ productId: string; title: string }> {
     const data = input as {
       title: string;
       descriptionHtml?: string;
@@ -270,16 +302,18 @@ export class RakutenAdapter implements IChannelAdapter {
       inventoryQuantity?: string | number;
     };
 
-    const itemUrl = data.itemUrl.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const itemUrl = data.itemUrl.replace(/[^a-zA-Z0-9_-]/g, "_").toLowerCase();
     const stockValue = data.stock ?? data.inventoryQuantity ?? 0;
 
-    const res = await this.post<{ ItemInsertResult?: { code: string; message: string } }>('/item/register', {
+    const res = await this.post<{
+      ItemInsertResult?: { code: string; message: string };
+    }>("/item/register", {
       item: {
         itemUrl,
         itemName: data.title,
         itemPrice: Number(data.price ?? 0),
-        itemCaption: data.descriptionHtml ?? '',
-        catalogId: '',
+        itemCaption: data.descriptionHtml ?? "",
+        catalogId: "",
         itemNumber: data.sku ?? itemUrl,
         inventory: {
           inventoryType: 1,
@@ -288,15 +322,21 @@ export class RakutenAdapter implements IChannelAdapter {
       },
     });
 
-    const code = res.ItemInsertResult?.code ?? '0';
-    if (code !== '0' && code !== '') {
-      throw new Error(`Rakuten item register error [${code}]: ${res.ItemInsertResult?.message ?? ''}`);
+    const code = res.ItemInsertResult?.code ?? "0";
+    if (code !== "0" && code !== "") {
+      throw new Error(
+        `Rakuten item register error [${code}]: ${res.ItemInsertResult?.message ?? ""}`,
+      );
     }
 
     return { productId: itemUrl, title: data.title };
   }
 
-  async pushVariantStock(_channelItemId: string, _channelVariantId: string, _newQty: number): Promise<void> {
-    throw new Error('Rakuten pushVariantStock: not yet implemented');
+  async pushVariantStock(
+    _channelItemId: string,
+    _channelVariantId: string,
+    _newQty: number,
+  ): Promise<void> {
+    throw new Error("Rakuten pushVariantStock: not yet implemented");
   }
 }

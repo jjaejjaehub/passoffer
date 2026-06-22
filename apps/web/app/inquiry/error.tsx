@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { ErrorPage } from '@/shared/ui';
-import { reportError } from '@/shared/lib';
+import { useEffect } from "react";
+import { ErrorPage } from "@/shared/ui";
+import { reportError } from "@/shared/lib";
 
 interface InquiryErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function InquiryError({ error, reset }: InquiryErrorProps): React.JSX.Element {
+export default function InquiryError({
+  error,
+  reset,
+}: InquiryErrorProps): React.JSX.Element {
   useEffect(() => {
     reportError(error);
   }, [error]);

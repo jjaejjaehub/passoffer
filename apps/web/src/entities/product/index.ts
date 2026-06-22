@@ -35,10 +35,11 @@ export {
   useShopifyDeleteProduct,
 } from "./api/shopifyProductMutations";
 export type { ShopifyUpdateProductInput } from "./api/shopifyProductMutations";
-export { useShopifyProductDetail, shopifyProductDetailQueries } from "./api/shopifyProductDetailQueries";
-export type {
-  ShopifyProductDetail,
+export {
+  useShopifyProductDetail,
+  shopifyProductDetailQueries,
 } from "./api/shopifyProductDetailQueries";
+export type { ShopifyProductDetail } from "./api/shopifyProductDetailQueries";
 export {
   shopifyProductQueries,
   useShopifyProducts,

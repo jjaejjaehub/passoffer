@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Box, Button, Heading, Text } from '@chakra-ui/react';
+import { Box, Button, Heading, Text } from "@chakra-ui/react";
 
 interface ErrorPageProps {
   title?: string;
@@ -9,8 +9,8 @@ interface ErrorPageProps {
 }
 
 export function ErrorPage({
-  title = '문제가 발생했습니다.',
-  description = '잠시 후 다시 시도해 주세요.',
+  title = "문제가 발생했습니다.",
+  description = "잠시 후 다시 시도해 주세요.",
   reset,
 }: ErrorPageProps): React.JSX.Element {
   return (

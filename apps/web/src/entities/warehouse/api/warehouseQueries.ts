@@ -48,7 +48,8 @@ export const warehouseKeys = {
   list: () => [...warehouseKeys.all, "list"] as const,
   detail: (id: string) => [...warehouseKeys.all, id] as const,
   health: (id: string) => [...warehouseKeys.all, id, "health"] as const,
-  capabilities: (id: string) => [...warehouseKeys.all, id, "capabilities"] as const,
+  capabilities: (id: string) =>
+    [...warehouseKeys.all, id, "capabilities"] as const,
   inventory: (id: string, filter?: Record<string, string>) =>
     [...warehouseKeys.all, id, "inventory", filter] as const,
   locations: (id: string) => [...warehouseKeys.all, id, "locations"] as const,
@@ -85,7 +86,8 @@ export function useWarehouseHealth(id: string | undefined) {
 export function useWarehouseCapabilities(id: string | undefined) {
   return useQuery({
     queryKey: warehouseKeys.capabilities(id!),
-    queryFn: () => http.get<WarehouseCapabilities>(`/api/warehouses/${id}/capabilities`),
+    queryFn: () =>
+      http.get<WarehouseCapabilities>(`/api/warehouses/${id}/capabilities`),
     enabled: !!id,
   });
 }
@@ -100,9 +102,12 @@ export function useWarehouseInventory(
       const params = new URLSearchParams();
       if (filter?.sku) params.set("sku", filter.sku);
       if (filter?.locationId) params.set("locationId", filter.locationId);
-      if (filter?.masterProductId) params.set("masterProductId", filter.masterProductId);
+      if (filter?.masterProductId)
+        params.set("masterProductId", filter.masterProductId);
       const qs = params.toString();
-      return http.get<InventoryRow[]>(`/api/warehouses/${id}/inventory${qs ? `?${qs}` : ""}`);
+      return http.get<InventoryRow[]>(
+        `/api/warehouses/${id}/inventory${qs ? `?${qs}` : ""}`,
+      );
     },
     enabled: !!id,
   });
@@ -119,7 +124,8 @@ export function useWarehouseLocations(id: string | undefined) {
 export function useInboundOrders(warehouseId: string | undefined) {
   return useQuery({
     queryKey: warehouseKeys.inbound(warehouseId!),
-    queryFn: () => http.get<InboundOrderRecord[]>(`/api/warehouses/${warehouseId}/inbound`),
+    queryFn: () =>
+      http.get<InboundOrderRecord[]>(`/api/warehouses/${warehouseId}/inbound`),
     enabled: !!warehouseId,
   });
 }
@@ -131,8 +137,13 @@ export function useWarehouseHistory(
   return useQuery({
     queryKey: warehouseKeys.history(id!, range!),
     queryFn: () => {
-      const params = new URLSearchParams({ startDate: range!.startDate, endDate: range!.endDate });
-      return http.get<HistoryEvent[]>(`/api/warehouses/${id}/history?${params}`);
+      const params = new URLSearchParams({
+        startDate: range!.startDate,
+        endDate: range!.endDate,
+      });
+      return http.get<HistoryEvent[]>(
+        `/api/warehouses/${id}/history?${params}`,
+      );
     },
     enabled: !!id && !!range,
   });

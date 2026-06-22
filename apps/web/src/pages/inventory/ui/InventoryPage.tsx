@@ -13,10 +13,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 
-import { useChannelApiKey, useChannelUuid, useActiveChannel } from "@/entities/channel";
 import {
-  useQoo10Products,
-} from "@/entities/product";
+  useChannelApiKey,
+  useChannelUuid,
+  useActiveChannel,
+} from "@/entities/channel";
+import { useQoo10Products } from "@/entities/product";
 import {
   useShopifyInventory,
   shopifyInventoryQueryRoot,
@@ -28,7 +30,10 @@ import { http } from "@/shared/api";
 import { appToaster } from "@/shared/ui/app-toaster";
 import type { Product } from "@oms/types";
 import { InventoryTable } from "@/widgets/inventory-table";
-import type { InventoryOptionType, InventoryRow } from "@/widgets/inventory-table";
+import type {
+  InventoryOptionType,
+  InventoryRow,
+} from "@/widgets/inventory-table";
 
 type InventoryChannel = "qoo10" | "shopify";
 
@@ -60,7 +65,13 @@ function Qoo10InventorySection(): React.JSX.Element {
 
   const { hasKey, isLoading: isCredentialLoading } = useChannelApiKey("qoo10");
 
-  const { data, isLoading: isProductsLoading, error, hasApiKey, totalPages } = useQoo10Products({
+  const {
+    data,
+    isLoading: isProductsLoading,
+    error,
+    hasApiKey,
+    totalPages,
+  } = useQoo10Products({
     ItemStatus: statusFilter,
     Page: page,
   });
@@ -104,10 +115,17 @@ function Qoo10InventorySection(): React.JSX.Element {
 
     // 배치 API 단일 호출 (브라우저 → Fastify × 1, 서버 → Qoo10 × N 병렬)
     void http
-      .post<{ results: Record<string, { optionType: InventoryOptionType; qty?: number; title?: string }> }>(
-        "/api/qoo10/items/inventory-meta-batch",
-        { items: toFetch.map((item) => ({ itemCode: item.id, sellerCode: item.sellerCode })) },
-      )
+      .post<{
+        results: Record<
+          string,
+          { optionType: InventoryOptionType; qty?: number; title?: string }
+        >;
+      }>("/api/qoo10/items/inventory-meta-batch", {
+        items: toFetch.map((item) => ({
+          itemCode: item.id,
+          sellerCode: item.sellerCode,
+        })),
+      })
       .then((res) => {
         setItemMeta((prev) => ({ ...prev, ...res.results }));
       })
@@ -122,7 +140,7 @@ function Qoo10InventorySection(): React.JSX.Element {
       .finally(() => {
         for (const item of toFetch) pendingRef.current.delete(item.id);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, hasKey, fetchTick]);
 
   useEffect(() => {
@@ -357,19 +375,18 @@ function ShopifyInventorySection(): React.JSX.Element {
 
     setIsSaving(true);
     try {
-      await http.post(
-        `/api/inventory/${channelUuid}/adjust`,
-        {
-          inventoryItemId: editing.variant.inventoryItemId,
-          newQuantity: qty,
-          currentQuantity: editing.variant.inventoryQuantity,
-        },
-      );
+      await http.post(`/api/inventory/${channelUuid}/adjust`, {
+        inventoryItemId: editing.variant.inventoryItemId,
+        newQuantity: qty,
+        currentQuantity: editing.variant.inventoryQuantity,
+      });
       appToaster.create({
         title: "재고가 업데이트되었습니다",
         type: "success",
       });
-      void queryClient.invalidateQueries({ queryKey: shopifyInventoryQueryRoot });
+      void queryClient.invalidateQueries({
+        queryKey: shopifyInventoryQueryRoot,
+      });
       setEditing(null);
     } catch {
       appToaster.create({
@@ -483,12 +500,7 @@ function ShopifyInventorySection(): React.JSX.Element {
           <Text fontSize="sm" color="red.700">
             {error.message}
           </Text>
-          <Button
-            size="xs"
-            variant="outline"
-            mt={2}
-            onClick={() => refetch()}
-          >
+          <Button size="xs" variant="outline" mt={2} onClick={() => refetch()}>
             다시 시도
           </Button>
         </Box>
@@ -641,7 +653,9 @@ function ShopifyInventoryTable({
   const allVariants = products.flatMap((p) =>
     p.variants.filter((v) => v.tracked),
   );
-  const outOfStockCount = allVariants.filter((v) => v.inventoryQuantity <= 0).length;
+  const outOfStockCount = allVariants.filter(
+    (v) => v.inventoryQuantity <= 0,
+  ).length;
   const lowStockCount = allVariants.filter(
     (v) => v.inventoryQuantity > 0 && v.inventoryQuantity <= 5,
   ).length;
@@ -734,123 +748,132 @@ function ShopifyInventoryTable({
             </Box>
             <Box as="tbody">
               {products.flatMap((product: ShopifyInventoryProduct) =>
-                product.variants.map((variant: ShopifyInventoryVariant, vi: number) => {
-                  const isOutOfStock = variant.tracked && variant.inventoryQuantity <= 0;
-                  const isLowStock =
-                    variant.tracked &&
-                    variant.inventoryQuantity > 0 &&
-                    variant.inventoryQuantity <= 5;
-                  const rowBg = isOutOfStock
-                    ? "red.50"
-                    : isLowStock
-                      ? "orange.50"
-                      : undefined;
+                product.variants.map(
+                  (variant: ShopifyInventoryVariant, vi: number) => {
+                    const isOutOfStock =
+                      variant.tracked && variant.inventoryQuantity <= 0;
+                    const isLowStock =
+                      variant.tracked &&
+                      variant.inventoryQuantity > 0 &&
+                      variant.inventoryQuantity <= 5;
+                    const rowBg = isOutOfStock
+                      ? "red.50"
+                      : isLowStock
+                        ? "orange.50"
+                        : undefined;
 
-                  return (
-                    <Box
-                      as="tr"
-                      key={`${product.productId}-${variant.variantId}`}
-                      borderBottomWidth="1px"
-                      borderColor="gray.100"
-                      bg={rowBg}
-                      _hover={{ bg: isOutOfStock ? "red.100" : isLowStock ? "orange.100" : "gray.50" }}
-                    >
-                      {/* 상품명: 첫 번째 변형에만 표시 */}
+                    return (
                       <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        minW="240px"
-                        maxW="240px"
-                        overflow="hidden"
-                        textOverflow="ellipsis"
-                        whiteSpace="nowrap"
-                        color="gray.900"
-                        fontWeight={vi === 0 ? "medium" : "normal"}
-                        opacity={vi === 0 ? 1 : 0.4}
-                      >
-                        {vi === 0 ? product.title : ""}
-                      </Box>
-                      <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        whiteSpace="nowrap"
-                        minW="160px"
-                        color="gray.700"
-                      >
-                        {variant.variantTitle === "Default Title"
-                          ? "-"
-                          : variant.variantTitle}
-                      </Box>
-                      <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        whiteSpace="nowrap"
-                        minW="140px"
-                        color="gray.500"
-                        fontSize="xs"
-                      >
-                        {variant.sku ?? "-"}
-                      </Box>
-                      <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        whiteSpace="nowrap"
-                        minW="100px"
-                        color="gray.800"
-                      >
-                        {parseFloat(variant.price).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </Box>
-                      <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        whiteSpace="nowrap"
-                        minW="80px"
-                        fontWeight={isOutOfStock ? "bold" : "semibold"}
-                        color={
-                          isOutOfStock
-                            ? "red.600"
+                        as="tr"
+                        key={`${product.productId}-${variant.variantId}`}
+                        borderBottomWidth="1px"
+                        borderColor="gray.100"
+                        bg={rowBg}
+                        _hover={{
+                          bg: isOutOfStock
+                            ? "red.100"
                             : isLowStock
-                              ? "orange.600"
-                              : "gray.900"
-                        }
+                              ? "orange.100"
+                              : "gray.50",
+                        }}
                       >
-                        {variant.tracked ? variant.inventoryQuantity : "-"}
+                        {/* 상품명: 첫 번째 변형에만 표시 */}
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          minW="240px"
+                          maxW="240px"
+                          overflow="hidden"
+                          textOverflow="ellipsis"
+                          whiteSpace="nowrap"
+                          color="gray.900"
+                          fontWeight={vi === 0 ? "medium" : "normal"}
+                          opacity={vi === 0 ? 1 : 0.4}
+                        >
+                          {vi === 0 ? product.title : ""}
+                        </Box>
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          whiteSpace="nowrap"
+                          minW="160px"
+                          color="gray.700"
+                        >
+                          {variant.variantTitle === "Default Title"
+                            ? "-"
+                            : variant.variantTitle}
+                        </Box>
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          whiteSpace="nowrap"
+                          minW="140px"
+                          color="gray.500"
+                          fontSize="xs"
+                        >
+                          {variant.sku ?? "-"}
+                        </Box>
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          whiteSpace="nowrap"
+                          minW="100px"
+                          color="gray.800"
+                        >
+                          {parseFloat(variant.price).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </Box>
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          whiteSpace="nowrap"
+                          minW="80px"
+                          fontWeight={isOutOfStock ? "bold" : "semibold"}
+                          color={
+                            isOutOfStock
+                              ? "red.600"
+                              : isLowStock
+                                ? "orange.600"
+                                : "gray.900"
+                          }
+                        >
+                          {variant.tracked ? variant.inventoryQuantity : "-"}
+                        </Box>
+                        <Box
+                          as="td"
+                          px={4}
+                          py={3}
+                          whiteSpace="nowrap"
+                          minW="60px"
+                          color={variant.tracked ? "green.600" : "gray.400"}
+                          fontSize="xs"
+                        >
+                          {variant.tracked ? "추적" : "미추적"}
+                        </Box>
+                        <Box as="td" px={4} py={3} minW="80px">
+                          {variant.tracked && (
+                            <Button
+                              type="button"
+                              size="xs"
+                              variant="outline"
+                              borderColor="gray.300"
+                              onClick={() => onEditClick(product, variant)}
+                            >
+                              수정
+                            </Button>
+                          )}
+                        </Box>
                       </Box>
-                      <Box
-                        as="td"
-                        px={4}
-                        py={3}
-                        whiteSpace="nowrap"
-                        minW="60px"
-                        color={variant.tracked ? "green.600" : "gray.400"}
-                        fontSize="xs"
-                      >
-                        {variant.tracked ? "추적" : "미추적"}
-                      </Box>
-                      <Box as="td" px={4} py={3} minW="80px">
-                        {variant.tracked && (
-                          <Button
-                            type="button"
-                            size="xs"
-                            variant="outline"
-                            borderColor="gray.300"
-                            onClick={() => onEditClick(product, variant)}
-                          >
-                            수정
-                          </Button>
-                        )}
-                      </Box>
-                    </Box>
-                  );
-                }),
+                    );
+                  },
+                ),
               )}
             </Box>
           </Box>
@@ -889,12 +912,7 @@ export function InventoryPage(): React.JSX.Element {
       </Box>
 
       {/* 채널 탭 */}
-      <Flex
-        borderBottomWidth="1px"
-        borderColor="gray.100"
-        mb={6}
-        gap={1}
-      >
+      <Flex borderBottomWidth="1px" borderColor="gray.100" mb={6} gap={1}>
         {CHANNEL_TABS.map((tab) => {
           const isActive = selectedChannel === tab.id;
           return (

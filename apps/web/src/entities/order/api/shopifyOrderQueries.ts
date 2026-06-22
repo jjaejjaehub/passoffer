@@ -74,7 +74,13 @@ export const shopifyOrderQueries = {
   list: (
     params: Pick<
       ShopifyOrdersQueryParams,
-      "pageSize" | "after" | "financialStatus" | "fulfillmentStatus" | "keyword" | "dateFrom" | "dateTo"
+      | "pageSize"
+      | "after"
+      | "financialStatus"
+      | "fulfillmentStatus"
+      | "keyword"
+      | "dateFrom"
+      | "dateTo"
     >,
   ) => [...shopifyOrdersQueryRoot, "list", params] as const,
   stats: (params: { dateFrom?: string; dateTo?: string }) =>
@@ -136,7 +142,8 @@ export function useShopifyOrders(
           response: {
             data: {
               error: "NO_API_KEY",
-              message: "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
+              message:
+                "Shopify 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
             },
           },
         });
@@ -169,7 +176,9 @@ export function useShopifyOrders(
     isLoading: query.isLoading && hasKey,
     error: query.error ? parseShopifyOrderError(query.error) : null,
     hasApiKey: hasKey,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }
 
@@ -197,7 +206,12 @@ export function useShopifyOrderStats(params: {
     queryFn: async (): Promise<ShopifyOrderStatsApiResponse> => {
       if (!channelUuid) {
         throw Object.assign(new Error("NO_API_KEY"), {
-          response: { data: { error: "NO_API_KEY", message: "Shopify 채널이 연결되지 않았습니다." } },
+          response: {
+            data: {
+              error: "NO_API_KEY",
+              message: "Shopify 채널이 연결되지 않았습니다.",
+            },
+          },
         });
       }
 
@@ -206,18 +220,30 @@ export function useShopifyOrderStats(params: {
       if (dateTo) searchParams.set("endDate", dateTo.replace(/-/g, ""));
 
       // 통계는 주문 목록을 가져와 집계
-      const orders = await http.get<Order[]>(`/api/orders?${searchParams.toString()}`);
+      const orders = await http.get<Order[]>(
+        `/api/orders?${searchParams.toString()}`,
+      );
       const orderCount = orders.length;
-      const totalRevenue = orders.reduce((sum, o) => sum + (o.payment?.totalAmount ?? 0), 0);
+      const totalRevenue = orders.reduce(
+        (sum, o) => sum + (o.payment?.totalAmount ?? 0),
+        0,
+      );
       const currencyCode = orders[0]?.payment?.currency ?? "USD";
 
       const fulfillmentBreakdown: Record<string, number> = {};
       const financialBreakdown: Record<string, number> = {};
       for (const o of orders) {
-        fulfillmentBreakdown[o.status] = (fulfillmentBreakdown[o.status] ?? 0) + 1;
+        fulfillmentBreakdown[o.status] =
+          (fulfillmentBreakdown[o.status] ?? 0) + 1;
       }
 
-      return { orderCount, totalRevenue, currencyCode, fulfillmentBreakdown, financialBreakdown };
+      return {
+        orderCount,
+        totalRevenue,
+        currencyCode,
+        fulfillmentBreakdown,
+        financialBreakdown,
+      };
     },
     enabled: hasKey && !!channelUuid && enabled,
     staleTime: 5 * 60 * 1000,

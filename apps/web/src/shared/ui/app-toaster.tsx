@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Spinner,
@@ -11,10 +11,10 @@ import {
   ToastRoot,
   ToastTitle,
   createToaster,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
 
 export const appToaster = createToaster({
-  placement: 'top-end',
+  placement: "top-end",
   pauseOnPageIdle: true,
 });
 
@@ -22,8 +22,8 @@ export function AppToasterHost(): React.JSX.Element {
   return (
     <Toaster toaster={appToaster}>
       {(toast) => (
-        <ToastRoot key={toast.id} width={{ base: 'xs', md: 'sm' }}>
-          {toast.type === 'loading' ? (
+        <ToastRoot key={toast.id} width={{ base: "xs", md: "sm" }}>
+          {toast.type === "loading" ? (
             <Spinner size="sm" color="blue.solid" />
           ) : (
             <ToastIndicator />

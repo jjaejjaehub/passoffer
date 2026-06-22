@@ -38,7 +38,9 @@ function buildOptionLabel(row: Qoo10GoodsInventoryRow): string {
   return parts.join(" / ") || row.ItemTypeCode || "-";
 }
 
-function rowsToOptionItems(rows: Qoo10GoodsInventoryRow[]): InventoryOptionItem[] {
+function rowsToOptionItems(
+  rows: Qoo10GoodsInventoryRow[],
+): InventoryOptionItem[] {
   return rows.map((row) => ({
     Name1: row.Name1,
     Value1: row.Value1,
@@ -63,12 +65,20 @@ interface ComboEditorProps {
   onSuccess: () => void;
 }
 
-function ComboEditor({ itemCode, sellerCode, rows, onSuccess }: ComboEditorProps) {
+function ComboEditor({
+  itemCode,
+  sellerCode,
+  rows,
+  onSuccess,
+}: ComboEditorProps) {
   const [editedQtys, setEditedQtys] = useState<Record<number, string>>(() =>
     Object.fromEntries(rows.map((r, i) => [i, String(r.Qty)])),
   );
 
-  const { mutate: saveInventory, isPending } = useSaveInventoryOptions(itemCode, "qoo10");
+  const { mutate: saveInventory, isPending } = useSaveInventoryOptions(
+    itemCode,
+    "qoo10",
+  );
 
   function handleQtyChange(idx: number, val: string) {
     setEditedQtys((prev) => ({ ...prev, [idx]: val }));
@@ -106,13 +116,36 @@ function ComboEditor({ itemCode, sellerCode, rows, onSuccess }: ComboEditorProps
         >
           <Box as="thead" bg="gray.50">
             <Box as="tr">
-              <Box as="th" px={3} py={2} textAlign="left" fontSize="xs" color="gray.500">
+              <Box
+                as="th"
+                px={3}
+                py={2}
+                textAlign="left"
+                fontSize="xs"
+                color="gray.500"
+              >
                 옵션
               </Box>
-              <Box as="th" px={3} py={2} textAlign="right" fontSize="xs" color="gray.500" w="100px">
+              <Box
+                as="th"
+                px={3}
+                py={2}
+                textAlign="right"
+                fontSize="xs"
+                color="gray.500"
+                w="100px"
+              >
                 가격
               </Box>
-              <Box as="th" px={3} py={2} textAlign="center" fontSize="xs" color="gray.500" w="100px">
+              <Box
+                as="th"
+                px={3}
+                py={2}
+                textAlign="center"
+                fontSize="xs"
+                color="gray.500"
+                w="100px"
+              >
                 수량
               </Box>
             </Box>
@@ -128,7 +161,14 @@ function ComboEditor({ itemCode, sellerCode, rows, onSuccess }: ComboEditorProps
                 <Box as="td" px={3} py={2} fontSize="xs" color="gray.700">
                   {buildOptionLabel(row)}
                 </Box>
-                <Box as="td" px={3} py={2} textAlign="right" fontSize="xs" color="gray.700">
+                <Box
+                  as="td"
+                  px={3}
+                  py={2}
+                  textAlign="right"
+                  fontSize="xs"
+                  color="gray.700"
+                >
                   {row.Price.toLocaleString()}
                 </Box>
                 <Box as="td" px={3} py={2} textAlign="center">
@@ -177,7 +217,12 @@ interface SimpleEditorProps {
   onSuccess: () => void;
 }
 
-function SimpleEditor({ itemCode, sellerCode, currentQty, onSuccess }: SimpleEditorProps) {
+function SimpleEditor({
+  itemCode,
+  sellerCode,
+  currentQty,
+  onSuccess,
+}: SimpleEditorProps) {
   const [qty, setQty] = useState(String(currentQty));
   const { mutateAsync, isPending, error } = useUpdateSimpleQty();
 
@@ -232,7 +277,9 @@ function SimpleEditor({ itemCode, sellerCode, currentQty, onSuccess }: SimpleEdi
           _hover={{ bg: "gray.800" }}
           size="sm"
           loading={isPending}
-          onClick={() => { void handleSave(); }}
+          onClick={() => {
+            void handleSave();
+          }}
         >
           저장
         </Button>
@@ -267,7 +314,13 @@ export function EditInventoryModal({
   const isCombo = rows.length > 0;
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={(d) => { if (!d.open) onClose(); }} size="lg">
+    <Dialog.Root
+      open={isOpen}
+      onOpenChange={(d) => {
+        if (!d.open) onClose();
+      }}
+      size="lg"
+    >
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content>

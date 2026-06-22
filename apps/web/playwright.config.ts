@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 /**
  * Playwright E2E 테스트 설정
@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test';
  */
 
 export default defineConfig({
-  testDir: './e2e',
+  testDir: "./e2e",
 
   // 각 테스트 타임아웃
   timeout: 30 * 1000,
@@ -31,26 +31,26 @@ export default defineConfig({
 
   // 리포터
   reporter: [
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['list'],
+    ["html", { outputFolder: "playwright-report", open: "never" }],
+    ["list"],
   ],
 
   use: {
     // 테스트 대상 URL
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
 
     // 실패 시 트레이스 수집
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     // 스크린샷 (실패 시만)
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
   },
 
   // 브라우저별 프로젝트 설정
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 
@@ -58,8 +58,8 @@ export default defineConfig({
   // 로컬에서는 미리 `bun dev`를 실행해두어야 한다
   webServer: process.env.CI
     ? {
-        command: 'bun run dev',
-        url: 'http://localhost:3000',
+        command: "bun run dev",
+        url: "http://localhost:3000",
         reuseExistingServer: false,
         timeout: 120 * 1000,
       }

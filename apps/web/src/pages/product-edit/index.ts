@@ -1,1 +1,4 @@
-export { ShopifyProductEditForm, type ShopifyProductEditFormProps } from "./ui/ShopifyProductEditForm";
+export {
+  ShopifyProductEditForm,
+  type ShopifyProductEditFormProps,
+} from "./ui/ShopifyProductEditForm";

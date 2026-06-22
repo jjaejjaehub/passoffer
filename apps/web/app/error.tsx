@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { ErrorPage } from '@/shared/ui';
-import { reportError } from '@/shared/lib';
+import { useEffect } from "react";
+import { ErrorPage } from "@/shared/ui";
+import { reportError } from "@/shared/lib";
 
 interface RootErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function RootError({ error, reset }: RootErrorProps): React.JSX.Element {
+export default function RootError({
+  error,
+  reset,
+}: RootErrorProps): React.JSX.Element {
   useEffect(() => {
     reportError(error);
   }, [error]);

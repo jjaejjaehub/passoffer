@@ -171,7 +171,10 @@ export function useQoo10UpdateProductMutation(): UseMutationResult<
     ): Promise<Qoo10UpdateGoodsResponse> => {
       const payload = toQoo10UpdateGoodsRequest(values);
 
-      return http.post<Qoo10UpdateGoodsResponse>("/api/qoo10/items/update", payload);
+      return http.post<Qoo10UpdateGoodsResponse>(
+        "/api/qoo10/items/update",
+        payload,
+      );
     },
     onSuccess: () => {
       appToaster.create({

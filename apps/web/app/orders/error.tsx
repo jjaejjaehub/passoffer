@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { Box, Button, Heading, Text } from '@chakra-ui/react';
-import { reportError } from '@/shared/lib';
+import { useEffect } from "react";
+import { Box, Button, Heading, Text } from "@chakra-ui/react";
+import { reportError } from "@/shared/lib";
 
 interface OrdersErrorProps {
   error: Error & { digest?: string };

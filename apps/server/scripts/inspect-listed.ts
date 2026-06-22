@@ -1,19 +1,19 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
-import { eq } from 'drizzle-orm';
-import { listedProducts, masterProducts } from '../src/db/schema';
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
+import { eq } from "drizzle-orm";
+import { listedProducts, masterProducts } from "../src/db/schema";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const db = drizzle(pool);
 
-const listedId = process.argv[2] ?? 'c4c8c66f-5ceb-4480-9243-a19810a6a3ef';
+const listedId = process.argv[2] ?? "c4c8c66f-5ceb-4480-9243-a19810a6a3ef";
 
 const [lp] = await db
   .select()
   .from(listedProducts)
   .where(eq(listedProducts.id, listedId));
 
-console.log('===== LISTED PRODUCT =====');
+console.log("===== LISTED PRODUCT =====");
 console.log(
   JSON.stringify(
     {
@@ -34,7 +34,7 @@ if (lp?.masterProductId) {
     .select()
     .from(masterProducts)
     .where(eq(masterProducts.id, lp.masterProductId));
-  console.log('\n===== MASTER PRODUCT =====');
+  console.log("\n===== MASTER PRODUCT =====");
   console.log(
     JSON.stringify(
       {

@@ -20,15 +20,28 @@ const STATUS_MAP: Record<string, string> = {
   S8: "승인거부",
 };
 
-function isDetailViewable(rawStatus: string | undefined, status: string): boolean {
+function isDetailViewable(
+  rawStatus: string | undefined,
+  status: string,
+): boolean {
   if (rawStatus) return rawStatus === "S1" || rawStatus === "S2";
   return status === "active";
 }
 
-function ItemStatusBadge({ rawStatus, status }: { rawStatus?: string; status: string }): React.JSX.Element {
+function ItemStatusBadge({
+  rawStatus,
+  status,
+}: {
+  rawStatus?: string;
+  status: string;
+}): React.JSX.Element {
   const displayStatus = rawStatus ?? status;
   const isTradable = rawStatus ? rawStatus === "S2" : status === "active";
-  const label = rawStatus ? (STATUS_MAP[rawStatus] ?? rawStatus) : (status === "active" ? "거래가능" : "거래중지");
+  const label = rawStatus
+    ? (STATUS_MAP[rawStatus] ?? rawStatus)
+    : status === "active"
+      ? "거래가능"
+      : "거래중지";
 
   return (
     <Box
@@ -78,8 +91,7 @@ export function ProductTable({
   const headerCheckboxRef = useRef<HTMLInputElement | null>(null);
 
   const isAllSelected: boolean =
-    items.length > 0 &&
-    items.every((item) => selectedItemCodes.has(item.id));
+    items.length > 0 && items.every((item) => selectedItemCodes.has(item.id));
 
   const selectedInViewCount: number = items.filter((item) =>
     selectedItemCodes.has(item.id),
@@ -190,7 +202,10 @@ export function ProductTable({
                   : "거래중지";
               const showSuspend = canSuspend(domainStatus);
               const showActivate = canActivate(domainStatus);
-              const canViewDetail = isDetailViewable(item.rawStatus, item.status);
+              const canViewDetail = isDetailViewable(
+                item.rawStatus,
+                item.status,
+              );
 
               return (
                 <Box
@@ -252,7 +267,10 @@ export function ProductTable({
                     <TruncatedCell value={item.sellerCode} maxW="160px" />
                   </Box>
                   <Box as="td" px={4} py={3}>
-                    <ItemStatusBadge rawStatus={item.rawStatus} status={item.status} />
+                    <ItemStatusBadge
+                      rawStatus={item.rawStatus}
+                      status={item.status}
+                    />
                   </Box>
                   <Box as="td" px={4} py={3} textAlign="right">
                     <HStack gap={2} justify="flex-end" flexWrap="wrap">

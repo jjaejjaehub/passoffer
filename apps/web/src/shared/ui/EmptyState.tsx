@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
-import type { ReactNode, ReactElement } from 'react';
+import { Box, Button, Heading, Text, VStack } from "@chakra-ui/react";
+import type { ReactNode, ReactElement } from "react";
 
 interface EmptyStateAction {
   label: string;
@@ -56,4 +56,3 @@ export function EmptyState({
     </Box>
   );
 }
-

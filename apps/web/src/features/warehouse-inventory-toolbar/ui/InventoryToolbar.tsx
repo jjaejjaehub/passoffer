@@ -26,13 +26,7 @@ export function InventoryToolbar({
   lotSupported,
 }: InventoryToolbarProps): ReactElement {
   return (
-    <Flex
-      align="center"
-      justify="space-between"
-      gap={3}
-      mb={4}
-      wrap="wrap"
-    >
+    <Flex align="center" justify="space-between" gap={3} mb={4} wrap="wrap">
       <Flex
         align="center"
         gap={2}
@@ -98,7 +92,11 @@ interface ToggleSegmentProps {
   label: string;
 }
 
-function ToggleSegment({ active, onClick, label }: ToggleSegmentProps): ReactElement {
+function ToggleSegment({
+  active,
+  onClick,
+  label,
+}: ToggleSegmentProps): ReactElement {
   return (
     <button
       type="button"

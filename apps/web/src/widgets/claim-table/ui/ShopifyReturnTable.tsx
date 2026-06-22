@@ -14,10 +14,7 @@ const RETURN_STATUS_LABEL: Record<string, string> = {
   CANCELLED: "반품 취소됨",
 };
 
-const RETURN_STATUS_COLOR: Record<
-  string,
-  { bg: string; color: string }
-> = {
+const RETURN_STATUS_COLOR: Record<string, { bg: string; color: string }> = {
   OPEN: { bg: "blue.50", color: "blue.700" },
   REQUESTED: { bg: "orange.50", color: "orange.700" },
   DECLINED: { bg: "red.50", color: "red.700" },
@@ -42,7 +39,10 @@ const RETURN_REASON_LABEL: Record<string, string> = {
 
 function ReturnStatusBadge({ status }: { status: string }): React.JSX.Element {
   const label = RETURN_STATUS_LABEL[status] ?? status;
-  const colors = RETURN_STATUS_COLOR[status] ?? { bg: "gray.100", color: "gray.600" };
+  const colors = RETURN_STATUS_COLOR[status] ?? {
+    bg: "gray.100",
+    color: "gray.600",
+  };
   return (
     <Box
       display="inline-flex"
@@ -78,8 +78,10 @@ export function ShopifyReturnTable({
   onSelectionChange,
   onRowClick,
 }: ShopifyReturnTableProps): React.JSX.Element {
-  const isAllSelected = returns.length > 0 && selectedIds.length === returns.length;
-  const isIndeterminate = selectedIds.length > 0 && selectedIds.length < returns.length;
+  const isAllSelected =
+    returns.length > 0 && selectedIds.length === returns.length;
+  const isIndeterminate =
+    selectedIds.length > 0 && selectedIds.length < returns.length;
 
   const handleSelectAll = (checked: boolean): void => {
     onSelectionChange(checked ? returns.map((r) => r.returnId) : []);
@@ -128,8 +130,12 @@ export function ShopifyReturnTable({
             <Table.ColumnHeader w="100px">반품번호</Table.ColumnHeader>
             <Table.ColumnHeader w="100px">주문번호</Table.ColumnHeader>
             <Table.ColumnHeader w="200px">상품명</Table.ColumnHeader>
-            <Table.ColumnHeader w="60px" textAlign="right">수량</Table.ColumnHeader>
-            <Table.ColumnHeader w="120px" textAlign="right">환불금액</Table.ColumnHeader>
+            <Table.ColumnHeader w="60px" textAlign="right">
+              수량
+            </Table.ColumnHeader>
+            <Table.ColumnHeader w="120px" textAlign="right">
+              환불금액
+            </Table.ColumnHeader>
             <Table.ColumnHeader w="160px">반품 사유</Table.ColumnHeader>
             <Table.ColumnHeader w="100px">요청일</Table.ColumnHeader>
             <Table.ColumnHeader w="100px">완료일</Table.ColumnHeader>
@@ -146,7 +152,10 @@ export function ShopifyReturnTable({
             const reasonLabel = firstReason
               ? (RETURN_REASON_LABEL[firstReason] ?? firstReason)
               : null;
-            const reasonNote = firstLineItem?.returnReasonNote ?? firstLineItem?.customerNote ?? null;
+            const reasonNote =
+              firstLineItem?.returnReasonNote ??
+              firstLineItem?.customerNote ??
+              null;
 
             return (
               <Table.Row
@@ -246,7 +255,9 @@ export function ShopifyReturnTable({
                     </Text>
                   )}
                   {!reasonLabel && !reasonNote && (
-                    <Text fontSize="xs" color="gray.400">—</Text>
+                    <Text fontSize="xs" color="gray.400">
+                      —
+                    </Text>
                   )}
                 </Table.Cell>
 

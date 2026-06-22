@@ -130,7 +130,10 @@ function FreshnessLabel({
       </Text>
     );
   }
-  const latest = rows.reduce((acc, r) => (r.fetchedAt > acc ? r.fetchedAt : acc), rows[0].fetchedAt);
+  const latest = rows.reduce(
+    (acc, r) => (r.fetchedAt > acc ? r.fetchedAt : acc),
+    rows[0].fetchedAt,
+  );
   const allFresh = rows.every((r) => r.freshness === "fresh");
   return (
     <Text fontSize="xs" color={allFresh ? "green.700" : "yellow.800"}>

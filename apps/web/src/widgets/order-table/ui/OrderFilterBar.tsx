@@ -1,7 +1,16 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Flex, Grid, Icon, Input, Popover, Text } from '@chakra-ui/react';
+import { useEffect, useMemo, useState } from "react";
+import {
+  Box,
+  Button,
+  Flex,
+  Grid,
+  Icon,
+  Input,
+  Popover,
+  Text,
+} from "@chakra-ui/react";
 import {
   addMonths,
   eachDayOfInterval,
@@ -14,11 +23,11 @@ import {
   isSameMonth,
   startOfMonth,
   startOfWeek,
-} from 'date-fns';
-import { Search, X } from 'lucide-react';
-import { LIVE_CHANNELS } from '@/shared/config';
+} from "date-fns";
+import { Search, X } from "lucide-react";
+import { LIVE_CHANNELS } from "@/shared/config";
 
-type DateRange = '오늘' | '7일' | '30일' | '직접입력';
+type DateRange = "오늘" | "7일" | "30일" | "직접입력";
 
 interface OrderFilterBarProps {
   channelId: string;
@@ -33,16 +42,16 @@ interface OrderFilterBarProps {
 }
 
 const STATUS_TABS: string[] = [
-  '전체',
-  '신규',
-  '처리중',
-  '배송준비',
-  '배송중',
-  '완료',
-  '취소·반품',
+  "전체",
+  "신규",
+  "처리중",
+  "배송준비",
+  "배송중",
+  "완료",
+  "취소·반품",
 ];
 
-const DATE_RANGES: DateRange[] = ['오늘', '7일', '30일', '직접입력'];
+const DATE_RANGES: DateRange[] = ["오늘", "7일", "30일", "직접입력"];
 
 export function OrderFilterBar({
   channelId,
@@ -60,7 +69,9 @@ export function OrderFilterBar({
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
-  const [currentMonth, setCurrentMonth] = useState<Date>(() => startOfMonth(new Date()));
+  const [currentMonth, setCurrentMonth] = useState<Date>(() =>
+    startOfMonth(new Date()),
+  );
 
   const channelTabs = LIVE_CHANNELS.map((channel) => ({
     id: channel.id,
@@ -90,7 +101,7 @@ export function OrderFilterBar({
   };
 
   const formatDisplayRange = (start: Date, end: Date): string => {
-    const fmt = (value: Date): string => formatDateFns(value, 'yyyy.MM.dd');
+    const fmt = (value: Date): string => formatDateFns(value, "yyyy.MM.dd");
     return `${fmt(start)} ~ ${fmt(end)}`;
   };
 
@@ -105,8 +116,8 @@ export function OrderFilterBar({
   };
 
   const handleClearSearch = (): void => {
-    setSearchValue('');
-    onSearchChange('');
+    setSearchValue("");
+    onSearchChange("");
   };
 
   const monthDates = useMemo(() => {
@@ -138,15 +149,17 @@ export function OrderFilterBar({
       >
         {channelTabs.map((channel) => {
           const isSelected = channelId === channel.id;
-          const isDisabled = !channel.isLive || channel.id === 'rakuten';
+          const isDisabled = !channel.isLive || channel.id === "rakuten";
           return (
             <Button
               key={channel.id}
               variant="ghost"
               size="sm"
-              onClick={isDisabled ? undefined : () => onChannelChange(channel.id)}
-              fontWeight={isSelected ? 'semibold' : 'normal'}
-              color={isSelected ? 'gray.900' : 'gray.500'}
+              onClick={
+                isDisabled ? undefined : () => onChannelChange(channel.id)
+              }
+              fontWeight={isSelected ? "semibold" : "normal"}
+              color={isSelected ? "gray.900" : "gray.500"}
               borderRadius={0}
               px={3}
               py={2}
@@ -155,28 +168,29 @@ export function OrderFilterBar({
               outline="none"
               boxShadow={
                 isSelected
-                  ? 'inset 0 -2px 0 0 var(--chakra-colors-gray-900)'
-                  : 'none'
+                  ? "inset 0 -2px 0 0 var(--chakra-colors-gray-900)"
+                  : "none"
               }
               _hover={
                 isDisabled
-                  ? { bg: 'transparent', boxShadow: 'none' }
+                  ? { bg: "transparent", boxShadow: "none" }
                   : {
-                      bg: 'transparent',
-                      color: 'gray.900',
-                      boxShadow: 'inset 0 -2px 0 0 var(--chakra-colors-gray-200)',
+                      bg: "transparent",
+                      color: "gray.900",
+                      boxShadow:
+                        "inset 0 -2px 0 0 var(--chakra-colors-gray-200)",
                     }
               }
-              _active={{ bg: 'transparent' }}
+              _active={{ bg: "transparent" }}
               _focus={{
                 boxShadow: isSelected
-                  ? 'inset 0 -2px 0 0 var(--chakra-colors-gray-900)'
-                  : 'none',
+                  ? "inset 0 -2px 0 0 var(--chakra-colors-gray-900)"
+                  : "none",
               }}
               disabled={isDisabled}
               opacity={isDisabled ? 0.4 : 1}
-              cursor={isDisabled ? 'not-allowed' : 'pointer'}
-              pointerEvents={isDisabled ? 'none' : 'auto'}
+              cursor={isDisabled ? "not-allowed" : "pointer"}
+              pointerEvents={isDisabled ? "none" : "auto"}
             >
               <Text fontSize="sm">{channel.name}</Text>
             </Button>
@@ -199,12 +213,12 @@ export function OrderFilterBar({
           return (
             <Button
               key={statusKey}
-              variant={isSelected ? 'solid' : 'ghost'}
+              variant={isSelected ? "solid" : "ghost"}
               size="sm"
               onClick={() => onStatusChange(statusKey)}
-              bg={isSelected ? 'gray.100' : 'transparent'}
-              color={isSelected ? 'gray.900' : 'gray.500'}
-              _hover={{ bg: isSelected ? 'gray.100' : 'gray.50' }}
+              bg={isSelected ? "gray.100" : "transparent"}
+              color={isSelected ? "gray.900" : "gray.500"}
+              _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
               height="auto"
               px={3}
               py={1.5}
@@ -212,7 +226,10 @@ export function OrderFilterBar({
             >
               <Flex align="center" gap={1}>
                 <Text fontSize="sm">{statusKey}</Text>
-                <Text fontSize="xs" color={isSelected ? 'gray.700' : 'gray.400'}>
+                <Text
+                  fontSize="xs"
+                  color={isSelected ? "gray.700" : "gray.400"}
+                >
                   ({statusCounts[statusKey] ?? 0})
                 </Text>
               </Flex>
@@ -233,7 +250,7 @@ export function OrderFilterBar({
         {/* Left: Date Range */}
         <Flex borderRadius="md" gap={0}>
           {DATE_RANGES.map((range, index) => {
-            const isCustom = range === '직접입력';
+            const isCustom = range === "직접입력";
 
             const rangeLabel =
               isCustom && customStart && customEnd
@@ -254,15 +271,15 @@ export function OrderFilterBar({
               return (
                 <Button
                   key={range}
-                  variant={isSelected ? 'solid' : 'outline'}
+                  variant={isSelected ? "solid" : "outline"}
                   size="sm"
-                  bg={isSelected ? 'gray.900' : 'white'}
-                  color={isSelected ? 'white' : 'gray.700'}
-                  borderColor={isSelected ? 'gray.900' : 'gray.200'}
-                  borderLeftRadius={isFirst ? 'md' : 0}
-                  borderRightRadius={isLast ? 'md' : 0}
+                  bg={isSelected ? "gray.900" : "white"}
+                  color={isSelected ? "white" : "gray.700"}
+                  borderColor={isSelected ? "gray.900" : "gray.200"}
+                  borderLeftRadius={isFirst ? "md" : 0}
+                  borderRightRadius={isLast ? "md" : 0}
                   _hover={{
-                    bg: isSelected ? 'gray.800' : 'gray.50',
+                    bg: isSelected ? "gray.800" : "gray.50",
                   }}
                   height="32px"
                   px={3}
@@ -281,17 +298,21 @@ export function OrderFilterBar({
 
             const isInRange = (date: Date): boolean => {
               if (customStart && customEnd) {
-                const start =
-                  isAfter(customStart, customEnd) ? customEnd : customStart;
-                const end =
-                  isAfter(customStart, customEnd) ? customStart : customEnd;
+                const start = isAfter(customStart, customEnd)
+                  ? customEnd
+                  : customStart;
+                const end = isAfter(customStart, customEnd)
+                  ? customStart
+                  : customEnd;
                 return isAfter(date, start) && isBefore(date, end);
               }
               if (customStart && hoverDate) {
-                const start =
-                  isAfter(customStart, hoverDate) ? hoverDate : customStart;
-                const end =
-                  isAfter(customStart, hoverDate) ? customStart : hoverDate;
+                const start = isAfter(customStart, hoverDate)
+                  ? hoverDate
+                  : customStart;
+                const end = isAfter(customStart, hoverDate)
+                  ? customStart
+                  : hoverDate;
                 return isAfter(date, start) && isBefore(date, end);
               }
               return false;
@@ -302,7 +323,7 @@ export function OrderFilterBar({
                 setCustomStart(date);
                 setCustomEnd(null);
                 setHoverDate(null);
-                onDateChange('직접입력');
+                onDateChange("직접입력");
                 return;
               }
 
@@ -319,7 +340,7 @@ export function OrderFilterBar({
             };
 
             const renderMonthLabel = (month: Date): string =>
-              formatDateFns(month, 'yyyy년 M월');
+              formatDateFns(month, "yyyy년 M월");
 
             const daysInFirstMonth = monthDates.filter((day) =>
               isSameMonth(day, currentMonth),
@@ -330,11 +351,16 @@ export function OrderFilterBar({
 
             const renderMonthGrid = (monthDays: Date[]): React.JSX.Element => {
               const month = monthDays[0] ?? currentMonth;
-              const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+              const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 
               return (
                 <Box flex="1">
-                  <Text fontSize="sm" fontWeight="medium" textAlign="center" mb={2}>
+                  <Text
+                    fontSize="sm"
+                    fontWeight="medium"
+                    textAlign="center"
+                    mb={2}
+                  >
                     {renderMonthLabel(month)}
                   </Text>
                   <Grid templateColumns="repeat(7, 1fr)" gap={1} mb={1}>
@@ -356,14 +382,14 @@ export function OrderFilterBar({
                       const isEnd = customEnd && isSameDay(day, customEnd);
                       const inRange = isInRange(day);
 
-                      let bg = 'white';
-                      let color = 'gray.700';
+                      let bg = "white";
+                      let color = "gray.700";
 
                       if (isStart || isEnd) {
-                        bg = 'gray.900';
-                        color = 'white';
+                        bg = "gray.900";
+                        color = "white";
                       } else if (inRange) {
-                        bg = 'gray.100';
+                        bg = "gray.100";
                       }
 
                       const isToday = isSameDay(day, new Date());
@@ -379,10 +405,12 @@ export function OrderFilterBar({
                           onMouseLeave={() => handleDayHover(null)}
                           bg={bg}
                           color={color}
-                          _hover={{ bg: isStart || isEnd ? 'gray.800' : 'gray.200' }}
-                          fontWeight={isToday ? 'semibold' : 'normal'}
+                          _hover={{
+                            bg: isStart || isEnd ? "gray.800" : "gray.200",
+                          }}
+                          fontWeight={isToday ? "semibold" : "normal"}
                         >
-                          {formatDateFns(day, 'd')}
+                          {formatDateFns(day, "d")}
                         </Button>
                       );
                     })}
@@ -398,22 +426,22 @@ export function OrderFilterBar({
                 onOpenChange={(details) => {
                   setCustomOpen(details.open);
                   if (details.open && !customStart && !customEnd) {
-                    onDateChange('직접입력');
+                    onDateChange("직접입력");
                   }
                 }}
               >
                 <Popover.Trigger>
                   <Button
                     as="div"
-                    variant={isSelected ? 'solid' : 'outline'}
+                    variant={isSelected ? "solid" : "outline"}
                     size="sm"
-                    bg={isSelected ? 'gray.900' : 'white'}
-                    color={isSelected ? 'white' : 'gray.700'}
-                    borderColor={isSelected ? 'gray.900' : 'gray.200'}
-                    borderLeftRadius={isFirst ? 'md' : 0}
-                    borderRightRadius={isLast ? 'md' : 0}
+                    bg={isSelected ? "gray.900" : "white"}
+                    color={isSelected ? "white" : "gray.700"}
+                    borderColor={isSelected ? "gray.900" : "gray.200"}
+                    borderLeftRadius={isFirst ? "md" : 0}
+                    borderRightRadius={isLast ? "md" : 0}
                     _hover={{
-                      bg: isSelected ? 'gray.800' : 'gray.50',
+                      bg: isSelected ? "gray.800" : "gray.50",
                     }}
                     height="32px"
                     px={3}
@@ -439,7 +467,7 @@ export function OrderFilterBar({
                           setCurrentMonth((prev) => addMonths(prev, -1))
                         }
                       >
-                        {'< 이전'}
+                        {"< 이전"}
                       </Button>
                       <Text fontSize="xs" color="gray.500">
                         기간을 선택하세요
@@ -451,7 +479,7 @@ export function OrderFilterBar({
                           setCurrentMonth((prev) => addMonths(prev, 1))
                         }
                       >
-                        {'다음 >'}
+                        {"다음 >"}
                       </Button>
                     </Flex>
                     <Flex gap={4}>
@@ -464,7 +492,7 @@ export function OrderFilterBar({
                         size="xs"
                         onClick={() => {
                           resetCustomRange();
-                          onDateChange('7일');
+                          onDateChange("7일");
                         }}
                       >
                         초기화
@@ -511,11 +539,11 @@ export function OrderFilterBar({
               <button
                 type="button"
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   right: 8,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af',
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#9ca3af",
                 }}
                 onClick={handleClearSearch}
               >
@@ -528,4 +556,3 @@ export function OrderFilterBar({
     </Box>
   );
 }
-

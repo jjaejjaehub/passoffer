@@ -14,7 +14,13 @@ export function ShopifyFormSection({
   children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <Box borderWidth="1px" borderColor="gray.200" borderRadius="lg" bg="white" p={5}>
+    <Box
+      borderWidth="1px"
+      borderColor="gray.200"
+      borderRadius="lg"
+      bg="white"
+      p={5}
+    >
       <Heading as="h2" size="md" mb={4}>
         {title}
       </Heading>
@@ -75,7 +81,10 @@ export function ShopifyFormErrorMsg({
 
 // ─── NativeSelect ─────────────────────────────────────────────
 
-type NativeSelectProps = Omit<React.ComponentPropsWithoutRef<"select">, "size"> & {
+type NativeSelectProps = Omit<
+  React.ComponentPropsWithoutRef<"select">,
+  "size"
+> & {
   placeholder?: string;
   size?: "sm" | "md";
   isDisabled?: boolean;

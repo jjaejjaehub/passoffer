@@ -34,7 +34,8 @@ function parseQoo10Error(error: unknown): Qoo10QueryError {
 
     if (errorCode === "NO_API_KEY") return { type: "NO_API_KEY", message };
     if (errorCode === "AUTH_ERROR") return { type: "AUTH_ERROR", message };
-    if (errorCode === "NETWORK_ERROR") return { type: "NETWORK_ERROR", message };
+    if (errorCode === "NETWORK_ERROR")
+      return { type: "NETWORK_ERROR", message };
     return { type: "API_ERROR", message };
   }
   return { type: "UNKNOWN", message: "알 수 없는 오류가 발생했습니다." };
@@ -42,7 +43,8 @@ function parseQoo10Error(error: unknown): Qoo10QueryError {
 
 const retryPredicate = (failureCount: number, error: unknown): boolean => {
   const parsed = parseQoo10Error(error);
-  if (parsed.type === "NO_API_KEY" || parsed.type === "AUTH_ERROR") return false;
+  if (parsed.type === "NO_API_KEY" || parsed.type === "AUTH_ERROR")
+    return false;
   return failureCount < 2;
 };
 
@@ -65,7 +67,12 @@ async function fetchQoo10Products(
   } else {
     params.set("itemStatus", itemStatus);
   }
-  const raw = await http.get<{ items: Product[]; totalItems: number; totalPages: number; statusTotals?: Record<string, number> }>(`/api/products?${params.toString()}`);
+  const raw = await http.get<{
+    items: Product[];
+    totalItems: number;
+    totalPages: number;
+    statusTotals?: Record<string, number>;
+  }>(`/api/products?${params.toString()}`);
   const items = Array.isArray(raw.items) ? raw.items : [];
   return {
     items,
@@ -113,7 +120,10 @@ export function useQoo10Products(
 
   const activeQuery = mergeAll ? mergedQuery : singleQuery;
   const result = activeQuery.data;
-  const isLoading = hasKey && (activeQuery.isLoading || (activeQuery.fetchStatus === "fetching" && activeQuery.isPending));
+  const isLoading =
+    hasKey &&
+    (activeQuery.isLoading ||
+      (activeQuery.fetchStatus === "fetching" && activeQuery.isPending));
 
   return {
     data: result?.items ?? [],
@@ -123,6 +133,8 @@ export function useQoo10Products(
     error: activeQuery.error ? parseQoo10Error(activeQuery.error) : null,
     hasApiKey: hasKey,
     statusTotals: result?.statusTotals,
-    refetch: () => { void activeQuery.refetch(); },
+    refetch: () => {
+      void activeQuery.refetch();
+    },
   };
 }

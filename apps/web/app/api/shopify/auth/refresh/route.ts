@@ -41,7 +41,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (!shopDomain || !clientId || !clientSecret || !refreshToken) {
     return NextResponse.json(
-      { error: "MISSING_FIELDS", message: "shopDomain, clientId, clientSecret, refreshToken 모두 필요합니다." },
+      {
+        error: "MISSING_FIELDS",
+        message:
+          "shopDomain, clientId, clientSecret, refreshToken 모두 필요합니다.",
+      },
       { status: 400 },
     );
   }
@@ -55,14 +59,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let shopifyRes: Response;
   try {
-    shopifyRes = await fetch(
-      `https://${shopDomain}/admin/oauth/access_token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params.toString(),
-      },
-    );
+    shopifyRes = await fetch(`https://${shopDomain}/admin/oauth/access_token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
   } catch {
     return NextResponse.json(
       { error: "NETWORK_ERROR", message: "Shopify 서버에 연결할 수 없습니다." },
@@ -73,7 +74,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const data = (await shopifyRes.json()) as ShopifyRefreshResponse;
 
   if (!shopifyRes.ok || !data.access_token) {
-    const message = data.error_description ?? data.error ?? "토큰 갱신에 실패했습니다.";
+    const message =
+      data.error_description ?? data.error ?? "토큰 갱신에 실패했습니다.";
     return NextResponse.json(
       { error: "REFRESH_FAILED", message },
       { status: shopifyRes.status },

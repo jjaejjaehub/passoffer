@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHmac } from "node:crypto";
 import type {
   Order,
   OrderItem,
@@ -20,9 +20,9 @@ import type {
   ListChannelProductsParams,
   ListChannelProductsResult,
   UpdateSellerCodeResult,
-} from '@oms/types';
+} from "@oms/types";
 
-const SHOPEE_BASE_URL = 'https://partner.shopeemobile.com';
+const SHOPEE_BASE_URL = "https://partner.shopeemobile.com";
 
 // ─── Raw Shopee Order API types ──────────────────────────────────
 
@@ -160,7 +160,7 @@ export function signPublic(
   partnerKey: string,
 ): string {
   const base = `${partnerId}${apiPath}${timestamp}`;
-  return createHmac('sha256', partnerKey).update(base).digest('hex');
+  return createHmac("sha256", partnerKey).update(base).digest("hex");
 }
 
 /**
@@ -176,14 +176,14 @@ export function signShop(
   partnerKey: string,
 ): string {
   const base = `${partnerId}${apiPath}${timestamp}${accessToken}${shopId}`;
-  return createHmac('sha256', partnerKey).update(base).digest('hex');
+  return createHmac("sha256", partnerKey).update(base).digest("hex");
 }
 
 // ─── ShopeeAdapter ───────────────────────────────────────────────
 
 export class ShopeeAdapter implements IChannelAdapter {
-  readonly vendor: ChannelVendor = 'SHOPEE';
-  readonly syncMode: SyncMode = 'realtime';
+  readonly vendor: ChannelVendor = "SHOPEE";
+  readonly syncMode: SyncMode = "realtime";
   readonly capabilities: ChannelCapabilities = {
     supportsOrderFetch: true,
     supportsClaimFetch: true,
@@ -208,7 +208,7 @@ export class ShopeeAdapter implements IChannelAdapter {
     shopId: string;
     accessToken: string;
   }) {
-    this.channelId = opts.channelId ?? '';
+    this.channelId = opts.channelId ?? "";
     this.partnerId = Number(opts.partnerId);
     this.partnerKey = opts.partnerKey;
     this.shopId = Number(opts.shopId);
@@ -257,12 +257,12 @@ export class ShopeeAdapter implements IChannelAdapter {
     pageSize?: number;
     itemStatus?: string | string[];
   }): Promise<ShopeeProductListResult> {
-    const apiPath = '/api/v2/product/get_item_list';
+    const apiPath = "/api/v2/product/get_item_list";
 
     // item_status는 배열로 전달 (반복 쿼리 파라미터)
     const statusList: string[] = Array.isArray(params.itemStatus)
       ? params.itemStatus
-      : [params.itemStatus ?? 'NORMAL'];
+      : [params.itemStatus ?? "NORMAL"];
 
     const url = this.buildShopUrl(apiPath, {
       offset: params.offset ?? 0,
@@ -304,7 +304,7 @@ export class ShopeeAdapter implements IChannelAdapter {
    * item_id_list는 JSON 배열 형태로 전달
    */
   async getItemBaseInfo(itemIds: number[]): Promise<ShopeeProductItem[]> {
-    const apiPath = '/api/v2/product/get_item_base_info';
+    const apiPath = "/api/v2/product/get_item_base_info";
     const url = this.buildShopUrl(apiPath, {
       item_id_list: JSON.stringify(itemIds),
     });
@@ -326,12 +326,12 @@ export class ShopeeAdapter implements IChannelAdapter {
         itemStatus: item.item_status,
         categoryId: item.category_id,
         price: item.price_info?.[0]?.current_price ?? 0,
-        currency: item.price_info?.[0]?.currency ?? '',
+        currency: item.price_info?.[0]?.currency ?? "",
         stock:
           item.stock_info_v2?.summary_info?.total_available_stock ??
           item.stock_info_v2?.seller_stock?.[0]?.stock ??
           0,
-        imageUrl: item.image?.image_url_list?.[0] ?? '',
+        imageUrl: item.image?.image_url_list?.[0] ?? "",
         hasModel: item.has_model,
         updateTime: item.update_time,
       }),
@@ -351,7 +351,7 @@ export class ShopeeAdapter implements IChannelAdapter {
     const start = Date.now();
     const ok = await this.validateCredential();
     return {
-      status: ok ? 'connected' : 'disconnected',
+      status: ok ? "connected" : "disconnected",
       latencyMs: Date.now() - start,
       checkedAt: new Date().toISOString(),
     };
@@ -359,18 +359,25 @@ export class ShopeeAdapter implements IChannelAdapter {
 
   // ─── IChannelAdapter 주문 메서드 ─────────────────────────────
 
-  private mapOrderStatus(shopeeStatus: string): Order['status'] {
+  private mapOrderStatus(shopeeStatus: string): Order["status"] {
     switch (shopeeStatus.toUpperCase()) {
-      case 'UNPAID': return 'PENDING';
-      case 'READY_TO_SHIP':
-      case 'PROCESSED': return 'PAID';
-      case 'SHIPPED':
-      case 'IN_CANCEL':
-      case 'TO_CONFIRM_RECEIVE': return 'SHIPPED';
-      case 'COMPLETED': return 'DELIVERED';
-      case 'CANCELLED': return 'CANCELLED';
-      case 'TO_RETURN': return 'RETURNED';
-      default: return 'PENDING';
+      case "UNPAID":
+        return "PENDING";
+      case "READY_TO_SHIP":
+      case "PROCESSED":
+        return "PAID";
+      case "SHIPPED":
+      case "IN_CANCEL":
+      case "TO_CONFIRM_RECEIVE":
+        return "SHIPPED";
+      case "COMPLETED":
+        return "DELIVERED";
+      case "CANCELLED":
+        return "CANCELLED";
+      case "TO_RETURN":
+        return "RETURNED";
+      default:
+        return "PENDING";
     }
   }
 
@@ -381,11 +388,13 @@ export class ShopeeAdapter implements IChannelAdapter {
       option: it.model_name || undefined,
       quantity: it.model_quantity_purchased,
       unitPrice: it.model_discounted_price ?? it.model_original_price,
-      totalPrice: (it.model_discounted_price ?? it.model_original_price) * it.model_quantity_purchased,
+      totalPrice:
+        (it.model_discounted_price ?? it.model_original_price) *
+        it.model_quantity_purchased,
       sku: it.item_sku || undefined,
     }));
 
-    const currency = (detail.currency ?? 'USD') as 'KRW' | 'JPY' | 'USD';
+    const currency = (detail.currency ?? "USD") as "KRW" | "JPY" | "USD";
 
     return {
       id: detail.order_sn,
@@ -396,8 +405,8 @@ export class ShopeeAdapter implements IChannelAdapter {
         name: detail.buyer_username,
       },
       shipping: {
-        receiver: detail.recipient_address?.name ?? '',
-        shippingAddress: detail.recipient_address?.full_address ?? '',
+        receiver: detail.recipient_address?.name ?? "",
+        shippingAddress: detail.recipient_address?.full_address ?? "",
         zipCode: detail.recipient_address?.zipcode ?? undefined,
         country: detail.recipient_address?.region ?? undefined,
         receiverTel: detail.recipient_address?.phone ?? undefined,
@@ -407,7 +416,7 @@ export class ShopeeAdapter implements IChannelAdapter {
         totalAmount: detail.total_amount,
         krwAmount: detail.total_amount,
         originalAmount: detail.total_amount,
-        paymentMethod: detail.payment_method ?? '',
+        paymentMethod: detail.payment_method ?? "",
         shippingRate: detail.actual_shipping_fee,
       },
       items,
@@ -420,16 +429,20 @@ export class ShopeeAdapter implements IChannelAdapter {
   async getOrders(params: GetOrdersParams): Promise<Order[]> {
     const toUnix = (yyyymmdd: string) => {
       const s = yyyymmdd;
-      return Math.floor(new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`).getTime() / 1000);
+      return Math.floor(
+        new Date(
+          `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`,
+        ).getTime() / 1000,
+      );
     };
 
-    const apiPath = '/api/v2/order/get_order_list';
+    const apiPath = "/api/v2/order/get_order_list";
     const allSns: string[] = [];
-    let cursor = '';
+    let cursor = "";
 
     do {
       const extra: Record<string, string | number> = {
-        time_range_field: 'create_time',
+        time_range_field: "create_time",
         time_from: toUnix(params.startDate),
         time_to: toUnix(params.endDate) + 86399,
         page_size: 100,
@@ -441,9 +454,12 @@ export class ShopeeAdapter implements IChannelAdapter {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Shopee HTTP error: ${res.status}`);
 
-      const data = (await res.json()) as ShopeeApiEnvelope<ShopeeOrderListResult>;
-      if (data.error && data.error !== 'error_auth') {
-        throw new Error(`Shopee order list error [${data.error}]: ${data.message}`);
+      const data =
+        (await res.json()) as ShopeeApiEnvelope<ShopeeOrderListResult>;
+      if (data.error && data.error !== "error_auth") {
+        throw new Error(
+          `Shopee order list error [${data.error}]: ${data.message}`,
+        );
       }
 
       const result = data.response;
@@ -462,17 +478,22 @@ export class ShopeeAdapter implements IChannelAdapter {
     const orders: Order[] = [];
     for (let i = 0; i < allSns.length; i += 50) {
       const batch = allSns.slice(i, i + 50);
-      const detailPath = '/api/v2/order/get_order_detail';
+      const detailPath = "/api/v2/order/get_order_detail";
       const url = this.buildShopUrl(detailPath, {
-        order_sn_list: batch.join(','),
-        response_optional_fields: 'item_list,recipient_address,actual_shipping_fee,payment_method,tracking_no',
+        order_sn_list: batch.join(","),
+        response_optional_fields:
+          "item_list,recipient_address,actual_shipping_fee,payment_method,tracking_no",
       });
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Shopee HTTP error: ${res.status}`);
 
-      const data = (await res.json()) as ShopeeApiEnvelope<ShopeeOrderDetailResult>;
-      if (data.error) throw new Error(`Shopee order detail error [${data.error}]: ${data.message}`);
+      const data =
+        (await res.json()) as ShopeeApiEnvelope<ShopeeOrderDetailResult>;
+      if (data.error)
+        throw new Error(
+          `Shopee order detail error [${data.error}]: ${data.message}`,
+        );
 
       for (const detail of data.response?.order_list ?? []) {
         orders.push(this.mapOrderDetail(detail));
@@ -483,17 +504,22 @@ export class ShopeeAdapter implements IChannelAdapter {
   }
 
   async getOrderDetail(orderId: string): Promise<Order> {
-    const detailPath = '/api/v2/order/get_order_detail';
+    const detailPath = "/api/v2/order/get_order_detail";
     const url = this.buildShopUrl(detailPath, {
       order_sn_list: orderId,
-      response_optional_fields: 'item_list,recipient_address,actual_shipping_fee,payment_method,tracking_no',
+      response_optional_fields:
+        "item_list,recipient_address,actual_shipping_fee,payment_method,tracking_no",
     });
 
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Shopee HTTP error: ${res.status}`);
 
-    const data = (await res.json()) as ShopeeApiEnvelope<ShopeeOrderDetailResult>;
-    if (data.error) throw new Error(`Shopee order detail error [${data.error}]: ${data.message}`);
+    const data =
+      (await res.json()) as ShopeeApiEnvelope<ShopeeOrderDetailResult>;
+    if (data.error)
+      throw new Error(
+        `Shopee order detail error [${data.error}]: ${data.message}`,
+      );
 
     const detail = data.response?.order_list?.[0];
     if (!detail) throw new Error(`Order not found: ${orderId}`);
@@ -502,32 +528,39 @@ export class ShopeeAdapter implements IChannelAdapter {
   }
 
   async cancelOrder(data: CancelOrderData): Promise<void> {
-    const apiPath = '/api/v2/order/cancel_order';
+    const apiPath = "/api/v2/order/cancel_order";
     const url = this.buildShopUrl(apiPath, {});
 
     const body: Record<string, unknown> = {
       order_sn: String(data.orderNo),
-      cancel_reason: 'CANCEL_BY_SELLER',
+      cancel_reason: "CANCEL_BY_SELLER",
     };
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) throw new Error(`Shopee cancel_order HTTP error: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Shopee cancel_order HTTP error: ${res.status}`);
 
     const result = (await res.json()) as ShopeeApiEnvelope<unknown>;
     if (result.error) {
-      throw new Error(`Shopee cancel_order error [${result.error}]: ${result.message}`);
+      throw new Error(
+        `Shopee cancel_order error [${result.error}]: ${result.message}`,
+      );
     }
   }
 
   async getReturns(params: GetClaimsParams): Promise<ReturnItem[]> {
     const toUnix = (yyyymmdd: string) => {
       const s = yyyymmdd;
-      return Math.floor(new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`).getTime() / 1000);
+      return Math.floor(
+        new Date(
+          `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T00:00:00Z`,
+        ).getTime() / 1000,
+      );
     };
 
     interface ShopeeReturnItem {
@@ -546,9 +579,9 @@ export class ShopeeAdapter implements IChannelAdapter {
       next_cursor?: string;
     }
 
-    const apiPath = '/api/v2/returns/get_return_list';
+    const apiPath = "/api/v2/returns/get_return_list";
     const allReturns: ReturnItem[] = [];
-    let cursor = '';
+    let cursor = "";
 
     do {
       const extra: Record<string, string | number> = {
@@ -557,14 +590,20 @@ export class ShopeeAdapter implements IChannelAdapter {
         page_size: 100,
       };
       if (cursor) extra.next_cursor = cursor;
-      if (params.claimStatus) extra.return_status = params.claimStatus.toUpperCase();
+      if (params.claimStatus)
+        extra.return_status = params.claimStatus.toUpperCase();
 
       const url = this.buildShopUrl(apiPath, extra);
       const res = await fetch(url);
-      if (!res.ok) throw new Error(`Shopee get_return_list HTTP error: ${res.status}`);
+      if (!res.ok)
+        throw new Error(`Shopee get_return_list HTTP error: ${res.status}`);
 
-      const data = (await res.json()) as ShopeeApiEnvelope<ShopeeReturnListResult>;
-      if (data.error) throw new Error(`Shopee get_return_list error [${data.error}]: ${data.message}`);
+      const data =
+        (await res.json()) as ShopeeApiEnvelope<ShopeeReturnListResult>;
+      if (data.error)
+        throw new Error(
+          `Shopee get_return_list error [${data.error}]: ${data.message}`,
+        );
 
       const result = data.response;
       for (const r of result?.return_list ?? []) {
@@ -592,7 +631,7 @@ export class ShopeeAdapter implements IChannelAdapter {
   }
 
   async approveReturn(data: ApproveReturnData): Promise<void> {
-    const apiPath = '/api/v2/returns/confirm_return';
+    const apiPath = "/api/v2/returns/confirm_return";
     const url = this.buildShopUrl(apiPath, {});
 
     const body: Record<string, unknown> = {
@@ -600,16 +639,19 @@ export class ShopeeAdapter implements IChannelAdapter {
     };
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    if (!res.ok) throw new Error(`Shopee confirm_return HTTP error: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Shopee confirm_return HTTP error: ${res.status}`);
 
     const result = (await res.json()) as ShopeeApiEnvelope<unknown>;
     if (result.error) {
-      throw new Error(`Shopee confirm_return error [${result.error}]: ${result.message}`);
+      throw new Error(
+        `Shopee confirm_return error [${result.error}]: ${result.message}`,
+      );
     }
   }
 
@@ -619,7 +661,7 @@ export class ShopeeAdapter implements IChannelAdapter {
     const raw = await this.getItemList({
       offset: params.offset ?? 0,
       pageSize: params.pageSize ?? 50,
-      itemStatus: params.itemStatus ?? 'NORMAL',
+      itemStatus: params.itemStatus ?? "NORMAL",
     });
     return {
       items: raw.items.map((item) => ({
@@ -627,40 +669,40 @@ export class ShopeeAdapter implements IChannelAdapter {
         sellerCode: item.itemSku,
         rawStatus: item.itemStatus,
         title: item.itemName,
-        promotionName: '',
-        status: item.itemStatus === 'NORMAL' ? 'active' : 'inactive',
+        promotionName: "",
+        status: item.itemStatus === "NORMAL" ? "active" : "inactive",
         price: item.price,
         settlePrice: item.price,
         retailPrice: item.price,
         qty: item.stock,
         imageUrl: item.imageUrl,
         category: {
-          main: { code: String(item.categoryId), name: '' },
-          sub1: { code: '', name: '' },
-          sub2: { code: '', name: '' },
+          main: { code: String(item.categoryId), name: "" },
+          sub1: { code: "", name: "" },
+          sub2: { code: "", name: "" },
         },
-        origin: { type: '기타', place: '' },
-        shippingNo: '',
-        availableDate: { type: 'normal', value: '' },
-        desiredShippingDate: '',
+        origin: { type: "기타", place: "" },
+        shippingNo: "",
+        availableDate: { type: "normal", value: "" },
+        desiredShippingDate: "",
         keyword: [],
         isAdult: false,
-        itemDetail: '',
-        videoUrl: '',
-        modelNm: '',
-        manufacturerDate: '',
-        brandNo: '',
-        material: '',
-        industrialCodeType: '',
-        industrialCode: '',
-        taxRate: '',
+        itemDetail: "",
+        videoUrl: "",
+        modelNm: "",
+        manufacturerDate: "",
+        brandNo: "",
+        material: "",
+        industrialCodeType: "",
+        industrialCode: "",
+        taxRate: "",
         listedDate: new Date(item.updateTime * 1000).toISOString(),
         changedDate: new Date(item.updateTime * 1000).toISOString(),
-        expireDate: '',
-        drugtype: '',
-        optionShippingNo1: '',
-        optionShippingNo2: '',
-        contactInfo: '',
+        expireDate: "",
+        drugtype: "",
+        optionShippingNo1: "",
+        optionShippingNo2: "",
+        contactInfo: "",
       })),
       totalItems: raw.totalCount,
       totalPages: 1,
@@ -669,7 +711,7 @@ export class ShopeeAdapter implements IChannelAdapter {
 
   async getProductDetail(itemId: string): Promise<unknown> {
     const itemIdNum = Number(itemId);
-    const infoPath = '/api/v2/product/get_item_base_info';
+    const infoPath = "/api/v2/product/get_item_base_info";
     const infoUrl = this.buildShopUrl(infoPath, {
       item_id_list: JSON.stringify([itemIdNum]),
     });
@@ -690,7 +732,11 @@ export class ShopeeAdapter implements IChannelAdapter {
         update_time: number;
         condition?: string;
         weight?: string;
-        dimension?: { package_length: number; package_width: number; package_height: number };
+        dimension?: {
+          package_length: number;
+          package_width: number;
+          package_height: number;
+        };
         pre_order?: { is_pre_order: boolean; days_to_ship: number };
         brand?: { brand_id: number; original_brand_name: string };
         price_info?: Array<{ currency: string; current_price: number }>;
@@ -707,89 +753,142 @@ export class ShopeeAdapter implements IChannelAdapter {
           attribute_id: number;
           original_attribute_name: string;
           is_mandatory: boolean;
-          attribute_value_list?: Array<{ value_id: number; original_value_name: string; value_unit?: string }>;
+          attribute_value_list?: Array<{
+            value_id: number;
+            original_value_name: string;
+            value_unit?: string;
+          }>;
         }>;
-        wholesales?: Array<{ min_count: number; max_count: number; unit_price: number }>;
-        video_info?: Array<{ video_url: string; thumbnail_url: string; duration: number }>;
+        wholesales?: Array<{
+          min_count: number;
+          max_count: number;
+          unit_price: number;
+        }>;
+        video_info?: Array<{
+          video_url: string;
+          thumbnail_url: string;
+          duration: number;
+        }>;
       }>;
     }>;
 
-    if (data.error) throw new Error(`Shopee API error [${data.error}]: ${data.message}`);
+    if (data.error)
+      throw new Error(`Shopee API error [${data.error}]: ${data.message}`);
     const raw = data.response?.item_list?.[0];
-    if (!raw) throw new Error('error_item_not_found');
+    if (!raw) throw new Error("error_item_not_found");
 
-    let tierVariations: Array<{ name: string; options: Array<{ option: string; imageUrl: string }> }> = [];
-    let models: Array<{ modelId: number; modelSku: string; modelStatus: string; tierIndex: number[]; price: number; currency: string; stock: number }> = [];
+    let tierVariations: Array<{
+      name: string;
+      options: Array<{ option: string; imageUrl: string }>;
+    }> = [];
+    let models: Array<{
+      modelId: number;
+      modelSku: string;
+      modelStatus: string;
+      tierIndex: number[];
+      price: number;
+      currency: string;
+      stock: number;
+    }> = [];
 
     if (raw.has_model) {
-      const modelPath = '/api/v2/product/get_model_list';
-      const modelUrl = this.buildShopUrl(modelPath, { item_id: String(itemIdNum) });
+      const modelPath = "/api/v2/product/get_model_list";
+      const modelUrl = this.buildShopUrl(modelPath, {
+        item_id: String(itemIdNum),
+      });
       try {
         const modelRes = await fetch(modelUrl);
         if (modelRes.ok) {
           const modelData = (await modelRes.json()) as ShopeeApiEnvelope<{
-            tier_variation?: Array<{ name: string; option_list: Array<{ option: string; image?: { image_url: string } }> }>;
+            tier_variation?: Array<{
+              name: string;
+              option_list: Array<{
+                option: string;
+                image?: { image_url: string };
+              }>;
+            }>;
             model?: Array<{
               model_id: number;
               model_sku: string;
               model_status: string;
               tier_index: number[];
               price_info?: Array<{ currency: string; current_price: number }>;
-              stock_info_v2?: { summary_info?: { total_available_stock: number } };
+              stock_info_v2?: {
+                summary_info?: { total_available_stock: number };
+              };
             }>;
           }>;
           if (!modelData.error && modelData.response) {
-            tierVariations = (modelData.response.tier_variation ?? []).map((tv) => ({
-              name: tv.name,
-              options: tv.option_list.map((o) => ({ option: o.option, imageUrl: o.image?.image_url ?? '' })),
-            }));
+            tierVariations = (modelData.response.tier_variation ?? []).map(
+              (tv) => ({
+                name: tv.name,
+                options: tv.option_list.map((o) => ({
+                  option: o.option,
+                  imageUrl: o.image?.image_url ?? "",
+                })),
+              }),
+            );
             models = (modelData.response.model ?? []).map((m) => ({
               modelId: m.model_id,
               modelSku: m.model_sku,
               modelStatus: m.model_status,
               tierIndex: m.tier_index ?? [],
               price: m.price_info?.[0]?.current_price ?? 0,
-              currency: m.price_info?.[0]?.currency ?? '',
+              currency: m.price_info?.[0]?.currency ?? "",
               stock: m.stock_info_v2?.summary_info?.total_available_stock ?? 0,
             }));
           }
         }
-      } catch { /* model 조회 실패 시 기본 정보만 반환 */ }
+      } catch {
+        /* model 조회 실패 시 기본 정보만 반환 */
+      }
     }
 
     return {
       item: {
         itemId: raw.item_id,
         itemName: raw.item_name,
-        description: raw.description ?? '',
-        itemSku: raw.item_sku ?? '',
+        description: raw.description ?? "",
+        itemSku: raw.item_sku ?? "",
         itemStatus: raw.item_status,
         categoryId: raw.category_id,
         hasModel: raw.has_model,
         createTime: raw.create_time,
         updateTime: raw.update_time,
-        condition: raw.condition ?? '',
-        weight: raw.weight ?? '',
+        condition: raw.condition ?? "",
+        weight: raw.weight ?? "",
         dimension: raw.dimension
-          ? { length: raw.dimension.package_length, width: raw.dimension.package_width, height: raw.dimension.package_height }
+          ? {
+              length: raw.dimension.package_length,
+              width: raw.dimension.package_width,
+              height: raw.dimension.package_height,
+            }
           : null,
         preOrder: raw.pre_order
-          ? { isPreOrder: raw.pre_order.is_pre_order, daysToShip: raw.pre_order.days_to_ship }
+          ? {
+              isPreOrder: raw.pre_order.is_pre_order,
+              daysToShip: raw.pre_order.days_to_ship,
+            }
           : null,
         brand: raw.brand
-          ? { brandId: raw.brand.brand_id, brandName: raw.brand.original_brand_name }
+          ? {
+              brandId: raw.brand.brand_id,
+              brandName: raw.brand.original_brand_name,
+            }
           : null,
         price: raw.price_info?.[0]?.current_price ?? 0,
-        currency: raw.price_info?.[0]?.currency ?? '',
+        currency: raw.price_info?.[0]?.currency ?? "",
         stock: raw.stock_info_v2?.summary_info?.total_available_stock ?? 0,
         images: raw.image?.image_url_list ?? [],
-        logistics: (raw.logistic_info ?? []).filter((l) => l.enabled).map((l) => ({
-          logisticId: l.logistic_id,
-          logisticName: l.logistic_name,
-          enabled: l.enabled,
-          isFree: l.is_free,
-          estimatedShippingFee: l.estimated_shipping_fee ?? 0,
-        })),
+        logistics: (raw.logistic_info ?? [])
+          .filter((l) => l.enabled)
+          .map((l) => ({
+            logisticId: l.logistic_id,
+            logisticName: l.logistic_name,
+            enabled: l.enabled,
+            isFree: l.is_free,
+            estimatedShippingFee: l.estimated_shipping_fee ?? 0,
+          })),
         attributes: (raw.attribute_list ?? []).map((a) => ({
           attributeId: a.attribute_id,
           attributeName: a.original_attribute_name,
@@ -797,22 +896,38 @@ export class ShopeeAdapter implements IChannelAdapter {
           values: (a.attribute_value_list ?? []).map((v) => ({
             valueId: v.value_id,
             valueName: v.original_value_name,
-            valueUnit: v.value_unit ?? '',
+            valueUnit: v.value_unit ?? "",
           })),
         })),
-        wholesales: (raw.wholesales ?? []).map((w) => ({ minCount: w.min_count, maxCount: w.max_count, unitPrice: w.unit_price })),
-        videos: (raw.video_info ?? []).map((v) => ({ videoUrl: v.video_url, thumbnailUrl: v.thumbnail_url, duration: v.duration })),
+        wholesales: (raw.wholesales ?? []).map((w) => ({
+          minCount: w.min_count,
+          maxCount: w.max_count,
+          unitPrice: w.unit_price,
+        })),
+        videos: (raw.video_info ?? []).map((v) => ({
+          videoUrl: v.video_url,
+          thumbnailUrl: v.thumbnail_url,
+          duration: v.duration,
+        })),
         tierVariations,
         models,
       },
     };
   }
 
-  async listChannelProducts(params: ListChannelProductsParams): Promise<ListChannelProductsResult> {
-    const statusParam = Array.isArray(params.status) ? params.status[0] : (params.status ?? 'NORMAL');
+  async listChannelProducts(
+    params: ListChannelProductsParams,
+  ): Promise<ListChannelProductsResult> {
+    const statusParam = Array.isArray(params.status)
+      ? params.status[0]
+      : (params.status ?? "NORMAL");
     const pageSize = params.pageSize ?? 50;
     const page = Number(params.page ?? 1);
-    const result = await this.getProducts({ itemStatus: statusParam, offset: (page - 1) * pageSize, pageSize });
+    const result = await this.getProducts({
+      itemStatus: statusParam,
+      offset: (page - 1) * pageSize,
+      pageSize,
+    });
     const items: ChannelProduct[] = result.items.map((p) => ({
       channelItemId: p.id,
       sellerCode: p.sellerCode || undefined,
@@ -821,11 +936,16 @@ export class ShopeeAdapter implements IChannelAdapter {
       images: p.imageUrl ? [p.imageUrl] : [],
       variants: [],
     }));
-    return { items, totalItems: result.totalItems, totalPages: Math.ceil(result.totalItems / pageSize) || 1, currentPage: page };
+    return {
+      items,
+      totalItems: result.totalItems,
+      totalPages: Math.ceil(result.totalItems / pageSize) || 1,
+      currentPage: page,
+    };
   }
 
   async getChannelProduct(channelItemId: string): Promise<ChannelProduct> {
-    const raw = await this.getProductDetail(channelItemId) as {
+    const raw = (await this.getProductDetail(channelItemId)) as {
       item?: {
         itemId: number;
         itemName: string;
@@ -833,23 +953,35 @@ export class ShopeeAdapter implements IChannelAdapter {
         price: number;
         currency: string;
         images: string[];
-        models: Array<{ modelId: number; modelSku: string; tierIndex: number[]; price: number; stock: number }>;
-        tierVariations: Array<{ name: string; options: Array<{ option: string }> }>;
+        models: Array<{
+          modelId: number;
+          modelSku: string;
+          tierIndex: number[];
+          price: number;
+          stock: number;
+        }>;
+        tierVariations: Array<{
+          name: string;
+          options: Array<{ option: string }>;
+        }>;
       };
     };
     const item = raw?.item;
     if (!item) throw new Error(`Shopee product not found: ${channelItemId}`);
 
     const variants: ChannelProductVariant[] = item.models.map((m) => {
-      const optParts = m.tierIndex.map((idx, axisIdx) => {
-        const axis = item.tierVariations[axisIdx];
-        return axis?.options[idx]?.option ?? '';
-      }).filter(Boolean);
+      const optParts = m.tierIndex
+        .map((idx, axisIdx) => {
+          const axis = item.tierVariations[axisIdx];
+          return axis?.options[idx]?.option ?? "";
+        })
+        .filter(Boolean);
       return {
         channelVariantId: String(m.modelId),
         optionCode: m.modelSku || undefined,
-        optionName: item.tierVariations.map((tv) => tv.name).join('/') || undefined,
-        optionValue: optParts.join('/') || undefined,
+        optionName:
+          item.tierVariations.map((tv) => tv.name).join("/") || undefined,
+        optionValue: optParts.join("/") || undefined,
         price: String(m.price) || undefined,
         stock: m.stock,
       };
@@ -866,11 +998,21 @@ export class ShopeeAdapter implements IChannelAdapter {
     };
   }
 
-  async updateSellerCode(channelVariantId: string, newCode: string): Promise<UpdateSellerCodeResult> {
+  async updateSellerCode(
+    channelVariantId: string,
+    newCode: string,
+  ): Promise<UpdateSellerCodeResult> {
     // Shopee model SKU update via update_model API
     // We need itemId to call the API, but channelVariantId is modelId alone.
     // Return unsupported for now — requires itemId context.
-    return { channelVariantId, oldCode: '', newCode, status: 'FAILED', error: 'updateSellerCode requires itemId context (not available via modelId alone)' };
+    return {
+      channelVariantId,
+      oldCode: "",
+      newCode,
+      status: "FAILED",
+      error:
+        "updateSellerCode requires itemId context (not available via modelId alone)",
+    };
   }
 
   async registerProduct(data: {
@@ -895,10 +1037,13 @@ export class ShopeeAdapter implements IChannelAdapter {
     is_pre_order?: boolean;
     days_to_ship?: number;
   }): Promise<{ productId: string; title: string }> {
-    const apiPath = '/api/v2/product/add_item';
+    const apiPath = "/api/v2/product/add_item";
     const url = this.buildShopUrl(apiPath, {});
 
-    const imageIds = data.image_id_list.split(',').map((id) => id.trim()).filter(Boolean);
+    const imageIds = data.image_id_list
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
 
     const payload: Record<string, unknown> = {
       item_name: data.item_name,
@@ -909,21 +1054,31 @@ export class ShopeeAdapter implements IChannelAdapter {
       item_status: data.item_status,
       condition: data.condition,
       image: { image_id_list: imageIds },
-      logistic_info: [{
-        logistic_id: data.logistic_id,
-        enabled: true,
-        is_free: data.logistic_is_free,
-        ...(data.logistic_shipping_fee !== undefined && { shipping_fee: data.logistic_shipping_fee }),
-      }],
+      logistic_info: [
+        {
+          logistic_id: data.logistic_id,
+          enabled: true,
+          is_free: data.logistic_is_free,
+          ...(data.logistic_shipping_fee !== undefined && {
+            shipping_fee: data.logistic_shipping_fee,
+          }),
+        },
+      ],
       brand: {
         brand_id: 0,
-        original_brand_name: data.no_brand ? 'No Brand' : (data.brand_name?.trim() ?? 'No Brand'),
+        original_brand_name: data.no_brand
+          ? "No Brand"
+          : (data.brand_name?.trim() ?? "No Brand"),
       },
       seller_stock: [{ stock: data.stock }],
     };
 
     if (data.item_sku) payload.item_sku = data.item_sku;
-    if (data.package_height !== undefined || data.package_length !== undefined || data.package_width !== undefined) {
+    if (
+      data.package_height !== undefined ||
+      data.package_length !== undefined ||
+      data.package_width !== undefined
+    ) {
       payload.dimension = {
         package_height: data.package_height ?? 1,
         package_length: data.package_length ?? 1,
@@ -931,58 +1086,74 @@ export class ShopeeAdapter implements IChannelAdapter {
       };
     }
     if (data.is_pre_order && data.days_to_ship) {
-      payload.pre_order = { is_pre_order: true, days_to_ship: data.days_to_ship };
+      payload.pre_order = {
+        is_pre_order: true,
+        days_to_ship: data.days_to_ship,
+      };
     }
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
     if (!res.ok) throw new Error(`Shopee add_item HTTP error: ${res.status}`);
 
     const result = (await res.json()) as ShopeeApiEnvelope<{ item_id: number }>;
-    if (result.error) throw new Error(`Shopee add_item error [${result.error}]: ${result.message}`);
+    if (result.error)
+      throw new Error(
+        `Shopee add_item error [${result.error}]: ${result.message}`,
+      );
 
     const itemId = result.response?.item_id ?? 0;
     return { productId: String(itemId), title: data.item_name };
   }
 
-  async deleteProduct(itemId: string): Promise<{ deletedProductId: string | null }> {
-    const apiPath = '/api/v2/product/delete_item';
+  async deleteProduct(
+    itemId: string,
+  ): Promise<{ deletedProductId: string | null }> {
+    const apiPath = "/api/v2/product/delete_item";
     const url = this.buildShopUrl(apiPath, {});
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ item_id: Number(itemId) }),
     });
 
-    if (!res.ok) throw new Error(`Shopee delete_item HTTP error: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Shopee delete_item HTTP error: ${res.status}`);
 
     const result = (await res.json()) as ShopeeApiEnvelope<unknown>;
-    if (result.error) throw new Error(`Shopee delete_item error [${result.error}]: ${result.message}`);
+    if (result.error)
+      throw new Error(
+        `Shopee delete_item error [${result.error}]: ${result.message}`,
+      );
 
     return { deletedProductId: itemId };
   }
 
   async unlistProduct(itemId: number, unlist: boolean): Promise<void> {
-    const apiPath = '/api/v2/product/unlist_item';
+    const apiPath = "/api/v2/product/unlist_item";
     const url = this.buildShopUrl(apiPath, {});
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ item_list: [{ item_id: itemId, unlist }] }),
     });
 
-    if (!res.ok) throw new Error(`Shopee unlist_item HTTP error: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`Shopee unlist_item HTTP error: ${res.status}`);
 
     const result = (await res.json()) as ShopeeApiEnvelope<{
       failure_list?: Array<{ item_id: number; failed_reason: string }>;
     }>;
-    if (result.error) throw new Error(`Shopee unlist_item error [${result.error}]: ${result.message}`);
+    if (result.error)
+      throw new Error(
+        `Shopee unlist_item error [${result.error}]: ${result.message}`,
+      );
 
     const failures = result.response?.failure_list ?? [];
     if (failures.length > 0) throw new Error(failures[0].failed_reason);
@@ -990,19 +1161,19 @@ export class ShopeeAdapter implements IChannelAdapter {
 
   async updateShipment(data: UpdateShipmentData): Promise<void> {
     // Step 1: ship_order to mark as ready
-    const shipPath = '/api/v2/logistics/ship_order';
+    const shipPath = "/api/v2/logistics/ship_order";
     const url = this.buildShopUrl(shipPath, {});
 
     const body = {
       order_sn: String(data.orderNo),
       package_number: data.trackingNumber,
       pickup: {},
-      dropoff: { branch_id: 0, sender_real_name: '' },
+      dropoff: { branch_id: 0, sender_real_name: "" },
     };
 
     const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
@@ -1010,11 +1181,17 @@ export class ShopeeAdapter implements IChannelAdapter {
 
     const result = (await res.json()) as ShopeeApiEnvelope<unknown>;
     if (result.error) {
-      throw new Error(`Shopee ship_order error [${result.error}]: ${result.message}`);
+      throw new Error(
+        `Shopee ship_order error [${result.error}]: ${result.message}`,
+      );
     }
   }
 
-  async pushVariantStock(_channelItemId: string, _channelVariantId: string, _newQty: number): Promise<void> {
-    throw new Error('Shopee pushVariantStock: not yet implemented');
+  async pushVariantStock(
+    _channelItemId: string,
+    _channelVariantId: string,
+    _newQty: number,
+  ): Promise<void> {
+    throw new Error("Shopee pushVariantStock: not yet implemented");
   }
 }

@@ -18,7 +18,10 @@ import {
   type ChannelRecord,
   type ChannelRequiredField,
 } from "@/entities/channel";
-import { useListToChannel, type MasterProductVariant } from "@/entities/master-product";
+import {
+  useListToChannel,
+  type MasterProductVariant,
+} from "@/entities/master-product";
 import { appToaster } from "@/shared/ui/app-toaster";
 
 interface ListedProduct {
@@ -35,26 +38,37 @@ interface Props {
   onSuccess?: () => void;
 }
 
-export function ListToChannelModal({ masterProductId, variants = [], listedProducts = [], open, onOpenChange, onSuccess }: Props): React.JSX.Element | null {
+export function ListToChannelModal({
+  masterProductId,
+  variants = [],
+  listedProducts = [],
+  open,
+  onOpenChange,
+  onSuccess,
+}: Props): React.JSX.Element | null {
   const { data: channels, isLoading: loadingChannels } = useChannels();
   const { data: platformData } = usePlatformConstraints();
-  const { mutateAsync: listToChannel, isPending } = useListToChannel(masterProductId);
+  const { mutateAsync: listToChannel, isPending } =
+    useListToChannel(masterProductId);
 
-  const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<ChannelRecord | null>(
+    null,
+  );
   const [overrides, setOverrides] = useState<Record<string, string>>({});
 
   if (!open) return null;
 
   const totalStock = variants.reduce((sum, v) => sum + (v.stock ?? 0), 0);
-  const firstPrice = variants[0]?.price ?? '';
+  const firstPrice = variants[0]?.price ?? "";
   const listedChannelIds = new Set(listedProducts.map((lp) => lp.channelId));
 
   const handleChannelSelect = (ch: ChannelRecord): void => {
     setSelectedChannel(ch);
     const defaults: Record<string, string> = {};
-    if (ch.channelType === 'QOO10_JP') {
-      if (totalStock > 0) defaults['ItemQty'] = String(totalStock);
-      if (firstPrice) defaults['ItemPrice'] = String(Math.round(Number(firstPrice)));
+    if (ch.channelType === "QOO10_JP") {
+      if (totalStock > 0) defaults["ItemQty"] = String(totalStock);
+      if (firstPrice)
+        defaults["ItemPrice"] = String(Math.round(Number(firstPrice)));
     }
     setOverrides(defaults);
   };
@@ -71,19 +85,24 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
     for (const field of requiredFields) {
       const raw = overrides[field.key];
       if (raw !== undefined && raw !== "") {
-        parsedOverrides[field.key] = field.type === "number" ? Number(raw) : raw;
+        parsedOverrides[field.key] =
+          field.type === "number" ? Number(raw) : raw;
       }
     }
 
     try {
-      await listToChannel({ channelId: selectedChannel.id, overrides: parsedOverrides });
+      await listToChannel({
+        channelId: selectedChannel.id,
+        overrides: parsedOverrides,
+      });
       appToaster.create({ title: "채널 등록 완료", type: "success" });
       onOpenChange(false);
       setSelectedChannel(null);
       setOverrides({});
       onSuccess?.();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "채널 등록에 실패했습니다.";
+      const msg =
+        err instanceof Error ? err.message : "채널 등록에 실패했습니다.";
       appToaster.create({ title: msg, type: "error" });
     }
   };
@@ -112,7 +131,9 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
         p={6}
       >
         <Flex justify="space-between" align="center" mb={5}>
-          <Text fontWeight="semibold" fontSize="md">채널 등록</Text>
+          <Text fontWeight="semibold" fontSize="md">
+            채널 등록
+          </Text>
           <Button
             variant="ghost"
             size="sm"
@@ -125,11 +146,18 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
 
         {/* Step 1: 채널 선택 */}
         <Box mb={5}>
-          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>1. 채널 선택</Text>
+          <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={2}>
+            1. 채널 선택
+          </Text>
           {loadingChannels ? (
-            <Flex justify="center" py={4}><Spinner size="sm" /></Flex>
+            <Flex justify="center" py={4}>
+              <Spinner size="sm" />
+            </Flex>
           ) : !channels?.length ? (
-            <Text fontSize="sm" color="gray.500">연결된 채널이 없습니다. 채널 설정 페이지에서 먼저 채널을 연결해 주세요.</Text>
+            <Text fontSize="sm" color="gray.500">
+              연결된 채널이 없습니다. 채널 설정 페이지에서 먼저 채널을 연결해
+              주세요.
+            </Text>
           ) : (
             <Stack gap={2}>
               {channels.map((ch) => {
@@ -158,20 +186,34 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
                     }
                     opacity={alreadyListed ? 0.6 : 1}
                     onClick={() => !alreadyListed && handleChannelSelect(ch)}
-                    _hover={alreadyListed ? undefined : { borderColor: "gray.400" }}
+                    _hover={
+                      alreadyListed ? undefined : { borderColor: "gray.400" }
+                    }
                     transition="all 0.1s"
                   >
                     <Flex justify="space-between" align="center">
                       <Box>
                         <Flex align="center" gap={2}>
-                          <Text fontSize="sm" fontWeight="medium">{ch.name}</Text>
+                          <Text fontSize="sm" fontWeight="medium">
+                            {ch.name}
+                          </Text>
                           {alreadyListed && (
-                            <Text fontSize="xs" color="green.600" fontWeight="medium" bg="green.50" px={1.5} py={0.5} borderRadius="sm">
+                            <Text
+                              fontSize="xs"
+                              color="green.600"
+                              fontWeight="medium"
+                              bg="green.50"
+                              px={1.5}
+                              py={0.5}
+                              borderRadius="sm"
+                            >
                               등록됨
                             </Text>
                           )}
                         </Flex>
-                        <Text fontSize="xs" color="gray.500">{ch.channelType}</Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {ch.channelType}
+                        </Text>
                       </Box>
                       <Box
                         w={2}
@@ -190,43 +232,63 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
         {/* Step 2: 채널 전용 필드 */}
         {selectedChannel && requiredFields.length > 0 && (
           <Box mb={5}>
-            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>2. 채널 전용 정보 입력</Text>
+            <Text fontSize="xs" fontWeight="medium" color="gray.500" mb={3}>
+              2. 채널 전용 정보 입력
+            </Text>
             <Stack gap={3}>
               {requiredFields.map((field) => (
                 <Box key={field.key}>
                   <Text fontSize="xs" color="gray.600" mb={1}>
                     {field.label}
                     {field.note && (
-                      <Text as="span" color="gray.400" ml={1.5} fontSize="xs">({field.note})</Text>
+                      <Text as="span" color="gray.400" ml={1.5} fontSize="xs">
+                        ({field.note})
+                      </Text>
                     )}
                   </Text>
                   {field.type === "select" && field.options ? (
                     <NativeSelect.Root size="sm">
                       <NativeSelect.Field
                         value={String(overrides[field.key] ?? "")}
-                        onChange={(e) => setOverrides((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        onChange={(e) =>
+                          setOverrides((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
                         borderColor="gray.200"
                       >
                         <option value="">선택안함</option>
                         {field.options.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
                         ))}
                       </NativeSelect.Field>
                       <NativeSelect.Indicator />
                     </NativeSelect.Root>
                   ) : field.conditionalOptions &&
                     field.conditionalOptions.values.includes(
-                      String(overrides[field.conditionalOptions.dependsOn] ?? "")
+                      String(
+                        overrides[field.conditionalOptions.dependsOn] ?? "",
+                      ),
                     ) ? (
                     <NativeSelect.Root size="sm">
                       <NativeSelect.Field
                         value={String(overrides[field.key] ?? "")}
-                        onChange={(e) => setOverrides((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                        onChange={(e) =>
+                          setOverrides((prev) => ({
+                            ...prev,
+                            [field.key]: e.target.value,
+                          }))
+                        }
                         borderColor="gray.200"
                       >
                         <option value="">선택안함</option>
                         {field.conditionalOptions.options.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
                         ))}
                       </NativeSelect.Field>
                       <NativeSelect.Indicator />
@@ -236,7 +298,12 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
                       size="sm"
                       type={field.type === "number" ? "number" : "text"}
                       value={overrides[field.key] ?? ""}
-                      onChange={(e) => setOverrides((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                      onChange={(e) =>
+                        setOverrides((prev) => ({
+                          ...prev,
+                          [field.key]: e.target.value,
+                        }))
+                      }
                       borderColor="gray.200"
                     />
                   )}
@@ -247,23 +314,45 @@ export function ListToChannelModal({ masterProductId, variants = [], listedProdu
         )}
 
         {/* 제약 조건 안내 */}
-        {selectedChannel && platformData?.constraints[selectedChannel.channelType] && (
-          <Box mb={5} bg="amber.50" borderWidth="1px" borderColor="amber.200" borderRadius="md" p={3}>
-            <Text fontSize="xs" fontWeight="medium" color="amber.700" mb={1.5}>플랫폼 제약 안내</Text>
-            {(() => {
-              const c = platformData.constraints[selectedChannel.channelType];
-              const notes: string[] = [];
-              if (c.title.maxLength) notes.push(`상품명 최대 ${c.title.maxLength}자`);
-              if (c.title.forbiddenChars?.length) notes.push(`상품명 사용 불가 문자: ${c.title.forbiddenChars.join(" ")}`);
-              if (c.images.maxCount) notes.push(`이미지 최대 ${c.images.maxCount}장`);
-              if (c.title.note) notes.push(c.title.note);
-              if (c.images.note) notes.push(c.images.note);
-              return notes.map((note, i) => (
-                <Text key={i} fontSize="xs" color="amber.700">• {note}</Text>
-              ));
-            })()}
-          </Box>
-        )}
+        {selectedChannel &&
+          platformData?.constraints[selectedChannel.channelType] && (
+            <Box
+              mb={5}
+              bg="amber.50"
+              borderWidth="1px"
+              borderColor="amber.200"
+              borderRadius="md"
+              p={3}
+            >
+              <Text
+                fontSize="xs"
+                fontWeight="medium"
+                color="amber.700"
+                mb={1.5}
+              >
+                플랫폼 제약 안내
+              </Text>
+              {(() => {
+                const c = platformData.constraints[selectedChannel.channelType];
+                const notes: string[] = [];
+                if (c.title.maxLength)
+                  notes.push(`상품명 최대 ${c.title.maxLength}자`);
+                if (c.title.forbiddenChars?.length)
+                  notes.push(
+                    `상품명 사용 불가 문자: ${c.title.forbiddenChars.join(" ")}`,
+                  );
+                if (c.images.maxCount)
+                  notes.push(`이미지 최대 ${c.images.maxCount}장`);
+                if (c.title.note) notes.push(c.title.note);
+                if (c.images.note) notes.push(c.images.note);
+                return notes.map((note, i) => (
+                  <Text key={i} fontSize="xs" color="amber.700">
+                    • {note}
+                  </Text>
+                ));
+              })()}
+            </Box>
+          )}
 
         <Flex justify="flex-end" gap={2}>
           <Button

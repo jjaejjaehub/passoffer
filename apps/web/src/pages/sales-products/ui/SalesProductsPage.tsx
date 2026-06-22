@@ -25,7 +25,11 @@ import {
   type ChannelRecord,
 } from "@/entities/channel";
 import { executeEditItemStatus, useEditItemStatus } from "@/entities/item";
-import { usePullSalesFromChannel, usePushStockToChannel, useSyncProductInfoToChannel } from "@/entities/master-product";
+import {
+  usePullSalesFromChannel,
+  usePushStockToChannel,
+  useSyncProductInfoToChannel,
+} from "@/entities/master-product";
 import { masterProductsQueryRoot } from "@/entities/master-product/api/masterProductQueries";
 import {
   useShopifyDeleteProduct,
@@ -35,7 +39,10 @@ import {
   DeleteConfirmDialog,
   StatusChangeConfirmDialog,
 } from "@/features/edit-item-status";
-import { ProductDetailModal, ShopifyProductDetailModal } from "@/features/view-product-detail";
+import {
+  ProductDetailModal,
+  ShopifyProductDetailModal,
+} from "@/features/view-product-detail";
 import { ROUTES, qoo10ProductsQueryRoot } from "@/shared/config";
 import { ErrorState, EmptyState, PageHeader } from "@/shared/ui";
 import { appToaster } from "@/shared/ui/app-toaster";
@@ -91,7 +98,13 @@ function getStatusTabsForChannel(
 function getLinkStatusBadge(item: ChannelProductItem) {
   if (item.linkStatus === "linked") {
     return (
-      <Badge colorScheme="green" px={2} py={0.5} borderRadius="md" fontSize="xs">
+      <Badge
+        colorScheme="green"
+        px={2}
+        py={0.5}
+        borderRadius="md"
+        fontSize="xs"
+      >
         연결됨
       </Badge>
     );
@@ -268,7 +281,9 @@ function SalesProductRow({
                   size="xs"
                   variant="outline"
                   colorScheme="red"
-                  onClick={() => onRowDeleteRequest(item.channelItemId, item.listedProductId)}
+                  onClick={() =>
+                    onRowDeleteRequest(item.channelItemId, item.listedProductId)
+                  }
                 >
                   삭제
                 </Button>
@@ -281,7 +296,9 @@ function SalesProductRow({
                     size="xs"
                     variant="outline"
                     onClick={() =>
-                      router.push(ROUTES.masterProductEdit(item.masterProductId!))
+                      router.push(
+                        ROUTES.masterProductEdit(item.masterProductId!),
+                      )
                     }
                   >
                     마스터 보기
@@ -374,7 +391,9 @@ function SalesProductsPageContent(): React.JSX.Element {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
   const [deleteTargetCodes, setDeleteTargetCodes] = useState<string[]>([]);
-  const [deleteTargetListedIds, setDeleteTargetListedIds] = useState<string[]>([]);
+  const [deleteTargetListedIds, setDeleteTargetListedIds] = useState<string[]>(
+    [],
+  );
   const [statusDialogOpen, setStatusDialogOpen] = useState<boolean>(false);
   const [statusTargetCodes, setStatusTargetCodes] = useState<string[]>([]);
   const [statusTargetValue, setStatusTargetValue] = useState<"1" | "2" | null>(
@@ -392,7 +411,9 @@ function SalesProductsPageContent(): React.JSX.Element {
     mutateAsync: updateShopifyStatusAsync,
     isPending: isShopifyStatusPending,
   } = useShopifyUpdateProductStatus(activeChannelId ?? undefined);
-  const { mutateAsync: deleteShopifyProductAsync } = useShopifyDeleteProduct(activeChannelId ?? undefined);
+  const { mutateAsync: deleteShopifyProductAsync } = useShopifyDeleteProduct(
+    activeChannelId ?? undefined,
+  );
   const { mutateAsync: unlinkChannelProductAsync } = useUnlinkChannelProduct();
 
   // 디바운스 검색
@@ -421,18 +442,15 @@ function SalesProductsPageContent(): React.JSX.Element {
     router,
   ]);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useChannelProducts(activeChannelId ?? "", {
-    page,
-    pageSize,
-    status: activeStatus === "all" ? undefined : activeStatus,
-    enabled: !!activeChannelId,
-  });
+  const { data, isLoading, isError, error, refetch } = useChannelProducts(
+    activeChannelId ?? "",
+    {
+      page,
+      pageSize,
+      status: activeStatus === "all" ? undefined : activeStatus,
+      enabled: !!activeChannelId,
+    },
+  );
 
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -564,7 +582,8 @@ function SalesProductsPageContent(): React.JSX.Element {
     const status = statusTargetValue;
 
     if (isShopify) {
-      const shopifyStatus: "ACTIVE" | "DRAFT" = status === "2" ? "ACTIVE" : "DRAFT";
+      const shopifyStatus: "ACTIVE" | "DRAFT" =
+        status === "2" ? "ACTIVE" : "DRAFT";
       if (statusTargetCodes.length === 1) {
         await updateShopifyStatusAsync({
           productId: statusTargetCodes[0],
@@ -585,7 +604,9 @@ function SalesProductsPageContent(): React.JSX.Element {
             }),
           ),
         );
-        const fulfilled = results.filter((r) => r.status === "fulfilled").length;
+        const fulfilled = results.filter(
+          (r) => r.status === "fulfilled",
+        ).length;
         const rejected = results.length - fulfilled;
         appToaster.create({
           title: "일괄 처리 완료",
@@ -719,9 +740,7 @@ function SalesProductsPageContent(): React.JSX.Element {
               const selectedItems = filteredItems.filter((it) =>
                 selectedItemCodes.has(it.channelItemId),
               );
-              const hasInactive = selectedItems.some(
-                (it) => !isItemActive(it),
-              );
+              const hasInactive = selectedItems.some((it) => !isItemActive(it));
               const hasActive = selectedItems.some((it) => isItemActive(it));
               return (
                 <Flex gap={2}>
@@ -766,7 +785,11 @@ function SalesProductsPageContent(): React.JSX.Element {
                       setDeleteTargetCodes(codes);
                       setDeleteTargetListedIds(
                         filteredItems
-                          .filter((i) => codes.includes(i.channelItemId) && i.listedProductId)
+                          .filter(
+                            (i) =>
+                              codes.includes(i.channelItemId) &&
+                              i.listedProductId,
+                          )
                           .map((i) => i.listedProductId!),
                       );
                       setDeleteDialogOpen(true);
@@ -780,103 +803,105 @@ function SalesProductsPageContent(): React.JSX.Element {
         </Flex>
 
         <Box flex="1" minH={0} overflowY="auto">
-        <Table.Root size="sm" variant="outline">
-          <Table.Header>
-            <Table.Row>
-              {canManage && (
+          <Table.Root size="sm" variant="outline">
+            <Table.Header>
+              <Table.Row>
+                {canManage && (
+                  <Table.ColumnHeader
+                    w="40px"
+                    position="sticky"
+                    top={0}
+                    zIndex={1}
+                    bg="white"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={(e) => toggleAllSelection(e.target.checked)}
+                    />
+                  </Table.ColumnHeader>
+                )}
                 <Table.ColumnHeader
-                  w="40px"
+                  w="60px"
+                  position="sticky"
+                  top={0}
+                  zIndex={1}
+                  bg="white"
+                />
+                <Table.ColumnHeader
                   position="sticky"
                   top={0}
                   zIndex={1}
                   bg="white"
                 >
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={(e) => toggleAllSelection(e.target.checked)}
-                  />
+                  상품명 / 채널 ID
                 </Table.ColumnHeader>
-              )}
-              <Table.ColumnHeader
-                w="60px"
-                position="sticky"
-                top={0}
-                zIndex={1}
-                bg="white"
-              />
-              <Table.ColumnHeader
-                position="sticky"
-                top={0}
-                zIndex={1}
-                bg="white"
-              >
-                상품명 / 채널 ID
-              </Table.ColumnHeader>
-              <Table.ColumnHeader
-                w="80px"
-                position="sticky"
-                top={0}
-                zIndex={1}
-                bg="white"
-              >
-                옵션 수
-              </Table.ColumnHeader>
-              <Table.ColumnHeader
-                w="100px"
-                position="sticky"
-                top={0}
-                zIndex={1}
-                bg="white"
-              >
-                연결 상태
-              </Table.ColumnHeader>
-              <Table.ColumnHeader
-                w="320px"
-                textAlign="right"
-                position="sticky"
-                top={0}
-                zIndex={1}
-                bg="white"
-              >
-                작업
-              </Table.ColumnHeader>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {filteredItems.map((item) => (
-              <SalesProductRow
-                key={item.channelItemId}
-                item={item}
-                channelId={activeChannelId}
-                canManage={canManage}
-                canViewDetail={isQoo10 || isShopify}
-                isActive={isItemActive(item)}
-                activateLabel={activateLabel}
-                suspendLabel={suspendLabel}
-                selected={selectedItemCodes.has(item.channelItemId)}
-                onToggleSelected={() => toggleRowSelection(item.channelItemId)}
-                onSelectDetail={() => {
-                  setSelectedItemCode(item.channelItemId);
-                  setSelectedSellerCode(item.sellerCode ?? null);
-                }}
-                onLinkSuccess={() => void refetch()}
-                onRowSuspend={(code) => openStatusDialog([code], "1")}
-                onRowActivate={(code) => openStatusDialog([code], "2")}
-                onRowDeleteRequest={(code, listedId) => {
-                  setDeleteTargetCodes([code]);
-                  setDeleteTargetListedIds(listedId ? [listedId] : []);
-                  setDeleteDialogOpen(true);
-                }}
-                isStatusActionPending={
-                  isEditItemStatusPending ||
-                  isShopifyStatusPending ||
-                  statusActionPending
-                }
-              />
-            ))}
-          </Table.Body>
-        </Table.Root>
+                <Table.ColumnHeader
+                  w="80px"
+                  position="sticky"
+                  top={0}
+                  zIndex={1}
+                  bg="white"
+                >
+                  옵션 수
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  w="100px"
+                  position="sticky"
+                  top={0}
+                  zIndex={1}
+                  bg="white"
+                >
+                  연결 상태
+                </Table.ColumnHeader>
+                <Table.ColumnHeader
+                  w="320px"
+                  textAlign="right"
+                  position="sticky"
+                  top={0}
+                  zIndex={1}
+                  bg="white"
+                >
+                  작업
+                </Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {filteredItems.map((item) => (
+                <SalesProductRow
+                  key={item.channelItemId}
+                  item={item}
+                  channelId={activeChannelId}
+                  canManage={canManage}
+                  canViewDetail={isQoo10 || isShopify}
+                  isActive={isItemActive(item)}
+                  activateLabel={activateLabel}
+                  suspendLabel={suspendLabel}
+                  selected={selectedItemCodes.has(item.channelItemId)}
+                  onToggleSelected={() =>
+                    toggleRowSelection(item.channelItemId)
+                  }
+                  onSelectDetail={() => {
+                    setSelectedItemCode(item.channelItemId);
+                    setSelectedSellerCode(item.sellerCode ?? null);
+                  }}
+                  onLinkSuccess={() => void refetch()}
+                  onRowSuspend={(code) => openStatusDialog([code], "1")}
+                  onRowActivate={(code) => openStatusDialog([code], "2")}
+                  onRowDeleteRequest={(code, listedId) => {
+                    setDeleteTargetCodes([code]);
+                    setDeleteTargetListedIds(listedId ? [listedId] : []);
+                    setDeleteDialogOpen(true);
+                  }}
+                  isStatusActionPending={
+                    isEditItemStatusPending ||
+                    isShopifyStatusPending ||
+                    statusActionPending
+                  }
+                />
+              ))}
+            </Table.Body>
+          </Table.Root>
         </Box>
       </Stack>
     );
@@ -931,8 +956,7 @@ function SalesProductsPageContent(): React.JSX.Element {
                 _hover={{
                   bg: "transparent",
                   color: "gray.900",
-                  boxShadow:
-                    "inset 0 -2px 0 0 var(--chakra-colors-gray-200)",
+                  boxShadow: "inset 0 -2px 0 0 var(--chakra-colors-gray-200)",
                 }}
                 _active={{ bg: "transparent" }}
                 _focus={{

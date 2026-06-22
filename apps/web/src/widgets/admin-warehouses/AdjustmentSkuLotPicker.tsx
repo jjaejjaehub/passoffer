@@ -35,7 +35,10 @@ export function AdjustmentSkuLotPicker({
 
   const isMatch = (row: InventoryRow): boolean => {
     if (!selected) return false;
-    return selected.sku === row.sku && (selected.lotCode ?? null) === (row.lotCode ?? null);
+    return (
+      selected.sku === row.sku &&
+      (selected.lotCode ?? null) === (row.lotCode ?? null)
+    );
   };
 
   return (

@@ -6,9 +6,7 @@ import { isAxiosError } from "axios";
 import { useChannelApiKey } from "@/entities/channel";
 import { http } from "@/shared/api";
 import { appToaster } from "@/shared/ui/app-toaster";
-import {
-  serializeSimpleOptions,
-} from "@/shared/lib/qoo10OptionSerializer";
+import { serializeSimpleOptions } from "@/shared/lib/qoo10OptionSerializer";
 
 import type { SimpleOptionItem } from "../model/types";
 
@@ -70,7 +68,9 @@ export function useSaveSimpleOptions(
     unknown,
     SimpleOptionItem[]
   >({
-    mutationFn: async (items: SimpleOptionItem[]): Promise<SaveSimpleOptionsResponse> => {
+    mutationFn: async (
+      items: SimpleOptionItem[],
+    ): Promise<SaveSimpleOptionsResponse> => {
       if (normalizedChannelId !== "qoo10") {
         throw new Error("지원하지 않는 채널입니다.");
       }
@@ -97,7 +97,12 @@ export function useSaveSimpleOptions(
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["products", "simple-options", normalizedChannelId, trimmedCode],
+        queryKey: [
+          "products",
+          "simple-options",
+          normalizedChannelId,
+          trimmedCode,
+        ],
       });
     },
     onError: (error: unknown) => {
@@ -115,4 +120,3 @@ export function useSaveSimpleOptions(
     isError: mutation.isError,
   };
 }
-

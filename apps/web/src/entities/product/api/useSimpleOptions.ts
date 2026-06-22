@@ -33,7 +33,11 @@ function isSimpleResponse(value: unknown): value is SimpleResponse {
   if (value.type !== "simple" && value.type !== "none") {
     return false;
   }
-  if ("items" in value && value.items !== undefined && !Array.isArray(value.items)) {
+  if (
+    "items" in value &&
+    value.items !== undefined &&
+    !Array.isArray(value.items)
+  ) {
     return false;
   }
   return true;
@@ -67,10 +71,7 @@ export function useSimpleOptions(
 
   const query = useQuery({
     queryKey: ["products", "simple-options", channelId, trimmedCode],
-    enabled:
-      channelId === "qoo10" &&
-      trimmedCode.length > 0 &&
-      hasQoo10Key,
+    enabled: channelId === "qoo10" && trimmedCode.length > 0 && hasQoo10Key,
     queryFn: async (): Promise<SimpleOptionData> => {
       const raw = await http.post<unknown>(
         `/api/qoo10/items/${encodeURIComponent(trimmedCode)}/options`,

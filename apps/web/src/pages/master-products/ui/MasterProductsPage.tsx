@@ -15,7 +15,15 @@ import {
 import { RefreshCw, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { useCheckListedProductFromChannel, useDeleteMasterProduct, useListedProducts, useMasterProducts, usePullSalesFromChannel, useSyncListedProduct, type MasterProduct } from "@/entities/master-product";
+import {
+  useCheckListedProductFromChannel,
+  useDeleteMasterProduct,
+  useListedProducts,
+  useMasterProducts,
+  usePullSalesFromChannel,
+  useSyncListedProduct,
+  type MasterProduct,
+} from "@/entities/master-product";
 import { useChannels } from "@/entities/channel";
 import { BulkListToChannelModal } from "@/features/list-to-channel";
 import { ROUTES } from "@/shared/config";
@@ -46,7 +54,11 @@ function MasterProductsTab({
 }): React.JSX.Element {
   const router = useRouter();
   const pathname = usePathname();
-  const { data, isLoading, refetch } = useMasterProducts({ search, page, pageSize: 20 });
+  const { data, isLoading, refetch } = useMasterProducts({
+    search,
+    page,
+    pageSize: 20,
+  });
   const { mutateAsync: deleteMasterProduct } = useDeleteMasterProduct();
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
@@ -82,8 +94,10 @@ function MasterProductsTab({
     }
   };
 
-  const allChecked = items.length > 0 && items.every((item) => selectedIds.has(item.id));
-  const indeterminate = !allChecked && items.some((item) => selectedIds.has(item.id));
+  const allChecked =
+    items.length > 0 && items.every((item) => selectedIds.has(item.id));
+  const indeterminate =
+    !allChecked && items.some((item) => selectedIds.has(item.id));
 
   const toggleAll = (): void => {
     if (allChecked) {
@@ -102,7 +116,9 @@ function MasterProductsTab({
     });
   };
 
-  const selectedProducts: MasterProduct[] = items.filter((item) => selectedIds.has(item.id));
+  const selectedProducts: MasterProduct[] = items.filter((item) =>
+    selectedIds.has(item.id),
+  );
 
   if (isLoading) {
     return (
@@ -141,7 +157,9 @@ function MasterProductsTab({
           borderRadius="md"
           color="white"
         >
-          <Text fontSize="sm" fontWeight="medium">{selectedIds.size}개 선택됨</Text>
+          <Text fontSize="sm" fontWeight="medium">
+            {selectedIds.size}개 선택됨
+          </Text>
           <Flex gap={2}>
             <Button
               size="xs"
@@ -193,7 +211,12 @@ function MasterProductsTab({
             {items.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={8}>
-                  <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
+                  <Text
+                    textAlign="center"
+                    color="gray.500"
+                    py={6}
+                    fontSize="sm"
+                  >
                     마스터 상품이 없습니다.
                   </Text>
                 </Table.Cell>
@@ -207,7 +230,12 @@ function MasterProductsTab({
                   bg={selectedIds.has(item.id) ? "blue.50" : undefined}
                   onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
                 >
-                  <Table.Cell onClick={(e) => { e.stopPropagation(); toggleOne(item.id); }}>
+                  <Table.Cell
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOne(item.id);
+                    }}
+                  >
                     <Checkbox.Root
                       checked={selectedIds.has(item.id)}
                       onCheckedChange={() => toggleOne(item.id)}
@@ -219,8 +247,12 @@ function MasterProductsTab({
                   </Table.Cell>
                   <Table.Cell>
                     <Stack gap={0.5}>
-                      <Text fontSize="sm" fontWeight="medium">{item.title}</Text>
-                      <Text fontSize="xs" color="gray.500">{item.code}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {item.title}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        {item.code}
+                      </Text>
                     </Stack>
                   </Table.Cell>
                   <Table.Cell>
@@ -236,14 +268,18 @@ function MasterProductsTab({
                     <Text fontSize="sm">{item.listedChannelCount}</Text>
                   </Table.Cell>
                   <Table.Cell>
-                    <Text fontSize="sm">{new Date(item.createdAt).toLocaleDateString("ko-KR")}</Text>
+                    <Text fontSize="sm">
+                      {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                    </Text>
                   </Table.Cell>
                   <Table.Cell onClick={(e) => e.stopPropagation()}>
                     <Flex gap={2}>
                       <Button
                         size="xs"
                         variant="outline"
-                        onClick={() => navigateTo(ROUTES.masterProductEdit(item.id))}
+                        onClick={() =>
+                          navigateTo(ROUTES.masterProductEdit(item.id))
+                        }
                       >
                         편집
                       </Button>
@@ -333,38 +369,64 @@ function ListedProductsTab({
   onPageChange: (next: number) => void;
 }): React.JSX.Element {
   const router = useRouter();
-  const [selectedChannelId, setSelectedChannelId] = useState<string | undefined>(undefined);
+  const [selectedChannelId, setSelectedChannelId] = useState<
+    string | undefined
+  >(undefined);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [checkingId, setCheckingId] = useState<string | null>(null);
   const [pullingId, setPullingId] = useState<string | null>(null);
   const { data: channels } = useChannels();
-  const { data, isLoading, refetch } = useListedProducts({ channelId: selectedChannelId, search, page, pageSize: 20 });
+  const { data, isLoading, refetch } = useListedProducts({
+    channelId: selectedChannelId,
+    search,
+    page,
+    pageSize: 20,
+  });
   const { mutateAsync: sync } = useSyncListedProduct();
   const { mutateAsync: checkChannel } = useCheckListedProductFromChannel();
   const { mutateAsync: pullSales } = usePullSalesFromChannel();
   const items = data?.items ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const handleCheckChannel = async (e: React.MouseEvent, id: string): Promise<void> => {
+  const handleCheckChannel = async (
+    e: React.MouseEvent,
+    id: string,
+  ): Promise<void> => {
     e.stopPropagation();
     setCheckingId(id);
     try {
       const result = await checkChannel(id);
       void refetch();
       if (result.status === "IN_SYNC") {
-        appToaster.create({ title: "채널 데이터와 일치합니다.", type: "success" });
+        appToaster.create({
+          title: "채널 데이터와 일치합니다.",
+          type: "success",
+        });
       } else if (result.status === "OUT_OF_SYNC") {
         const diffFields = result.diffs?.map((d) => d.field).join(", ") ?? "";
-        appToaster.create({ title: `채널 데이터 불일치: ${diffFields}`, type: "warning" });
+        appToaster.create({
+          title: `채널 데이터 불일치: ${diffFields}`,
+          type: "warning",
+        });
       } else if (result.status === "CHANNEL_DELETED") {
-        appToaster.create({ title: "채널에서 삭제된 상품입니다.", type: "error" });
+        appToaster.create({
+          title: "채널에서 삭제된 상품입니다.",
+          type: "error",
+        });
       } else if (result.status === "UNSUPPORTED") {
-        appToaster.create({ title: result.message ?? "지원하지 않는 채널입니다.", type: "info" });
+        appToaster.create({
+          title: result.message ?? "지원하지 않는 채널입니다.",
+          type: "info",
+        });
       } else {
-        appToaster.create({ title: result.message ?? "확인 실패", type: "error" });
+        appToaster.create({
+          title: result.message ?? "확인 실패",
+          type: "error",
+        });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "채널 데이터 확인에 실패했습니다.";
+      const msg =
+        err instanceof Error ? err.message : "채널 데이터 확인에 실패했습니다.";
       appToaster.create({ title: msg, type: "error" });
     } finally {
       setCheckingId(null);
@@ -386,7 +448,10 @@ function ListedProductsTab({
     }
   };
 
-  const handlePullSales = async (e: React.MouseEvent, id: string): Promise<void> => {
+  const handlePullSales = async (
+    e: React.MouseEvent,
+    id: string,
+  ): Promise<void> => {
     e.stopPropagation();
     setPullingId(id);
     try {
@@ -394,18 +459,30 @@ function ListedProductsTab({
       void refetch();
       if (result.status === "OK") {
         const count = result.processedOrderCount ?? 0;
-        const summary = (result.deductions ?? []).map((d) => `${d.sku} -${d.soldQty}`).join(", ");
+        const summary = (result.deductions ?? [])
+          .map((d) => `${d.sku} -${d.soldQty}`)
+          .join(", ");
         appToaster.create({
-          title: count === 0 ? "신규 주문 없음" : `처리된 주문 ${count}건${summary ? ` (${summary})` : ""}`,
+          title:
+            count === 0
+              ? "신규 주문 없음"
+              : `처리된 주문 ${count}건${summary ? ` (${summary})` : ""}`,
           type: count === 0 ? "info" : "success",
         });
       } else if (result.status === "UNSUPPORTED") {
-        appToaster.create({ title: result.message ?? "지원하지 않는 채널입니다.", type: "info" });
+        appToaster.create({
+          title: result.message ?? "지원하지 않는 채널입니다.",
+          type: "info",
+        });
       } else {
-        appToaster.create({ title: result.message ?? "판매 동기화 실패", type: "error" });
+        appToaster.create({
+          title: result.message ?? "판매 동기화 실패",
+          type: "error",
+        });
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "판매 동기화에 실패했습니다.";
+      const msg =
+        err instanceof Error ? err.message : "판매 동기화에 실패했습니다.";
       appToaster.create({ title: msg, type: "error" });
     } finally {
       setPullingId(null);
@@ -482,7 +559,12 @@ function ListedProductsTab({
             {items.length === 0 ? (
               <Table.Row>
                 <Table.Cell colSpan={8}>
-                  <Text textAlign="center" color="gray.500" py={6} fontSize="sm">
+                  <Text
+                    textAlign="center"
+                    color="gray.500"
+                    py={6}
+                    fontSize="sm"
+                  >
                     판매상품이 없습니다.
                   </Text>
                 </Table.Cell>
@@ -493,13 +575,19 @@ function ListedProductsTab({
                   key={item.id}
                   cursor="pointer"
                   _hover={{ bg: "gray.50" }}
-                  onClick={() => router.push(ROUTES.listedProductDetail(item.id))}
+                  onClick={() =>
+                    router.push(ROUTES.listedProductDetail(item.id))
+                  }
                 >
                   <Table.Cell>
                     <Stack gap={0.5}>
-                      <Text fontSize="sm" fontWeight="medium">{item.title ?? "-"}</Text>
+                      <Text fontSize="sm" fontWeight="medium">
+                        {item.title ?? "-"}
+                      </Text>
                       {item.channelItemCode && (
-                        <Text fontSize="xs" color="gray.500">{item.channelItemCode}</Text>
+                        <Text fontSize="xs" color="gray.500">
+                          {item.channelItemCode}
+                        </Text>
                       )}
                     </Stack>
                   </Table.Cell>
@@ -535,9 +623,22 @@ function ListedProductsTab({
                       <Button
                         size="xs"
                         variant="outline"
-                        borderColor={item.syncStatus === "FAILED" ? "red.300" : "orange.300"}
-                        color={item.syncStatus === "FAILED" ? "red.600" : "orange.600"}
-                        _hover={{ bg: item.syncStatus === "FAILED" ? "red.50" : "orange.50" }}
+                        borderColor={
+                          item.syncStatus === "FAILED"
+                            ? "red.300"
+                            : "orange.300"
+                        }
+                        color={
+                          item.syncStatus === "FAILED"
+                            ? "red.600"
+                            : "orange.600"
+                        }
+                        _hover={{
+                          bg:
+                            item.syncStatus === "FAILED"
+                              ? "red.50"
+                              : "orange.50",
+                        }}
                         loading={syncingId === item.id}
                         onClick={(e) => void handleSync(e, item.id)}
                         gap={1}
@@ -665,11 +766,7 @@ function MasterProductsPageContent(): React.JSX.Element {
         </Button>
       </Flex>
 
-      <Box
-        borderBottomWidth="1px"
-        borderColor="gray.200"
-        mb={4}
-      >
+      <Box borderBottomWidth="1px" borderColor="gray.200" mb={4}>
         <Flex gap={1}>
           {TABS.map((tab) => {
             const isSelected = activeTab === tab.id;

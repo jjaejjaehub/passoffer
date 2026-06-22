@@ -72,9 +72,7 @@ export interface GoodsInventoryQueryInput {
   hasKey: boolean;
 }
 
-export function goodsInventoryQueryOptions(
-  input: GoodsInventoryQueryInput,
-) {
+export function goodsInventoryQueryOptions(input: GoodsInventoryQueryInput) {
   const { itemCode, sellerCode, hasKey } = input;
   const code = itemCode.trim();
   const sellerTrimmed = sellerCode.trim();
@@ -85,15 +83,13 @@ export function goodsInventoryQueryOptions(
     queryKey: goodsInventoryQueries.byItem(code, sellerTrimmed),
     queryFn: async (): Promise<Qoo10GoodsInventoryRow[]> => {
       const response = await http.get<
-        { type: "none" } | { type: "inventory"; items: Qoo10GoodsInventoryRow[] }
-      >(
-        `/api/qoo10/items/${encodeURIComponent(code)}/inventory`,
-        {
-          ...(sellerTrimmed.length > 0
-            ? { params: { SellerCode: sellerTrimmed } }
-            : {}),
-        },
-      );
+        | { type: "none" }
+        | { type: "inventory"; items: Qoo10GoodsInventoryRow[] }
+      >(`/api/qoo10/items/${encodeURIComponent(code)}/inventory`, {
+        ...(sellerTrimmed.length > 0
+          ? { params: { SellerCode: sellerTrimmed } }
+          : {}),
+      });
 
       if (response.type === "none") {
         return [];
@@ -138,10 +134,7 @@ export function useGoodsInventory(
 
   return {
     rows: query.data ?? [],
-    isLoading:
-      query.isLoading &&
-      hasKey &&
-      Boolean(itemCode.trim()),
+    isLoading: query.isLoading && hasKey && Boolean(itemCode.trim()),
     error: parsedError,
     refetch: () => {
       void query.refetch();

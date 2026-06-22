@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { ErrorPage } from '@/shared/ui';
-import { reportError } from '@/shared/lib';
+import { useEffect } from "react";
+import { ErrorPage } from "@/shared/ui";
+import { reportError } from "@/shared/lib";
 
 interface DashboardPageErrorProps {
   error: Error & { digest?: string };

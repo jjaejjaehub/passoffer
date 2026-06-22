@@ -1,15 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { ErrorPage } from '@/shared/ui';
-import { reportError } from '@/shared/lib';
+import { useEffect } from "react";
+import { ErrorPage } from "@/shared/ui";
+import { reportError } from "@/shared/lib";
 
 interface ChannelsErrorProps {
   error: Error & { digest?: string };
   reset: () => void;
 }
 
-export default function ChannelsError({ error, reset }: ChannelsErrorProps): React.JSX.Element {
+export default function ChannelsError({
+  error,
+  reset,
+}: ChannelsErrorProps): React.JSX.Element {
   useEffect(() => {
     reportError(error);
   }, [error]);

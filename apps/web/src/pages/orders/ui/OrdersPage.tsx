@@ -2,23 +2,26 @@
 
 import { Suspense, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Box,
-  Button,
-  Flex,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Button, Flex, Text } from "@chakra-ui/react";
 import { AlertTriangle, KeyIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import type { Order } from "@/entities/order";
 import { useActiveChannel, useChannelApiKey } from "@/entities/channel";
 import { LIVE_CHANNELS } from "@/shared/config";
-import { useQoo10Orders, useRakutenOrders, useShopeeOrders } from "@/entities/order";
+import {
+  useQoo10Orders,
+  useRakutenOrders,
+  useShopeeOrders,
+} from "@/entities/order";
 import { useOrderFilter } from "@/features/filter-orders";
 import { PageHeader, TableSkeleton, ErrorState } from "@/shared/ui";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { BulkActionBar, OrderFilterBar, OrderTable } from "@/widgets/order-table";
+import {
+  BulkActionBar,
+  OrderFilterBar,
+  OrderTable,
+} from "@/widgets/order-table";
 import { OrderQuickDrawer } from "@/widgets/order-detail-panel";
 import { ShopifyOrdersSection } from "@/widgets/shopify-order-table";
 import { ROUTES } from "@/shared/config";
@@ -122,7 +125,8 @@ function Qoo10OrdersContent({
             selectedCount={selectedIds.length}
             totalCount={filteredOrders.length}
             isAllSelected={
-              selectedIds.length > 0 && selectedIds.length === filteredOrders.length
+              selectedIds.length > 0 &&
+              selectedIds.length === filteredOrders.length
             }
             onSelectAll={(checked) => {
               if (checked) {
@@ -209,10 +213,7 @@ function ShopeeOrdersSection(): React.JSX.Element {
 
   if (error) {
     return (
-      <ErrorState
-        title="주문 조회 중 오류 발생"
-        description={error.message}
-      />
+      <ErrorState title="주문 조회 중 오류 발생" description={error.message} />
     );
   }
 
@@ -244,7 +245,10 @@ function ShopeeOrdersSection(): React.JSX.Element {
           <BulkActionBar
             selectedCount={selectedIds.length}
             totalCount={filteredOrders.length}
-            isAllSelected={selectedIds.length > 0 && selectedIds.length === filteredOrders.length}
+            isAllSelected={
+              selectedIds.length > 0 &&
+              selectedIds.length === filteredOrders.length
+            }
             onSelectAll={(checked) => {
               setSelectedIds(checked ? filteredOrders.map((o) => o.id) : []);
             }}
@@ -291,17 +295,17 @@ function RakutenOrdersSection(): React.JSX.Element {
         icon={<KeyIcon />}
         title="라쿠텐 API 키가 없습니다"
         description="채널 설정에서 라쿠텐 RMS API 키를 등록하면 주문이 자동으로 수집됩니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push(ROUTES.settings.channels) }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push(ROUTES.settings.channels),
+        }}
       />
     );
   }
 
   if (error) {
     return (
-      <ErrorState
-        title="라쿠텐 주문 조회 오류"
-        description={error.message}
-      />
+      <ErrorState title="라쿠텐 주문 조회 오류" description={error.message} />
     );
   }
 
@@ -328,31 +332,79 @@ function RakutenOrdersSection(): React.JSX.Element {
         overflowX="auto"
         mt={2}
       >
-        <Box as="table" w="100%" fontSize="sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+        <Box
+          as="table"
+          w="100%"
+          fontSize="sm"
+          style={{ borderCollapse: "separate", borderSpacing: 0 }}
+        >
           <Box as="thead" bg="gray.50">
             <Box as="tr">
-              {["주문번호", "주문일", "구매자", "상품", "금액", "상태"].map((h) => (
-                <Box key={h} as="th" px={4} py={3} textAlign="left" fontSize="xs" color="gray.500" whiteSpace="nowrap">
-                  {h}
-                </Box>
-              ))}
+              {["주문번호", "주문일", "구매자", "상품", "금액", "상태"].map(
+                (h) => (
+                  <Box
+                    key={h}
+                    as="th"
+                    px={4}
+                    py={3}
+                    textAlign="left"
+                    fontSize="xs"
+                    color="gray.500"
+                    whiteSpace="nowrap"
+                  >
+                    {h}
+                  </Box>
+                ),
+              )}
             </Box>
           </Box>
           <Box as="tbody">
             {orders.map((order) => (
-              <Box key={order.id} as="tr" borderTopWidth="1px" borderColor="gray.100">
-                <Box as="td" px={4} py={3} fontFamily="mono" fontSize="xs" color="gray.700">{order.channelOrderId}</Box>
-                <Box as="td" px={4} py={3} whiteSpace="nowrap" fontSize="xs" color="gray.600">
-                  {order.orderedAt ? order.orderedAt.slice(0, 10) : '-'}
+              <Box
+                key={order.id}
+                as="tr"
+                borderTopWidth="1px"
+                borderColor="gray.100"
+              >
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  fontFamily="mono"
+                  fontSize="xs"
+                  color="gray.700"
+                >
+                  {order.channelOrderId}
                 </Box>
-                <Box as="td" px={4} py={3} fontSize="sm">{order.buyer.name || '-'}</Box>
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  whiteSpace="nowrap"
+                  fontSize="xs"
+                  color="gray.600"
+                >
+                  {order.orderedAt ? order.orderedAt.slice(0, 10) : "-"}
+                </Box>
+                <Box as="td" px={4} py={3} fontSize="sm">
+                  {order.buyer.name || "-"}
+                </Box>
                 <Box as="td" px={4} py={3} fontSize="sm" color="gray.700">
-                  {order.items[0]?.productName ?? '-'}
+                  {order.items[0]?.productName ?? "-"}
                   {order.items.length > 1 && (
-                    <Text as="span" fontSize="xs" color="gray.400" ml={1}>외 {order.items.length - 1}건</Text>
+                    <Text as="span" fontSize="xs" color="gray.400" ml={1}>
+                      외 {order.items.length - 1}건
+                    </Text>
                   )}
                 </Box>
-                <Box as="td" px={4} py={3} textAlign="right" whiteSpace="nowrap" fontWeight="medium">
+                <Box
+                  as="td"
+                  px={4}
+                  py={3}
+                  textAlign="right"
+                  whiteSpace="nowrap"
+                  fontWeight="medium"
+                >
                   ¥{order.payment.totalAmount.toLocaleString()}
                 </Box>
                 <Box as="td" px={4} py={3}>
@@ -376,7 +428,6 @@ function RakutenOrdersSection(): React.JSX.Element {
           </Box>
         </Box>
       </Box>
-
     </Box>
   );
 }
@@ -394,8 +445,16 @@ function OrdersPageContent(): React.JSX.Element {
   // URL→Context 동기화는 ChannelUrlSyncer가 담당하므로 여기서는 중복 제거
 
   const { apiDateParams, setChannel } = useOrderFilter([]);
-  const { data: qoo10Orders, isLoading, error, hasApiKey, refetch } =
-    useQoo10Orders({ ...apiDateParams, enabled: !isShopify && !isRakuten && !isShopee });
+  const {
+    data: qoo10Orders,
+    isLoading,
+    error,
+    hasApiKey,
+    refetch,
+  } = useQoo10Orders({
+    ...apiDateParams,
+    enabled: !isShopify && !isRakuten && !isShopee,
+  });
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
@@ -407,17 +466,26 @@ function OrdersPageContent(): React.JSX.Element {
 
       {isShopify ? (
         <>
-          <ShopifyChannelTabBar activeChannel={activeChannel} onChannelChange={setChannel} />
+          <ShopifyChannelTabBar
+            activeChannel={activeChannel}
+            onChannelChange={setChannel}
+          />
           <ShopifyOrdersSection />
         </>
       ) : isRakuten ? (
         <>
-          <ShopifyChannelTabBar activeChannel={activeChannel} onChannelChange={setChannel} />
+          <ShopifyChannelTabBar
+            activeChannel={activeChannel}
+            onChannelChange={setChannel}
+          />
           <RakutenOrdersSection />
         </>
       ) : isShopee ? (
         <>
-          <ShopifyChannelTabBar activeChannel={activeChannel} onChannelChange={setChannel} />
+          <ShopifyChannelTabBar
+            activeChannel={activeChannel}
+            onChannelChange={setChannel}
+          />
           <ShopeeOrdersSection />
         </>
       ) : (

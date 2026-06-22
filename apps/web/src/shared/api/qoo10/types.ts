@@ -225,7 +225,7 @@ export interface Qoo10OrderDetailItem {
   PaymentDate: string;
   DeliveredDate: string;
   buyer: string;
-  buyer_gata: string;       // 구매자명(카타카나)
+  buyer_gata: string; // 구매자명(카타카나)
   buyerTel: string;
   buyerMobile: string;
   buyerEmail: string;
@@ -241,7 +241,7 @@ export interface Qoo10OrderDetailItem {
   discount: number;
   total: number;
   receiver: string;
-  receiver_gata: string;    // 수취인명(카타카나)
+  receiver_gata: string; // 수취인명(카타카나)
   shippingCountry: string;
   zipCode: string;
   shippingAddr: string;
@@ -285,8 +285,8 @@ export interface Qoo10OrderDetailItem {
   CODQrefundPrice: number;
   CODCancelRelatedOrder: string;
   // 미수취 신고
-  nrDutyTarget: string;     // SC: 미수취, SL: 일부 미수취
-  nrSolType: string;        // ND: 재배송, NC: 환불
+  nrDutyTarget: string; // SC: 미수취, SL: 일부 미수취
+  nrSolType: string; // ND: 재배송, NC: 환불
   nrPartRefundCnt: number;
   nrPartRefundBalance: number;
 }

@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
-import { format, subDays } from 'date-fns';
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
+import { format, subDays } from "date-fns";
 
-import { useChannelApiKey, useChannelUuid } from '@/entities/channel';
-import { http } from '@/shared/api';
-import type { Order } from '@oms/types';
+import { useChannelApiKey, useChannelUuid } from "@/entities/channel";
+import { http } from "@/shared/api";
+import type { Order } from "@oms/types";
 
 export type { Order as RakutenOrderItem };
 
@@ -33,18 +33,20 @@ export interface RakutenOrderQueryResult {
 }
 
 export const rakutenOrderQueries = {
-  all: () => ['rakuten', 'orders'] as const,
-  list: (params: Omit<RakutenOrderQueryParams, 'enabled'>) =>
+  all: () => ["rakuten", "orders"] as const,
+  list: (params: Omit<RakutenOrderQueryParams, "enabled">) =>
     [...rakutenOrderQueries.all(), params] as const,
 };
 
 function toRakutenDate(date: Date): string {
-  return format(date, 'yyyyMMdd');
+  return format(date, "yyyyMMdd");
 }
 
-export function useRakutenOrders(params: RakutenOrderQueryParams = {}): RakutenOrderQueryResult {
-  const { hasKey } = useChannelApiKey('rakuten');
-  const channelUuid = useChannelUuid('rakuten');
+export function useRakutenOrders(
+  params: RakutenOrderQueryParams = {},
+): RakutenOrderQueryResult {
+  const { hasKey } = useChannelApiKey("rakuten");
+  const channelUuid = useChannelUuid("rakuten");
 
   const today = new Date();
   const {
@@ -58,18 +60,23 @@ export function useRakutenOrders(params: RakutenOrderQueryParams = {}): RakutenO
     queryKey: rakutenOrderQueries.list({ dateFrom, dateTo, status }),
     queryFn: async (): Promise<Order[]> => {
       if (!channelUuid) {
-        throw Object.assign(new Error('NO_API_KEY'), {
+        throw Object.assign(new Error("NO_API_KEY"), {
           response: {
             data: {
-              error: 'NO_API_KEY',
-              message: 'Rakuten 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.',
+              error: "NO_API_KEY",
+              message:
+                "Rakuten 채널이 연결되지 않았습니다. 채널 설정에서 등록해 주세요.",
             },
           },
         });
       }
 
-      const searchParams = new URLSearchParams({ channelId: channelUuid, startDate: dateFrom, endDate: dateTo });
-      if (status) searchParams.set('status', status);
+      const searchParams = new URLSearchParams({
+        channelId: channelUuid,
+        startDate: dateFrom,
+        endDate: dateTo,
+      });
+      if (status) searchParams.set("status", status);
 
       return http.get<Order[]>(`/api/orders?${searchParams.toString()}`);
     },
@@ -81,8 +88,9 @@ export function useRakutenOrders(params: RakutenOrderQueryParams = {}): RakutenO
   const error = query.error
     ? {
         message: isAxiosError<{ message?: string }>(query.error)
-          ? (query.error.response?.data?.message ?? '주문을 불러오는 중 오류가 발생했습니다.')
-          : '주문을 불러오는 중 오류가 발생했습니다.',
+          ? (query.error.response?.data?.message ??
+            "주문을 불러오는 중 오류가 발생했습니다.")
+          : "주문을 불러오는 중 오류가 발생했습니다.",
       }
     : null;
 
@@ -91,6 +99,8 @@ export function useRakutenOrders(params: RakutenOrderQueryParams = {}): RakutenO
     isLoading: query.isLoading && hasKey && enabled,
     error,
     hasApiKey: hasKey,
-    refetch: () => { void query.refetch(); },
+    refetch: () => {
+      void query.refetch();
+    },
   };
 }

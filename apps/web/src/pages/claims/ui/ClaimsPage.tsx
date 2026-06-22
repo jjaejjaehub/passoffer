@@ -7,7 +7,12 @@ import { format, subDays } from "date-fns";
 import { AlertTriangle, KeyIcon } from "lucide-react";
 
 import { useChannelApiKey, useActiveChannel } from "@/entities/channel";
-import { useQoo10Claims, useQoo10CancelProcess, useQoo10ClaimAccept, useQoo10ClaimRedelivery } from "@/entities/order";
+import {
+  useQoo10Claims,
+  useQoo10CancelProcess,
+  useQoo10ClaimAccept,
+  useQoo10ClaimRedelivery,
+} from "@/entities/order";
 import { useShopifyReturns } from "@/entities/order";
 import { appToaster } from "@/shared/ui";
 import type { ChannelId } from "@/shared/config";
@@ -39,9 +44,10 @@ type ShopifyReturnStatus = (typeof SHOPIFY_RETURN_STATUSES)[number]["value"];
 
 // ─── 날짜 파싱 (Qoo10) ─────────────────────────────────────────
 
-function dateRangeToParams(
-  range: string,
-): { search_Sdate: string; search_Edate: string } {
+function dateRangeToParams(range: string): {
+  search_Sdate: string;
+  search_Edate: string;
+} {
   const today = new Date();
   const fmt = (d: Date) => format(d, "yyyyMMdd");
 
@@ -54,7 +60,10 @@ function dateRangeToParams(
   if (range.includes("~")) {
     const parts = range.split("~").map((s) => s.trim());
     const toYMD = (s: string) => s.replace(/\./g, "");
-    return { search_Sdate: toYMD(parts[0] ?? ""), search_Edate: toYMD(parts[1] ?? "") };
+    return {
+      search_Sdate: toYMD(parts[0] ?? ""),
+      search_Edate: toYMD(parts[1] ?? ""),
+    };
   }
   return { search_Sdate: fmt(subDays(today, 30)), search_Edate: fmt(today) };
 }
@@ -81,7 +90,11 @@ function Qoo10ClaimsSection({
   const dateParams = dateRangeToParams(dateRange);
   const claimStatCode = CLAIM_STATUS_CODE[statusFilter];
 
-  const { data: rawClaims, isLoading, error } = useQoo10Claims({
+  const {
+    data: rawClaims,
+    isLoading,
+    error,
+  } = useQoo10Claims({
     ClaimStat: claimStatCode,
     search_Sdate: dateParams.search_Sdate,
     search_Edate: dateParams.search_Edate,
@@ -107,7 +120,10 @@ function Qoo10ClaimsSection({
         icon={<KeyIcon />}
         title="Qoo10 API 키가 없습니다"
         description="채널 설정에서 Qoo10 API 키를 등록하면 클레임이 자동으로 수집됩니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
@@ -117,13 +133,18 @@ function Qoo10ClaimsSection({
       <ErrorBox
         title="API 키 인증 실패"
         message="API 키 인증에 실패했습니다. 채널 설정에서 키를 확인해 주세요."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
 
   if (error) {
-    return <ErrorBox title="클레임 조회 중 오류 발생" message={error.message} />;
+    return (
+      <ErrorBox title="클레임 조회 중 오류 발생" message={error.message} />
+    );
   }
 
   if (isLoading) {
@@ -139,10 +160,12 @@ function Qoo10ClaimsSection({
     );
   }
 
-  const selectedClaims = filteredClaims.filter((c) => selectedIds.includes(c.orderNo));
-  const cancelable = selectedClaims.filter((c) => c.claimStatus === '1');
-  const acceptable = selectedClaims.filter((c) => c.claimStatus === '4');
-  const redeliverable = selectedClaims.filter((c) => c.claimStatus === '11');
+  const selectedClaims = filteredClaims.filter((c) =>
+    selectedIds.includes(c.orderNo),
+  );
+  const cancelable = selectedClaims.filter((c) => c.claimStatus === "1");
+  const acceptable = selectedClaims.filter((c) => c.claimStatus === "4");
+  const redeliverable = selectedClaims.filter((c) => c.claimStatus === "11");
 
   const handleBulkAction = async (
     packNos: number[],
@@ -151,17 +174,29 @@ function Qoo10ClaimsSection({
   ): Promise<void> => {
     try {
       await Promise.all(packNos.map((packNo) => mutate(packNo)));
-      appToaster.create({ type: 'success', title: successMsg });
+      appToaster.create({ type: "success", title: successMsg });
       setSelectedIds([]);
     } catch {
-      appToaster.create({ type: 'error', title: '처리 중 오류가 발생했습니다.' });
+      appToaster.create({
+        type: "error",
+        title: "처리 중 오류가 발생했습니다.",
+      });
     }
   };
 
   return (
     <Box flex="1" mt={2} minW={0} display="flex" flexDirection="column" gap={2}>
       {selectedIds.length > 0 && (
-        <Flex gap={2} align="center" px={1} py={2} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+        <Flex
+          gap={2}
+          align="center"
+          px={1}
+          py={2}
+          bg="blue.50"
+          borderRadius="md"
+          borderWidth="1px"
+          borderColor="blue.200"
+        >
           <Text fontSize="sm" color="blue.700" fontWeight="medium" mr={2}>
             {selectedIds.length}건 선택됨
           </Text>
@@ -231,12 +266,17 @@ function Qoo10ClaimsSection({
 
 // ─── Shopify 반품 섹션 ────────────────────────────────────────
 
-function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Element {
+function ShopifyReturnsSection({
+  search,
+}: {
+  search: string;
+}): React.JSX.Element {
   const router = useRouter();
   const { hasKey } = useChannelApiKey("shopify");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<ShopifyReturnStatus>("ALL");
-  const [selectedReturn, setSelectedReturn] = useState<ShopifyReturnItem | null>(null);
+  const [selectedReturn, setSelectedReturn] =
+    useState<ShopifyReturnItem | null>(null);
 
   const { data, isLoading, error } = useShopifyReturns({
     claimStatus: statusFilter !== "ALL" ? statusFilter : undefined,
@@ -269,7 +309,10 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
         icon={<KeyIcon />}
         title="Shopify API 키가 없습니다"
         description="채널 설정에서 Shopify API 키를 등록하면 반품 현황이 자동으로 수집됩니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
@@ -298,7 +341,9 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
               key={value}
               variant={isSelected ? "solid" : "ghost"}
               size="sm"
-              onClick={() => { setStatusFilter(value); }}
+              onClick={() => {
+                setStatusFilter(value);
+              }}
               bg={isSelected ? "gray.100" : "transparent"}
               color={isSelected ? "gray.900" : "gray.500"}
               _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
@@ -311,7 +356,10 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
               <Flex align="center" gap={1}>
                 <Text fontSize="sm">{label}</Text>
                 {count !== undefined && (
-                  <Text fontSize="xs" color={isSelected ? "gray.700" : "gray.400"}>
+                  <Text
+                    fontSize="xs"
+                    color={isSelected ? "gray.700" : "gray.400"}
+                  >
                     ({count})
                   </Text>
                 )}
@@ -324,10 +372,7 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
       {/* 에러 */}
       {error && (
         <Box m={4}>
-          <ErrorBox
-            title="반품 조회 중 오류 발생"
-            message={error.message}
-          />
+          <ErrorBox title="반품 조회 중 오류 발생" message={error.message} />
         </Box>
       )}
 
@@ -363,7 +408,6 @@ function ShopifyReturnsSection({ search }: { search: string }): React.JSX.Elemen
         item={selectedReturn}
         onClose={() => setSelectedReturn(null)}
       />
-
     </Box>
   );
 }
@@ -396,8 +440,12 @@ function ErrorBox({
         <AlertTriangle size={18} />
       </Box>
       <Box flex="1">
-        <Text fontWeight="semibold" mb={1}>{title}</Text>
-        <Text fontSize="sm" color="gray.700">{message}</Text>
+        <Text fontWeight="semibold" mb={1}>
+          {title}
+        </Text>
+        <Text fontSize="sm" color="gray.700">
+          {message}
+        </Text>
       </Box>
       {action && (
         <Button ml={4} colorScheme="blue" onClick={action.onClick} size="sm">
@@ -410,7 +458,11 @@ function ErrorBox({
 
 // ─── 미지원 채널 섹션 ─────────────────────────────────────────
 
-function UnsupportedChannelSection({ channelName }: { channelName: string }): React.JSX.Element {
+function UnsupportedChannelSection({
+  channelName,
+}: {
+  channelName: string;
+}): React.JSX.Element {
   return (
     <EmptyState
       title={`${channelName} 클레임 미지원`}

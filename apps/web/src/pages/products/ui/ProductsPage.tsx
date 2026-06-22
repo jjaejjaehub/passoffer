@@ -13,7 +13,11 @@ import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, KeyIcon, Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useChannelApiKey, useActiveChannel, useChannelUuid } from "@/entities/channel";
+import {
+  useChannelApiKey,
+  useActiveChannel,
+  useChannelUuid,
+} from "@/entities/channel";
 import type { ChannelId } from "@/shared/config";
 import { executeEditItemStatus, useEditItemStatus } from "@/entities/item";
 import {
@@ -25,9 +29,7 @@ import {
   ItemBulkActionBar,
   StatusChangeConfirmDialog,
 } from "@/features/edit-item-status";
-import {
-  ProductDetailModal,
-} from "@/features/view-product-detail";
+import { ProductDetailModal } from "@/features/view-product-detail";
 import { ShopeeProductsContent } from "./ShopeeProductsContent";
 import { ShopifyProductsContent } from "./ShopifyProductsContent";
 import { http } from "@/shared/api";
@@ -64,7 +66,11 @@ const SHOPIFY_STATUS_LABEL: Record<string, string> = {
 
 // Shopee item_status 문서 기반: NORMAL / BANNED / UNLIST / REVIEWING / SELLER_DELETE / SHOPEE_DELETE
 const SHOPEE_STATUS_TABS = [
-  { id: "all", label: "전체", apiValues: ["NORMAL", "BANNED", "UNLIST", "REVIEWING"] },
+  {
+    id: "all",
+    label: "전체",
+    apiValues: ["NORMAL", "BANNED", "UNLIST", "REVIEWING"],
+  },
   { id: "NORMAL", label: "판매중", apiValues: ["NORMAL"] },
   { id: "UNLIST", label: "판매중지", apiValues: ["UNLIST"] },
   { id: "REVIEWING", label: "검수중", apiValues: ["REVIEWING"] },
@@ -97,7 +103,8 @@ function ProductsPageContent(): React.JSX.Element {
   const { activeChannel: globalChannel, setActiveChannel } = useActiveChannel();
   // URL param이 있으면 우선, 없으면 전역 채널 사용
   const activeChannel = currentSearchParams.get("channel") ?? globalChannel;
-  const activeStatus = (currentSearchParams.get("status") ?? "all") as (typeof STATUS_TABS)[number]["id"];
+  const activeStatus = (currentSearchParams.get("status") ??
+    "all") as (typeof STATUS_TABS)[number]["id"];
   const [searchInput, setSearchInput] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [selectedItemCode, setSelectedItemCode] = useState<string | null>(null);
@@ -117,8 +124,11 @@ function ProductsPageContent(): React.JSX.Element {
   const [statusActionPending, setStatusActionPending] =
     useState<boolean>(false);
 
-  const activeShopifyStatus = (currentSearchParams.get("status") ?? "all") as ShopifyStatusId;
-  const [shopifyAfterCursor, setShopifyAfterCursor] = useState<string | undefined>(undefined);
+  const activeShopifyStatus = (currentSearchParams.get("status") ??
+    "all") as ShopifyStatusId;
+  const [shopifyAfterCursor, setShopifyAfterCursor] = useState<
+    string | undefined
+  >(undefined);
   const [shopifyCursorStack, setShopifyCursorStack] = useState<string[]>([]);
 
   const {
@@ -132,36 +142,53 @@ function ProductsPageContent(): React.JSX.Element {
   const isShopeeChannel = activeChannel === "shopee";
   const isShopifyChannel = activeChannel === "shopify";
 
-  const activeShopeeStatus = (currentSearchParams.get("status") ?? "all") as ShopeeStatusId;
+  const activeShopeeStatus = (currentSearchParams.get("status") ??
+    "all") as ShopeeStatusId;
 
-  const shopeeStatusTab = SHOPEE_STATUS_TABS.find(
-    (t) => t.id === activeShopeeStatus,
-  ) ?? SHOPEE_STATUS_TABS[0];
+  const shopeeStatusTab =
+    SHOPEE_STATUS_TABS.find((t) => t.id === activeShopeeStatus) ??
+    SHOPEE_STATUS_TABS[0];
 
   const { hasKey } = useChannelApiKey("qoo10");
   const qoo10ChannelUuid = useChannelUuid("qoo10");
 
   const isQoo10Channel = !isShopeeChannel && !isShopifyChannel;
 
-  const { data, totalPages, isLoading, error, hasApiKey, refetch, statusTotals: mergeStatusTotals } =
-    useQoo10Products({
-      ItemStatus: isAllStatuses ? "S2" : activeStatus,
-      Page: String(page),
-      mergeAllStatuses: isAllStatuses,
-      enabled: isQoo10Channel,
-    });
+  const {
+    data,
+    totalPages,
+    isLoading,
+    error,
+    hasApiKey,
+    refetch,
+    statusTotals: mergeStatusTotals,
+  } = useQoo10Products({
+    ItemStatus: isAllStatuses ? "S2" : activeStatus,
+    Page: String(page),
+    mergeAllStatuses: isAllStatuses,
+    enabled: isQoo10Channel,
+  });
 
   const statusTotalQueries = useQueries({
     queries: QOO10_PRODUCT_LIST_STATUSES.map((statusId) => ({
-      queryKey: [...qoo10ProductsQueryRoot, "total", statusId, qoo10ChannelUuid] as const,
-      enabled: hasKey && isQoo10Channel && !mergeStatusTotals && !!qoo10ChannelUuid,
+      queryKey: [
+        ...qoo10ProductsQueryRoot,
+        "total",
+        statusId,
+        qoo10ChannelUuid,
+      ] as const,
+      enabled:
+        hasKey && isQoo10Channel && !mergeStatusTotals && !!qoo10ChannelUuid,
       staleTime: 5 * 60 * 1000,
       retry: false,
       queryFn: async (): Promise<number> => {
         const result = await http.get<{ items: Product[]; totalItems: number }>(
           `/api/products?channelId=${qoo10ChannelUuid}&itemStatus=${statusId}&page=1`,
         );
-        return result.totalItems ?? (Array.isArray(result.items) ? result.items.length : 0);
+        return (
+          result.totalItems ??
+          (Array.isArray(result.items) ? result.items.length : 0)
+        );
       },
     })),
   });
@@ -177,7 +204,12 @@ function ProductsPageContent(): React.JSX.Element {
   // URL param 변경 시 전역 채널 동기화
   useEffect(() => {
     const urlChannel = currentSearchParams.get("channel");
-    if (urlChannel && (urlChannel === "qoo10" || urlChannel === "shopee" || urlChannel === "shopify")) {
+    if (
+      urlChannel &&
+      (urlChannel === "qoo10" ||
+        urlChannel === "shopee" ||
+        urlChannel === "shopify")
+    ) {
       setActiveChannel(urlChannel as ChannelId);
     }
   }, [currentSearchParams, setActiveChannel]);
@@ -198,13 +230,11 @@ function ProductsPageContent(): React.JSX.Element {
 
   // End of filteredItems
 
-
   // 페이지·상태 탭·검색·채널이 바뀌면 행 선택을 비움 (의도적 트리거 전용 deps)
   // biome-ignore lint/correctness/useExhaustiveDependencies: 필터/페이지 변경 시 선택 초기화
   useEffect(() => {
     setSelectedItemCodes(new Set());
   }, [page, activeStatus, debouncedSearch, activeChannel]);
-
 
   const toggleRowSelection = (itemCode: string): void => {
     setSelectedItemCodes((prev) => {
@@ -394,12 +424,10 @@ function ProductsPageContent(): React.JSX.Element {
     router.push(`/products?${nextSearchParams.toString()}`);
   };
 
-
   const handleClearSearch = (): void => {
     setSearchInput("");
     setDebouncedSearch("");
   };
-
 
   const renderContent = (): React.JSX.Element => {
     if (isShopeeChannel) {
@@ -538,7 +566,10 @@ function ProductsPageContent(): React.JSX.Element {
         >
           {channelTabs.map((channel) => {
             const isSelected = activeChannel === channel.id;
-            const isDisabled = !channel.isLive || channel.id === "rakuten" || channel.id === "amazon";
+            const isDisabled =
+              !channel.isLive ||
+              channel.id === "rakuten" ||
+              channel.id === "amazon";
 
             return (
               <Button
@@ -606,7 +637,9 @@ function ProductsPageContent(): React.JSX.Element {
                     size="sm"
                     variant={isSelected ? "solid" : "ghost"}
                     onClick={() => {
-                      const next = new URLSearchParams(currentSearchParams.toString());
+                      const next = new URLSearchParams(
+                        currentSearchParams.toString(),
+                      );
                       next.set("status", tab.id);
                       next.set("page", "1");
                       router.push(`/products?${next.toString()}`);
@@ -632,7 +665,9 @@ function ProductsPageContent(): React.JSX.Element {
                       size="sm"
                       variant={isSelected ? "solid" : "ghost"}
                       onClick={() => {
-                        const next = new URLSearchParams(currentSearchParams.toString());
+                        const next = new URLSearchParams(
+                          currentSearchParams.toString(),
+                        );
                         next.set("status", tab.id);
                         next.set("page", "1");
                         router.push(`/products?${next.toString()}`);
@@ -650,33 +685,33 @@ function ProductsPageContent(): React.JSX.Element {
                   );
                 })
               : STATUS_TABS.map((tab) => {
-                const isSelected = activeStatus === tab.id;
-                return (
-                  <Button
-                    key={tab.id}
-                    size="sm"
-                    variant={isSelected ? "solid" : "ghost"}
-                    onClick={() => handleStatusChange(tab.id)}
-                    bg={isSelected ? "gray.100" : "transparent"}
-                    color={isSelected ? "gray.900" : "gray.500"}
-                    _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
-                    height="auto"
-                    px={3}
-                    py={1.5}
-                    borderRadius="md"
-                  >
-                    <Flex align="center" gap={1}>
-                      <Text fontSize="sm">{tab.label}</Text>
-                      <Text
-                        fontSize="xs"
-                        color={isSelected ? "gray.700" : "gray.400"}
-                      >
-                        ({statusCounts[tab.id] ?? 0})
-                      </Text>
-                    </Flex>
-                  </Button>
-                );
-              })}
+                  const isSelected = activeStatus === tab.id;
+                  return (
+                    <Button
+                      key={tab.id}
+                      size="sm"
+                      variant={isSelected ? "solid" : "ghost"}
+                      onClick={() => handleStatusChange(tab.id)}
+                      bg={isSelected ? "gray.100" : "transparent"}
+                      color={isSelected ? "gray.900" : "gray.500"}
+                      _hover={{ bg: isSelected ? "gray.100" : "gray.50" }}
+                      height="auto"
+                      px={3}
+                      py={1.5}
+                      borderRadius="md"
+                    >
+                      <Flex align="center" gap={1}>
+                        <Text fontSize="sm">{tab.label}</Text>
+                        <Text
+                          fontSize="xs"
+                          color={isSelected ? "gray.700" : "gray.400"}
+                        >
+                          ({statusCounts[tab.id] ?? 0})
+                        </Text>
+                      </Flex>
+                    </Button>
+                  );
+                })}
         </Flex>
 
         <Flex
@@ -756,7 +791,6 @@ function ProductsPageContent(): React.JSX.Element {
         actionLabel={statusTargetValue === "1" ? "판매중지" : "판매중으로 변경"}
         onConfirm={handleStatusConfirm}
       />
-
 
       <ProductDetailModal
         itemCode={selectedItemCode}

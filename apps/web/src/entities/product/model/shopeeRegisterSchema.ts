@@ -44,10 +44,7 @@ export const shopeeRegisterSchema = z
       .int()
       .positive("유효한 배송 채널 ID를 입력해 주세요"),
     logistic_is_free: z.boolean(),
-    logistic_shipping_fee: z
-      .number()
-      .nonnegative()
-      .optional(),
+    logistic_shipping_fee: z.number().nonnegative().optional(),
 
     // ── 브랜드 ───────────────────────────────────────────
     no_brand: z.boolean(),
@@ -57,15 +54,14 @@ export const shopeeRegisterSchema = z
     is_pre_order: z.boolean(),
     days_to_ship: z.number().int().positive().optional(),
   })
+  .refine((data) => data.no_brand || Boolean(data.brand_name?.trim()), {
+    message: "브랜드명을 입력하거나 '브랜드 없음'을 선택해 주세요",
+    path: ["brand_name"],
+  })
   .refine(
-    (data) => data.no_brand || Boolean(data.brand_name?.trim()),
-    {
-      message: "브랜드명을 입력하거나 '브랜드 없음'을 선택해 주세요",
-      path: ["brand_name"],
-    },
-  )
-  .refine(
-    (data) => !data.is_pre_order || (data.days_to_ship !== undefined && data.days_to_ship > 0),
+    (data) =>
+      !data.is_pre_order ||
+      (data.days_to_ship !== undefined && data.days_to_ship > 0),
     {
       message: "예약 구매 시 배송 소요일을 입력해 주세요",
       path: ["days_to_ship"],

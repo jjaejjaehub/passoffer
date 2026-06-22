@@ -54,7 +54,8 @@ export function InboundBatchTable({
   onOpenDetail,
 }: InboundBatchTableProps): ReactElement {
   const dispatchableIds = useMemo(
-    () => batches.filter((b) => b.status === "pending_dispatch").map((b) => b.id),
+    () =>
+      batches.filter((b) => b.status === "pending_dispatch").map((b) => b.id),
     [batches],
   );
   const allSelected =
@@ -76,7 +77,9 @@ export function InboundBatchTable({
           <Table.Row>
             <Table.ColumnHeader w="44px">
               <Checkbox.Root
-                checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                checked={
+                  allSelected ? true : someSelected ? "indeterminate" : false
+                }
                 onCheckedChange={(e) => onToggleAll(e.checked === true)}
                 disabled={dispatchableIds.length === 0}
               >
@@ -106,7 +109,9 @@ export function InboundBatchTable({
           ) : (
             batches.map((batch) => {
               const total = batch.rows.length;
-              const validCount = batch.rows.filter((r) => r.errors.length === 0).length;
+              const validCount = batch.rows.filter(
+                (r) => r.errors.length === 0,
+              ).length;
               const errorCount = total - validCount;
               const canSelect = batch.status === "pending_dispatch";
               const checked = selectedIds.has(batch.id);

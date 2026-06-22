@@ -7,9 +7,7 @@ import { useChannelApiKey } from "@/entities/channel";
 import { http } from "@/shared/api";
 import { appToaster } from "@/shared/ui/app-toaster";
 
-import {
-  serializeInventoryOptions,
-} from "@/shared/lib/qoo10OptionSerializer";
+import { serializeInventoryOptions } from "@/shared/lib/qoo10OptionSerializer";
 
 import type { InventoryOptionItem } from "../model/types";
 
@@ -100,7 +98,12 @@ export function useSaveInventoryOptions(
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["products", "inventory-options", normalizedChannelId, trimmedCode],
+        queryKey: [
+          "products",
+          "inventory-options",
+          normalizedChannelId,
+          trimmedCode,
+        ],
       });
     },
     onError: (error: unknown) => {
@@ -118,4 +121,3 @@ export function useSaveInventoryOptions(
     isError: mutation.isError,
   };
 }
-

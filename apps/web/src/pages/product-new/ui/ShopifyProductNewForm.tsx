@@ -14,7 +14,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { Controller, useFieldArray, type Resolver, type SubmitErrorHandler, useForm } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  type Resolver,
+  type SubmitErrorHandler,
+  useForm,
+} from "react-hook-form";
 
 import { useChannelApiKey } from "@/entities/channel";
 import {
@@ -36,7 +42,9 @@ import {
 // ─── 옵션 설정 섹션 ───────────────────────────────────────────
 
 /** 옵션 배열에서 variant combination 목록 생성 */
-function buildCombinations(options: Array<{ name: string; values: string }>): string[] {
+function buildCombinations(
+  options: Array<{ name: string; values: string }>,
+): string[] {
   const parsed = options
     .map((o) =>
       o.values
@@ -48,13 +56,10 @@ function buildCombinations(options: Array<{ name: string; values: string }>): st
 
   if (parsed.length === 0) return [];
 
-  return parsed.reduce<string[]>(
-    (acc, vals) => {
-      if (acc.length === 0) return vals;
-      return acc.flatMap((a) => vals.map((v) => `${a} / ${v}`));
-    },
-    [],
-  );
+  return parsed.reduce<string[]>((acc, vals) => {
+    if (acc.length === 0) return vals;
+    return acc.flatMap((a) => vals.map((v) => `${a} / ${v}`));
+  }, []);
 }
 
 function OptionsSection({
@@ -67,7 +72,9 @@ function OptionsSection({
   control: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["control"];
   register: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["register"];
   watch: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["watch"];
-  errors: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["formState"]["errors"];
+  errors: ReturnType<
+    typeof useForm<ShopifyRegisterFormValues>
+  >["formState"]["errors"];
   setValue: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["setValue"];
 }): React.JSX.Element {
   const hasOptions = watch("hasOptions");
@@ -75,7 +82,10 @@ function OptionsSection({
   const variantRows = watch("variantRows");
   const trackInventory = watch("trackInventory");
 
-  const { fields, append, remove } = useFieldArray({ control, name: "options" });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "options",
+  });
 
   // options가 바뀔 때마다 variantRows 자동 재생성
   const combinations = useMemo(() => buildCombinations(options), [options]);
@@ -85,10 +95,18 @@ function OptionsSection({
     const prev = variantRows ?? [];
     const next = combinations.map((combo) => {
       const existing = prev.find((r) => r.combination === combo);
-      return existing ?? { combination: combo, price: 0, compareAtPrice: undefined, sku: "", inventoryQuantity: 0 };
+      return (
+        existing ?? {
+          combination: combo,
+          price: 0,
+          compareAtPrice: undefined,
+          sku: "",
+          inventoryQuantity: 0,
+        }
+      );
     });
     setValue("variantRows", next, { shouldValidate: false });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combinations.join("|"), hasOptions]);
 
   return (
@@ -111,7 +129,10 @@ function OptionsSection({
               />
             )}
           />
-          <label htmlFor="hasOptions" style={{ fontSize: "14px", color: "#4A5568", cursor: "pointer" }}>
+          <label
+            htmlFor="hasOptions"
+            style={{ fontSize: "14px", color: "#4A5568", cursor: "pointer" }}
+          >
             옵션 사용 (색상, 사이즈 등 여러 옵션이 있는 상품)
           </label>
         </Flex>
@@ -121,7 +142,14 @@ function OptionsSection({
             {/* 옵션 목록 */}
             <Stack gap={3}>
               {fields.map((field, idx) => (
-                <Box key={field.id} p={4} borderWidth="1px" borderRadius="md" borderColor="gray.200" bg="gray.50">
+                <Box
+                  key={field.id}
+                  p={4}
+                  borderWidth="1px"
+                  borderRadius="md"
+                  borderColor="gray.200"
+                  bg="gray.50"
+                >
                   <Flex gap={3} align="flex-start">
                     <Stack flex="1" gap={3}>
                       <Box>
@@ -131,7 +159,9 @@ function OptionsSection({
                           placeholder="예: 색상, 사이즈, 소재"
                           {...register(`options.${idx}.name`)}
                         />
-                        <ErrorMsg>{errors.options?.[idx]?.name?.message}</ErrorMsg>
+                        <ErrorMsg>
+                          {errors.options?.[idx]?.name?.message}
+                        </ErrorMsg>
                       </Box>
                       <Box>
                         <Label required>옵션 값 (콤마 구분)</Label>
@@ -140,8 +170,12 @@ function OptionsSection({
                           placeholder="예: 빨강, 파랑, 흰색"
                           {...register(`options.${idx}.values`)}
                         />
-                        <HelperText>콤마(,)로 구분하여 입력하세요. 공백은 자동 제거됩니다.</HelperText>
-                        <ErrorMsg>{errors.options?.[idx]?.values?.message}</ErrorMsg>
+                        <HelperText>
+                          콤마(,)로 구분하여 입력하세요. 공백은 자동 제거됩니다.
+                        </HelperText>
+                        <ErrorMsg>
+                          {errors.options?.[idx]?.values?.message}
+                        </ErrorMsg>
                       </Box>
                     </Stack>
                     <Button
@@ -175,7 +209,9 @@ function OptionsSection({
                 </Button>
               )}
               {fields.length >= 3 && (
-                <Text fontSize="xs" color="gray.400">Shopify는 옵션을 최대 3개까지 지원합니다.</Text>
+                <Text fontSize="xs" color="gray.400">
+                  Shopify는 옵션을 최대 3개까지 지원합니다.
+                </Text>
               )}
             </Stack>
 
@@ -185,17 +221,35 @@ function OptionsSection({
                 <Text fontSize="sm" fontWeight="medium" mb={2} color="gray.700">
                   옵션 조합별 가격 / 재고 ({combinations.length}개 variant)
                 </Text>
-                <Box overflowX="auto" borderWidth="1px" borderRadius="md" borderColor="gray.200">
+                <Box
+                  overflowX="auto"
+                  borderWidth="1px"
+                  borderRadius="md"
+                  borderColor="gray.200"
+                >
                   <Table.Root size="sm">
                     <Table.Header>
                       <Table.Row bg="gray.50">
-                        <Table.ColumnHeader minW="160px">옵션 조합</Table.ColumnHeader>
-                        <Table.ColumnHeader minW="120px">
-                          판매가 <Text as="span" color="gray.400">*</Text>
+                        <Table.ColumnHeader minW="160px">
+                          옵션 조합
                         </Table.ColumnHeader>
-                        <Table.ColumnHeader minW="120px">정가 (할인 전)</Table.ColumnHeader>
-                        <Table.ColumnHeader minW="140px">SKU</Table.ColumnHeader>
-                        {trackInventory && <Table.ColumnHeader minW="80px" textAlign="right">재고</Table.ColumnHeader>}
+                        <Table.ColumnHeader minW="120px">
+                          판매가{" "}
+                          <Text as="span" color="gray.400">
+                            *
+                          </Text>
+                        </Table.ColumnHeader>
+                        <Table.ColumnHeader minW="120px">
+                          정가 (할인 전)
+                        </Table.ColumnHeader>
+                        <Table.ColumnHeader minW="140px">
+                          SKU
+                        </Table.ColumnHeader>
+                        {trackInventory && (
+                          <Table.ColumnHeader minW="80px" textAlign="right">
+                            재고
+                          </Table.ColumnHeader>
+                        )}
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -229,7 +283,9 @@ function OptionsSection({
                                 setValueAs: (v) => (v === "" ? 0 : Number(v)),
                               })}
                             />
-                            <ErrorMsg>{errors.variantRows?.[idx]?.price?.message}</ErrorMsg>
+                            <ErrorMsg>
+                              {errors.variantRows?.[idx]?.price?.message}
+                            </ErrorMsg>
                           </Table.Cell>
                           <Table.Cell>
                             <Input
@@ -237,9 +293,13 @@ function OptionsSection({
                               type="number"
                               step={0.01}
                               placeholder="0.00"
-                              {...register(`variantRows.${idx}.compareAtPrice`, {
-                                setValueAs: (v) => (v === "" ? undefined : Number(v)),
-                              })}
+                              {...register(
+                                `variantRows.${idx}.compareAtPrice`,
+                                {
+                                  setValueAs: (v) =>
+                                    v === "" ? undefined : Number(v),
+                                },
+                              )}
                             />
                           </Table.Cell>
                           <Table.Cell>
@@ -257,9 +317,13 @@ function OptionsSection({
                                 step={1}
                                 textAlign="right"
                                 placeholder="0"
-                                {...register(`variantRows.${idx}.inventoryQuantity`, {
-                                  setValueAs: (v) => (v === "" ? 0 : Number(v)),
-                                })}
+                                {...register(
+                                  `variantRows.${idx}.inventoryQuantity`,
+                                  {
+                                    setValueAs: (v) =>
+                                      v === "" ? 0 : Number(v),
+                                  },
+                                )}
                               />
                             </Table.Cell>
                           )}
@@ -268,7 +332,10 @@ function OptionsSection({
                     </Table.Body>
                   </Table.Root>
                 </Box>
-                <HelperText>옵션 값을 수정하면 조합이 자동으로 갱신됩니다. 기존에 입력한 값은 유지됩니다.</HelperText>
+                <HelperText>
+                  옵션 값을 수정하면 조합이 자동으로 갱신됩니다. 기존에 입력한
+                  값은 유지됩니다.
+                </HelperText>
               </Box>
             )}
 
@@ -279,7 +346,14 @@ function OptionsSection({
                 id="trackInventory"
                 {...register("trackInventory")}
               />
-              <label htmlFor="trackInventory" style={{ fontSize: "14px", color: "#4A5568", cursor: "pointer" }}>
+              <label
+                htmlFor="trackInventory"
+                style={{
+                  fontSize: "14px",
+                  color: "#4A5568",
+                  cursor: "pointer",
+                }}
+              >
                 재고 추적 사용
               </label>
             </Flex>
@@ -301,7 +375,9 @@ function SingleVariantSection({
   register: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["register"];
   watch: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["watch"];
   setValue: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["setValue"];
-  errors: ReturnType<typeof useForm<ShopifyRegisterFormValues>>["formState"]["errors"];
+  errors: ReturnType<
+    typeof useForm<ShopifyRegisterFormValues>
+  >["formState"]["errors"];
 }): React.JSX.Element {
   const trackInventory = watch("trackInventory");
 
@@ -317,7 +393,9 @@ function SingleVariantSection({
               type="number"
               step={0.01}
               placeholder="예: 29.99"
-              {...register("price", { setValueAs: (v) => (v === "" ? undefined : Number(v)) })}
+              {...register("price", {
+                setValueAs: (v) => (v === "" ? undefined : Number(v)),
+              })}
             />
             <ErrorMsg>{errors.price?.message}</ErrorMsg>
           </Box>
@@ -329,7 +407,9 @@ function SingleVariantSection({
               type="number"
               step={0.01}
               placeholder="예: 39.99 (할인 전 가격)"
-              {...register("compareAtPrice", { setValueAs: (v) => (v === "" ? undefined : Number(v)) })}
+              {...register("compareAtPrice", {
+                setValueAs: (v) => (v === "" ? undefined : Number(v)),
+              })}
             />
             <ErrorMsg>{errors.compareAtPrice?.message}</ErrorMsg>
           </Box>
@@ -337,7 +417,12 @@ function SingleVariantSection({
 
         <Box>
           <Label>SKU</Label>
-          <Input id="sku" size="sm" placeholder="재고 관리 코드 (선택)" {...register("sku")} />
+          <Input
+            id="sku"
+            size="sm"
+            placeholder="재고 관리 코드 (선택)"
+            {...register("sku")}
+          />
           <ErrorMsg>{errors.sku?.message}</ErrorMsg>
         </Box>
 
@@ -348,7 +433,10 @@ function SingleVariantSection({
             checked={trackInventory}
             onChange={(e) => setValue("trackInventory", e.target.checked)}
           />
-          <label htmlFor="trackInventory" style={{ fontSize: "14px", color: "#4A5568", cursor: "pointer" }}>
+          <label
+            htmlFor="trackInventory"
+            style={{ fontSize: "14px", color: "#4A5568", cursor: "pointer" }}
+          >
             재고 추적 사용
           </label>
         </Flex>
@@ -361,7 +449,9 @@ function SingleVariantSection({
               size="sm"
               type="number"
               step={1}
-              {...register("inventoryQuantity", { setValueAs: (v) => (v === "" ? 0 : Number(v)) })}
+              {...register("inventoryQuantity", {
+                setValueAs: (v) => (v === "" ? 0 : Number(v)),
+              })}
             />
             <HelperText>기본 위치(Location)의 재고로 설정됩니다.</HelperText>
             <ErrorMsg>{errors.inventoryQuantity?.message}</ErrorMsg>
@@ -387,7 +477,9 @@ export function ShopifyProductNewForm(): React.JSX.Element {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ShopifyRegisterFormValues>({
-    resolver: zodResolver(shopifyRegisterSchema) as Resolver<ShopifyRegisterFormValues>,
+    resolver: zodResolver(
+      shopifyRegisterSchema,
+    ) as Resolver<ShopifyRegisterFormValues>,
     defaultValues: {
       title: "",
       descriptionHtml: "",
@@ -412,10 +504,14 @@ export function ShopifyProductNewForm(): React.JSX.Element {
   const hasOptions = watch("hasOptions");
   const descriptionHtml = watch("descriptionHtml") ?? ""; // RichHtmlEditor 초기값용
 
-  const onInvalid: SubmitErrorHandler<ShopifyRegisterFormValues> = (fieldErrors) => {
+  const onInvalid: SubmitErrorHandler<ShopifyRegisterFormValues> = (
+    fieldErrors,
+  ) => {
     const firstKey = Object.keys(fieldErrors)[0];
     if (!firstKey) return;
-    document.getElementById(firstKey)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    document
+      .getElementById(firstKey)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const onValid = async (values: ShopifyRegisterFormValues): Promise<void> => {
@@ -431,7 +527,10 @@ export function ShopifyProductNewForm(): React.JSX.Element {
       <EmptyState
         title="Shopify API 키가 없습니다"
         description="채널 설정에서 Shopify API 키를 등록하면 상품을 등록할 수 있습니다."
-        action={{ label: "채널 설정으로 이동", onClick: () => router.push("/settings/channels") }}
+        action={{
+          label: "채널 설정으로 이동",
+          onClick: () => router.push("/settings/channels"),
+        }}
       />
     );
   }
@@ -463,20 +562,37 @@ export function ShopifyProductNewForm(): React.JSX.Element {
               <Stack direction={{ base: "column", md: "row" }} gap={4}>
                 <Box flex="1">
                   <Label>브랜드 (Vendor)</Label>
-                  <Input id="vendor" size="sm" placeholder="브랜드명 (선택)" {...register("vendor")} />
+                  <Input
+                    id="vendor"
+                    size="sm"
+                    placeholder="브랜드명 (선택)"
+                    {...register("vendor")}
+                  />
                   <ErrorMsg>{errors.vendor?.message}</ErrorMsg>
                 </Box>
                 <Box flex="1">
                   <Label>상품 유형 (Product Type)</Label>
-                  <Input id="productType" size="sm" placeholder="예: Apparel, Electronics (선택)" {...register("productType")} />
+                  <Input
+                    id="productType"
+                    size="sm"
+                    placeholder="예: Apparel, Electronics (선택)"
+                    {...register("productType")}
+                  />
                   <ErrorMsg>{errors.productType?.message}</ErrorMsg>
                 </Box>
               </Stack>
 
               <Box>
                 <Label>태그 (Tags)</Label>
-                <Input id="tags" size="sm" placeholder="예: summer, sale, cotton (콤마로 구분)" {...register("tags")} />
-                <HelperText>태그는 Shopify 검색 및 필터에서 활용됩니다.</HelperText>
+                <Input
+                  id="tags"
+                  size="sm"
+                  placeholder="예: summer, sale, cotton (콤마로 구분)"
+                  {...register("tags")}
+                />
+                <HelperText>
+                  태그는 Shopify 검색 및 필터에서 활용됩니다.
+                </HelperText>
                 <ErrorMsg>{errors.tags?.message}</ErrorMsg>
               </Box>
 
@@ -489,15 +605,24 @@ export function ShopifyProductNewForm(): React.JSX.Element {
                     <Select
                       id="status"
                       value={field.value}
-                      onChange={(e) => field.onChange(e.target.value as "ACTIVE" | "DRAFT" | "ARCHIVED")}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value as "ACTIVE" | "DRAFT" | "ARCHIVED",
+                        )
+                      }
                     >
                       <option value="DRAFT">초안 (DRAFT) — 비공개</option>
                       <option value="ACTIVE">판매 중 (ACTIVE) — 공개</option>
-                      <option value="ARCHIVED">보관됨 (ARCHIVED) — 비공개</option>
+                      <option value="ARCHIVED">
+                        보관됨 (ARCHIVED) — 비공개
+                      </option>
                     </Select>
                   )}
                 />
-                <HelperText>DRAFT로 등록 후 검토 완료 시 ACTIVE로 변경하는 것을 권장합니다.</HelperText>
+                <HelperText>
+                  DRAFT로 등록 후 검토 완료 시 ACTIVE로 변경하는 것을
+                  권장합니다.
+                </HelperText>
                 <ErrorMsg>{errors.status?.message}</ErrorMsg>
               </Box>
             </Stack>
@@ -507,7 +632,9 @@ export function ShopifyProductNewForm(): React.JSX.Element {
           <Section title="상품 설명">
             <RichHtmlEditor
               value={descriptionHtml}
-              onChange={(v) => setValue("descriptionHtml", v, { shouldValidate: true })}
+              onChange={(v) =>
+                setValue("descriptionHtml", v, { shouldValidate: true })
+              }
               isDisabled={isLoading}
               minHeight="320px"
             />
@@ -541,11 +668,14 @@ export function ShopifyProductNewForm(): React.JSX.Element {
                 id="imageUrls"
                 size="sm"
                 rows={4}
-                placeholder={"https://example.com/image1.jpg\nhttps://example.com/image2.jpg"}
+                placeholder={
+                  "https://example.com/image1.jpg\nhttps://example.com/image2.jpg"
+                }
                 {...register("imageUrls")}
               />
               <HelperText>
-                이미지 URL을 줄바꿈 또는 콤마(,)로 구분하여 입력해 주세요. 공개 접근 가능한 URL이어야 합니다.
+                이미지 URL을 줄바꿈 또는 콤마(,)로 구분하여 입력해 주세요. 공개
+                접근 가능한 URL이어야 합니다.
               </HelperText>
               <ErrorMsg>{errors.imageUrls?.message}</ErrorMsg>
             </Box>
@@ -553,7 +683,11 @@ export function ShopifyProductNewForm(): React.JSX.Element {
 
           {/* ─ 하단 액션 ─────────────────────────────────── */}
           <Flex justify="flex-end" gap={3} pt={2}>
-            <Button variant="ghost" onClick={() => router.back()} disabled={isLoading}>
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              disabled={isLoading}
+            >
               취소
             </Button>
             <Button

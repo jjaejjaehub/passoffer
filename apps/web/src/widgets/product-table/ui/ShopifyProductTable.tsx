@@ -10,11 +10,7 @@ const STATUS_MAP: Record<string, string> = {
   inactive: "판매중지",
 };
 
-function ShopifyStatusBadge({
-  status,
-}: {
-  status: string;
-}): React.JSX.Element {
+function ShopifyStatusBadge({ status }: { status: string }): React.JSX.Element {
   const isActive = status === "active";
   const label = STATUS_MAP[status] ?? status;
 
@@ -307,9 +303,7 @@ export function ShopifyProductTable({
                     verticalAlign="middle"
                     fontFamily="mono"
                     fontSize="sm"
-                    color={
-                      item.qty === 0 ? "red.500" : "gray.700"
-                    }
+                    color={item.qty === 0 ? "red.500" : "gray.700"}
                   >
                     {item.qty.toLocaleString()}
                   </Box>
