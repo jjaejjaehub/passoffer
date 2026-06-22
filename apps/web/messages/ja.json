@@ -24,6 +24,7 @@
       "newOrders": "新規注文",
       "dispatch": "出荷管理",
       "shipping": "配送管理",
+      "barcodeDispatch": "バーコード出荷マネージャー",
       "all": "全件照会",
       "claims": "クレーム"
     },

@@ -8,12 +8,14 @@ import {
   ChevronDown,
   CreditCard,
   FileText,
+  Gift,
   Globe,
   ChevronRight,
   LayoutDashboard,
   LogOut,
   MessageCircle,
   Package2,
+  ScanLine,
   Settings2,
   ShoppingBag,
   ShoppingCart,
@@ -302,6 +304,10 @@ export function Sidebar(): React.JSX.Element {
                   isExactActive(ROUTES.newOrders) ||
                   isActive(ROUTES.dispatch) ||
                   isActive(ROUTES.shipping) ||
+                  isActive(ROUTES.barcodeDispatch) ||
+                  isActive(ROUTES.skuMatching) ||
+                  isActive(ROUTES.matchingRules) ||
+                  isActive(ROUTES.giftRules) ||
                   isActive(ROUTES.allOrders) ||
                   isActive(ROUTES.claims),
               )}
@@ -316,6 +322,9 @@ export function Sidebar(): React.JSX.Element {
                   isExactActive(ROUTES.newOrders) ||
                   isActive(ROUTES.dispatch) ||
                   isActive(ROUTES.shipping) ||
+                  isActive(ROUTES.skuMatching) ||
+                  isActive(ROUTES.matchingRules) ||
+                  isActive(ROUTES.giftRules) ||
                   isActive(ROUTES.allOrders) ||
                   isActive(ROUTES.claims)
                     ? "gray.900"
@@ -372,6 +381,50 @@ export function Sidebar(): React.JSX.Element {
                     <Flex {...subItemStyle(isActive(ROUTES.shipping))}>
                       <Icon as={Truck} boxSize={3} color="gray.400" mr={1} />
                       <Text fontSize="sm">{t("orders.shipping")}</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.barcodeDispatch} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.barcodeDispatch)}
+                    onMouseEnter={() => prefetch(ROUTES.barcodeDispatch)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.barcodeDispatch))}>
+                      <Icon as={ScanLine} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">{t("orders.barcodeDispatch")}</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.skuMatching} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.skuMatching)}
+                    onMouseEnter={() => prefetch(ROUTES.skuMatching)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.skuMatching))}>
+                      <Icon as={Boxes} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">SKU매칭</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.matchingRules} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.matchingRules)}
+                    onMouseEnter={() => prefetch(ROUTES.matchingRules)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.matchingRules))}>
+                      <Icon as={Sparkles} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">매칭규칙</Text>
+                    </Flex>
+                  </Link>
+                </Box>
+                <Box mt={1}>
+                  <Link href={ROUTES.giftRules} style={{ textDecoration: "none" }}
+                    onClick={() => setPendingHref(ROUTES.giftRules)}
+                    onMouseEnter={() => prefetch(ROUTES.giftRules)}
+                  >
+                    <Flex {...subItemStyle(isActive(ROUTES.giftRules))}>
+                      <Icon as={Gift} boxSize={3} color="gray.400" mr={1} />
+                      <Text fontSize="sm">사은품규칙</Text>
                     </Flex>
                   </Link>
                 </Box>

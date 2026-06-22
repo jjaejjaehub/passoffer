@@ -24,6 +24,7 @@
       "newOrders": "신규주문",
       "dispatch": "출고관리",
       "shipping": "배송관리",
+      "barcodeDispatch": "바코드출고매니저",
       "all": "전체조회",
       "claims": "클레임"
     },
